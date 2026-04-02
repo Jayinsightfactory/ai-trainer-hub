@@ -9,13 +9,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const { sidebarCollapsed, bottomPanelOpen } = useWorkspace();
 
   return (
-    <div className="h-screen w-screen overflow-hidden flex bg-gray-950 text-gray-200">
+    <div className="h-screen w-screen overflow-hidden flex bg-white text-gray-800">
       {/* Activity Bar */}
       <ActivityBar />
 
       {/* Sidebar */}
       {!sidebarCollapsed && (
-        <div className="w-56 shrink-0 border-r border-gray-800">
+        <div className="w-56 shrink-0 border-r border-gray-200">
           <Sidebar />
         </div>
       )}

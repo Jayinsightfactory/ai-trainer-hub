@@ -30,7 +30,7 @@ export default function ActivityBar() {
   };
 
   return (
-    <div className="flex flex-col items-center w-12 bg-gray-950 border-r border-gray-800 py-2 shrink-0">
+    <div className="flex flex-col items-center w-12 bg-gray-50 border-r border-gray-200 py-2 shrink-0">
       {/* Logo */}
       <button onClick={() => handleClick(NAV_ITEMS[0])} className="mb-4 p-1.5">
         <Bot className="size-6 text-indigo-400" />
@@ -49,8 +49,8 @@ export default function ActivityBar() {
               onClick={() => handleClick(item)}
               className={`relative flex items-center justify-center size-10 rounded-lg transition-colors group ${
                 isActive
-                  ? "bg-gray-800 text-white"
-                  : "text-gray-500 hover:text-gray-300 hover:bg-gray-800/50"
+                  ? "bg-indigo-50 text-indigo-700"
+                  : "text-gray-400 hover:text-gray-700 hover:bg-gray-100"
               }`}
               title={item.label}
             >
@@ -67,14 +67,14 @@ export default function ActivityBar() {
       <div className="flex flex-col gap-1">
         <button
           onClick={toggleSidebar}
-          className="flex items-center justify-center size-10 text-gray-500 hover:text-gray-300 hover:bg-gray-800/50 rounded-lg"
+          className="flex items-center justify-center size-10 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
           title="사이드바 토글"
         >
           <PanelLeft className="size-5" />
         </button>
         <button
           onClick={() => { setActiveView("settings"); router.push("/"); }}
-          className="flex items-center justify-center size-10 text-gray-500 hover:text-gray-300 hover:bg-gray-800/50 rounded-lg"
+          className="flex items-center justify-center size-10 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
           title="설정"
         >
           <Settings className="size-5" />

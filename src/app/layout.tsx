@@ -27,7 +27,7 @@ export default function RootLayout({
   return (
     <html
       lang="ko"
-      className={`${geistSans.variable} ${geistMono.variable} dark antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
       <body className="h-screen overflow-hidden font-[family-name:var(--font-geist-sans)]">
         <AppShell>{children}</AppShell>

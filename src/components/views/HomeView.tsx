@@ -229,13 +229,20 @@ export default function HomeView() {
 
   const demo = DEMO_CASES[selectedCase];
 
-  // Initialize field values when case changes
+  // Initialize field values + pre-fill conversations when case changes
   useEffect(() => {
     const vals: Record<string, string> = {};
     demo.fields.forEach((f) => { vals[f.key] = f.value; });
     setFieldValues(vals);
-    setChatMessages([]);
     setShowBefore(true);
+
+    // Pre-fill chat with first 2 conversations
+    const prefilled: { role: "user" | "ai"; text: string }[] = [];
+    demo.conversations.slice(0, 2).forEach((c) => {
+      prefilled.push({ role: "user", text: c.question });
+      prefilled.push({ role: "ai", text: c.after });
+    });
+    setChatMessages(prefilled);
   }, [selectedCase]);
 
   // Auto-scroll chat
@@ -277,11 +284,11 @@ export default function HomeView() {
   return (
     <div className="flex h-full">
       {/* ===== LEFT: 학습 입력 영역 ===== */}
-      <div className="flex-1 flex flex-col min-w-0 border-r border-gray-800">
+      <div className="flex-1 flex flex-col min-w-0 border-r border-gray-200">
         {/* Case Selector */}
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-800 bg-gray-900/50">
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50/50">
           <Sparkles className="size-4 text-indigo-400" />
-          <span className="text-xs font-semibold text-gray-300">학습 데모</span>
+          <span className="text-xs font-semibold text-gray-700">학습 데모</span>
           <div className="flex gap-1 ml-2">
             {DEMO_CASES.map((c, i) => (
               <button
@@ -290,7 +297,7 @@ export default function HomeView() {
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-colors ${
                   selectedCase === i
                     ? "bg-indigo-600 text-white"
-                    : "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
+                    : "bg-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-200"
                 }`}
               >
                 <c.icon className="size-3" />
@@ -299,7 +306,7 @@ export default function HomeView() {
             ))}
           </div>
           <div className="flex-1" />
-          <Badge variant="secondary" className="text-[10px] bg-gray-800 text-gray-400">
+          <Badge variant="secondary" className="text-[10px] bg-gray-100 text-gray-500">
             {demo.businessName} · {demo.tone}
           </Badge>
         </div>
@@ -311,14 +318,14 @@ export default function HomeView() {
           </div>
 
           {demo.fields.map((field) => (
-            <div key={field.key} className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
+            <div key={field.key} className="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
               <div
-                className="flex items-center justify-between px-3 py-2 bg-gray-800/50 cursor-pointer"
+                className="flex items-center justify-between px-3 py-2 bg-gray-100 cursor-pointer"
                 onClick={() => setEditingField(editingField === field.key ? null : field.key)}
               >
                 <div className="flex items-center gap-2">
                   <Pencil className="size-3 text-indigo-400" />
-                  <span className="text-xs font-medium text-gray-300">{field.label}</span>
+                  <span className="text-xs font-medium text-gray-700">{field.label}</span>
                 </div>
                 {editingField === field.key ? (
                   <ChevronUp className="size-3.5 text-gray-500" />
@@ -330,7 +337,7 @@ export default function HomeView() {
                 <textarea
                   value={fieldValues[field.key] || ""}
                   onChange={(e) => handleFieldChange(field.key, e.target.value)}
-                  className="w-full bg-gray-950 text-xs text-gray-300 p-3 outline-none resize-none font-mono leading-relaxed"
+                  className="w-full bg-white text-xs text-gray-700 p-3 outline-none resize-none font-mono leading-relaxed"
                   rows={8}
                 />
               ) : (
@@ -348,7 +355,7 @@ export default function HomeView() {
               <button
                 onClick={() => setShowBefore(true)}
                 className={`flex-1 text-xs py-1.5 rounded-md transition-colors ${
-                  showBefore ? "bg-red-500/20 text-red-400 font-semibold" : "bg-gray-800 text-gray-500"
+                  showBefore ? "bg-red-500/20 text-red-400 font-semibold" : "bg-gray-100 text-gray-500"
                 }`}
               >
                 학습 전
@@ -356,14 +363,14 @@ export default function HomeView() {
               <button
                 onClick={() => setShowBefore(false)}
                 className={`flex-1 text-xs py-1.5 rounded-md transition-colors ${
-                  !showBefore ? "bg-emerald-500/20 text-emerald-400 font-semibold" : "bg-gray-800 text-gray-500"
+                  !showBefore ? "bg-emerald-500/20 text-emerald-400 font-semibold" : "bg-gray-100 text-gray-500"
                 }`}
               >
                 학습 후
               </button>
             </div>
             <div className={`rounded-lg p-3 text-xs leading-relaxed whitespace-pre-line ${
-              showBefore ? "bg-red-500/5 border border-red-500/20 text-gray-400" : "bg-emerald-500/5 border border-emerald-500/20 text-gray-300"
+              showBefore ? "bg-red-500/5 border border-red-500/20 text-gray-500" : "bg-emerald-500/5 border border-emerald-500/20 text-gray-700"
             }`}>
               {showBefore ? firstConv.before : firstConv.after}
             </div>
@@ -384,7 +391,7 @@ export default function HomeView() {
                       setChatMessages((prev) => [...prev, { role: "ai", text: c.after }]);
                     }, 800);
                   }}
-                  className="text-[11px] px-2.5 py-1 bg-gray-800 text-gray-400 hover:text-white hover:bg-indigo-600/30 rounded-full transition-colors"
+                  className="text-[11px] px-2.5 py-1 bg-gray-100 text-gray-500 hover:text-gray-900 hover:bg-indigo-600/30 rounded-full transition-colors"
                 >
                   {c.question}
                 </button>
@@ -395,16 +402,16 @@ export default function HomeView() {
       </div>
 
       {/* ===== RIGHT: 실시간 미리보기 ===== */}
-      <div className="w-[420px] shrink-0 flex flex-col bg-gray-900/30">
+      <div className="w-[420px] shrink-0 flex flex-col bg-gray-50/30">
         {/* Preview Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-gray-900/50">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50/50">
           <div className="flex items-center gap-2">
             <Bot className="size-4 text-indigo-400" />
-            <span className="text-xs font-semibold text-gray-300">실시간 미리보기</span>
+            <span className="text-xs font-semibold text-gray-700">실시간 미리보기</span>
           </div>
           <button
             onClick={() => setChatMessages([])}
-            className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-gray-300"
+            className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-gray-700"
           >
             <RotateCcw className="size-3" />
             초기화
@@ -415,7 +422,7 @@ export default function HomeView() {
         <div ref={chatRef} className="flex-1 overflow-y-auto p-4 space-y-3" style={{ scrollbarWidth: "thin" }}>
           {/* System badge */}
           <div className="text-center">
-            <Badge variant="secondary" className="text-[9px] bg-gray-800 text-gray-500">
+            <Badge variant="secondary" className="text-[9px] bg-gray-100 text-gray-500">
               {demo.businessName} AI · {demo.tone}
             </Badge>
           </div>
@@ -426,8 +433,8 @@ export default function HomeView() {
               <div className="size-7 rounded-full bg-indigo-500/20 flex items-center justify-center shrink-0">
                 <Bot className="size-4 text-indigo-400" />
               </div>
-              <div className="bg-gray-800 rounded-2xl rounded-bl-sm px-3 py-2 max-w-[85%]">
-                <p className="text-xs text-gray-300 leading-relaxed">
+              <div className="bg-gray-100 rounded-2xl rounded-bl-sm px-3 py-2 max-w-[85%]">
+                <p className="text-xs text-gray-700 leading-relaxed">
                   안녕하세요! {demo.businessName} AI입니다 😊{"\n"}
                   왼쪽에서 데이터를 수정하거나, 아래에 질문을 입력해보세요!
                 </p>
@@ -451,13 +458,13 @@ export default function HomeView() {
               <div className={`max-w-[85%] rounded-2xl px-3 py-2 ${
                 msg.role === "user"
                   ? "bg-indigo-600 text-white rounded-br-sm"
-                  : "bg-gray-800 text-gray-300 rounded-bl-sm"
+                  : "bg-gray-100 text-gray-700 rounded-bl-sm"
               }`}>
                 <p className="text-xs leading-relaxed whitespace-pre-line">{msg.text}</p>
               </div>
               {msg.role === "user" && (
                 <div className="size-7 rounded-full bg-gray-700 flex items-center justify-center shrink-0">
-                  <User className="size-4 text-gray-400" />
+                  <User className="size-4 text-gray-500" />
                 </div>
               )}
             </motion.div>
@@ -470,7 +477,7 @@ export default function HomeView() {
                 <div className="size-7 rounded-full bg-indigo-500/20 flex items-center justify-center">
                   <Brain className="size-4 text-indigo-400 animate-pulse" />
                 </div>
-                <div className="bg-gray-800 rounded-2xl rounded-bl-sm px-3 py-2 flex items-center gap-1.5">
+                <div className="bg-gray-100 rounded-2xl rounded-bl-sm px-3 py-2 flex items-center gap-1.5">
                   <Loader2 className="size-3 text-gray-500 animate-spin" />
                   <span className="text-xs text-gray-500">학습된 AI가 답변 중...</span>
                 </div>
@@ -480,7 +487,7 @@ export default function HomeView() {
         </div>
 
         {/* Input */}
-        <div className="p-3 border-t border-gray-800">
+        <div className="p-3 border-t border-gray-200">
           <form
             onSubmit={(e) => { e.preventDefault(); handleSend(); }}
             className="flex gap-2"
@@ -489,14 +496,14 @@ export default function HomeView() {
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
               placeholder="직접 질문해보세요..."
-              className="flex-1 bg-gray-800 text-xs text-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-indigo-500"
+              className="flex-1 bg-gray-100 text-xs text-gray-700 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-indigo-500"
             />
-            <button type="submit" className="size-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center hover:bg-indigo-700 shrink-0">
+            <button type="submit" className="size-8 rounded-lg bg-indigo-600 text-gray-900 flex items-center justify-center hover:bg-indigo-700 shrink-0">
               <Send className="size-3.5" />
             </button>
           </form>
           <div className="flex items-center justify-between mt-2">
-            <span className="text-[9px] text-gray-600">왼쪽 데이터를 수정하면 응답이 즉시 바뀝니다</span>
+            <span className="text-[9px] text-gray-400">왼쪽 데이터를 수정하면 응답이 즉시 바뀝니다</span>
             <button
               onClick={() => { window.location.href = `/learn?template=text-cs-cafe`; }}
               className="flex items-center gap-1 text-[10px] text-indigo-400 hover:text-indigo-300"
