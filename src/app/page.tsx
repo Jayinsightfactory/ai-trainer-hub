@@ -128,19 +128,6 @@ const pricing = [
 export default function Home() {
   return (
     <div className="flex flex-col min-h-full">
-      {/* ===== Nav ===== */}
-      <nav className="sticky top-0 z-50 backdrop-blur-md bg-white/80 border-b border-gray-100">
-        <div className="mx-auto max-w-6xl flex items-center justify-between px-6 py-4">
-          <Link href="/" className="flex items-center gap-2">
-            <Bot className="size-7 text-indigo-600" />
-            <span className="text-lg font-bold tracking-tight">AI Trainer Hub</span>
-          </Link>
-          <Link href="/onboarding">
-            <Button size="sm">시작하기</Button>
-          </Link>
-        </div>
-      </nav>
-
       {/* ===== Mini Hero — 한줄 메시지 ===== */}
       <section className="bg-gradient-to-br from-indigo-600 via-purple-600 to-fuchsia-500 text-white">
         <div className="mx-auto max-w-4xl px-6 py-12 sm:py-16 text-center">
