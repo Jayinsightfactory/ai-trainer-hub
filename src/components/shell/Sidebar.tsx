@@ -18,52 +18,49 @@ import {
 import { Progress } from "@/components/ui/progress";
 
 function HomeSidebar() {
-  const agents = [
-    { name: "브레인 에이전트", icon: Brain, status: "running", progress: 78 },
-    { name: "인사이트 에이전트", icon: Eye, status: "running", progress: 92 },
-    { name: "콘텐츠 에이전트", icon: Mic, status: "idle", progress: 100 },
-    { name: "고객응대 에이전트", icon: Globe, status: "running", progress: 65 },
-    { name: "성장 에이전트", icon: Sparkles, status: "idle", progress: 100 },
+  const cases = [
+    { label: "카페 고객응대", score: "87%", badge: "인기" },
+    { label: "쇼핑몰 CS", score: "92%", badge: "" },
+    { label: "영어학원 상담", score: "78%", badge: "" },
+    { label: "부동산 매물설명", score: "85%", badge: "" },
+    { label: "건강식품 CS", score: "93%", badge: "최고" },
   ];
 
   return (
     <div className="flex flex-col gap-4 p-3">
-      <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">퍼포먼스</div>
+      <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">학습 성과</div>
 
-      {/* Quick Stats */}
+      {/* Stats */}
       <div className="grid grid-cols-2 gap-2">
         <div className="bg-gray-800 rounded-lg p-2.5">
-          <div className="text-lg font-bold text-emerald-400">42</div>
-          <div className="text-[10px] text-gray-500">총 템플릿</div>
+          <div className="text-lg font-bold text-emerald-400">87%</div>
+          <div className="text-[10px] text-gray-500">평균 정확도</div>
         </div>
         <div className="bg-gray-800 rounded-lg p-2.5">
-          <div className="text-lg font-bold text-indigo-400">5</div>
-          <div className="text-[10px] text-gray-500">활성 에이전트</div>
+          <div className="text-lg font-bold text-indigo-400">21</div>
+          <div className="text-[10px] text-gray-500">학습 사례</div>
         </div>
         <div className="bg-gray-800 rounded-lg p-2.5">
-          <div className="text-lg font-bold text-amber-400">89%</div>
-          <div className="text-[10px] text-gray-500">가동률</div>
+          <div className="text-lg font-bold text-amber-400">42</div>
+          <div className="text-[10px] text-gray-500">템플릿</div>
         </div>
         <div className="bg-gray-800 rounded-lg p-2.5">
-          <div className="text-lg font-bold text-pink-400">2.1k</div>
-          <div className="text-[10px] text-gray-500">오늘 처리</div>
+          <div className="text-lg font-bold text-pink-400">15</div>
+          <div className="text-[10px] text-gray-500">카테고리</div>
         </div>
       </div>
 
-      {/* Agent Status */}
+      {/* Top Cases */}
       <div>
-        <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">에이전트 상태</div>
-        <div className="space-y-2">
-          {agents.map((a) => (
-            <div key={a.name} className="flex items-center gap-2 bg-gray-800/50 rounded-lg p-2">
-              <a.icon className="size-4 text-gray-400 shrink-0" />
-              <div className="flex-1 min-w-0">
-                <div className="text-xs text-gray-300 truncate">{a.name}</div>
-                <Progress value={a.progress} className="h-1 mt-1 [&>div]:bg-indigo-500" />
+        <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">성과 TOP 사례</div>
+        <div className="space-y-1">
+          {cases.map((c) => (
+            <div key={c.label} className="flex items-center justify-between bg-gray-800/50 rounded-lg px-2.5 py-2 hover:bg-gray-800 cursor-pointer transition-colors">
+              <span className="text-xs text-gray-300">{c.label}</span>
+              <div className="flex items-center gap-1.5">
+                {c.badge && <span className="text-[9px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400">{c.badge}</span>}
+                <span className="text-xs font-bold text-emerald-400">{c.score}</span>
               </div>
-              <div className={`size-2 rounded-full shrink-0 ${
-                a.status === "running" ? "bg-emerald-400 animate-pulse" : "bg-gray-600"
-              }`} />
             </div>
           ))}
         </div>
@@ -71,9 +68,9 @@ function HomeSidebar() {
 
       {/* Quick Actions */}
       <div>
-        <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">빠른 작업</div>
+        <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">빠른 시작</div>
         <div className="space-y-1">
-          {["새 학습 시작", "브리핑 생성", "리포트 내보내기"].map((action) => (
+          {["새 학습 시작", "템플릿 둘러보기", "사례 더 보기"].map((action) => (
             <button
               key={action}
               className="w-full text-left text-xs text-gray-400 hover:text-white hover:bg-gray-800 rounded px-2 py-1.5 transition-colors"
