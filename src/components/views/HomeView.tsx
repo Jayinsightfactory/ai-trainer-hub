@@ -1,304 +1,322 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Coffee,
   ShoppingBag,
-  GraduationCap,
-  Building2,
   Stethoscope,
-  Scissors,
+  Wrench,
   Dumbbell,
-  UtensilsCrossed,
-  Car,
-  Briefcase,
-  Dog,
   Camera,
   ArrowRight,
   Bot,
-  MessageSquare,
+  User,
   Database,
   Sparkles,
+  MessageSquare,
   ChevronRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 /* ------------------------------------------------------------------ */
-/*  업종별 데모 데이터                                                   */
+/*  업종별 데모 데이터 (3x2 = 6개, 서비스/기술/동작 혼합)                  */
 /* ------------------------------------------------------------------ */
 interface IndustryDemo {
   id: string;
   icon: React.ElementType;
   name: string;
+  tag: string;
   color: string;
   bg: string;
+  border: string;
   tier: "free" | "pro";
-  inputSummary: string;
-  processSummary: string;
-  resultExample: { question: string; answer: string };
+  inputs: string[];
+  process: string[];
+  chat: { q: string; a: string }[];
 }
 
 const INDUSTRIES: IndustryDemo[] = [
+  // 서비스직
   {
     id: "cafe",
     icon: Coffee,
-    name: "카페/음식점",
+    name: "카페 고객응대 AI",
+    tag: "서비스",
     color: "text-orange-600",
     bg: "bg-orange-50",
+    border: "border-orange-200",
     tier: "free",
-    inputSummary: "메뉴판 · 영업시간 · FAQ 20개 · 말투 예시",
-    processSummary: "역할 설정 → 지식 업로드 → 톤 학습",
-    resultExample: {
-      question: "메뉴 추천해주세요",
-      answer: "시그니처 라떼 추천드려요! 매일 아침 로스팅한 콜롬비아 원두에 수제 바닐라시럽이 들어가서 다른 데서 못 드시는 맛이에요 ☕ 달달한 거 좋으시면 바닐라라떼도 추천! 세트로 마들렌이랑 드시면 1,000원 할인이에요 🧁",
-    },
+    inputs: [
+      "메뉴판 전체 (가격·재료·알레르기)",
+      "영업시간 · 위치 · 주차 · 와이파이",
+      "사장님 말투 예시 10문장",
+      "리뷰 답글 가이드 (별점별)",
+    ],
+    process: [
+      "역할 설정: 카페 AI 직원",
+      "지식 업로드: 메뉴 + FAQ",
+      "톤 학습: 사장님 말투 반영",
+      "테스트 → 피드백 → 재학습",
+    ],
+    chat: [
+      { q: "메뉴 추천해주세요", a: "시그니처 라떼 추천드려요! ☕ 매일 아침 로스팅한 콜롬비아 원두에 수제 바닐라시럽이 들어가요. 달달한 거 좋으시면 바닐라라떼도 추천! 라떼+마들렌 세트 8,500원이면 가성비 최고예요 🧁" },
+      { q: "주차 가능한가요?", a: "네! 건물 뒤 3대 가능, 1시간 무료예요. 주말엔 연남동 공영주차장(도보 3분)도 추천드려요 🚗" },
+    ],
   },
+  // 기술직
+  {
+    id: "car",
+    icon: Wrench,
+    name: "자동차 정비 상담 AI",
+    tag: "기술",
+    color: "text-slate-600",
+    bg: "bg-slate-50",
+    border: "border-slate-200",
+    tier: "free",
+    inputs: [
+      "정비 항목별 가격표 (엔진오일·브레이크·타이어)",
+      "차종별 정비 매뉴얼 요약",
+      "증상→원인 진단 가이드 50건",
+      "예약 시스템 연동 정보",
+    ],
+    process: [
+      "역할 설정: 정비소 상담 AI",
+      "지식 업로드: 가격표 + 진단 가이드",
+      "증상→원인 매칭 패턴 학습",
+      "견적 자동 산출 로직 설정",
+    ],
+    chat: [
+      { q: "엔진오일 교환 얼마예요?", a: "차종이 어떻게 되세요? 일반 합성유 7~9만원, 풀합성유 12~15만원이에요. 주행 1만km마다 추천! 지금 예약하시면 에어컨 필터 무료 점검 해드립니다 🔧" },
+      { q: "브레이크에서 소리가 나요", a: "끼익 소리면 패드 마모 가능성이 높아요. 방치하면 디스크까지 손상될 수 있어서 빨리 점검 추천드려요. 패드 교환 5~8만원, 내일 오전 예약 가능합니다!" },
+    ],
+  },
+  // 쇼핑몰
   {
     id: "shopping",
     icon: ShoppingBag,
-    name: "쇼핑몰",
+    name: "쇼핑몰 CS 자동화 AI",
+    tag: "서비스",
     color: "text-pink-600",
     bg: "bg-pink-50",
+    border: "border-pink-200",
     tier: "free",
-    inputSummary: "환불정책 · 상품 카탈로그 · CS 기록 100건",
-    processSummary: "정책 학습 → FAQ 패턴 추출 → 에스컬레이션 규칙",
-    resultExample: {
-      question: "이거 환불 가능한가요?",
-      answer: "주문번호 알려주시면 바로 확인해드릴게요! 미개봉+7일 이내면 전액 환불, 개봉 후엔 교환 가능합니다. 불량이시면 30일 이내 무료 반품이에요. 혹시 상품에 문제 있으셨나요?",
-    },
+    inputs: [
+      "환불·교환·배송 정책 문서",
+      "상품 카탈로그 (사이즈·소재·가격)",
+      "기존 CS 상담 기록 100건+",
+      "에스컬레이션 기준 (담당자 연결 조건)",
+    ],
+    process: [
+      "정책 문서 → 규칙 추출",
+      "CS 기록 → FAQ 패턴 학습",
+      "사이즈 추천 로직 설정",
+      "자동 답변 + 담당자 연결 분기",
+    ],
+    chat: [
+      { q: "환불 가능한가요?", a: "주문번호 알려주시면 바로 확인해드릴게요! 미개봉+7일 이내 전액 환불, 개봉 후엔 교환 가능해요. 불량이면 30일 이내 무료 반품이에요 📦" },
+      { q: "M이랑 L 차이가요?", a: "오버핏이라 M도 넉넉해요! 키 175+ 이시면 L, 170 이하시면 M 추천. 평소 사이즈 알려주시면 더 정확히 안내드릴게요 👕" },
+    ],
   },
-  {
-    id: "academy",
-    icon: GraduationCap,
-    name: "학원/교육",
-    color: "text-violet-600",
-    bg: "bg-violet-50",
-    tier: "free",
-    inputSummary: "커리큘럼 · 레벨 기준표 · 상담 매뉴얼 · FAQ",
-    processSummary: "학부모 공감 규칙 → 커리큘럼 학습 → 레벨 매칭",
-    resultExample: {
-      question: "7살 영어 시작하려고요",
-      answer: "딱 좋은 시기예요! 파닉스반(월수금 3:30, 40분)이 맞아요 — 원어민+한국인 2인 티칭이라 아이들이 좋아해요. 무료 레벨테스트(15분) 먼저 받아보시겠어요? 이번 주 목금 가능합니다 📝",
-    },
-  },
-  {
-    id: "realestate",
-    icon: Building2,
-    name: "부동산",
-    color: "text-sky-600",
-    bg: "bg-sky-50",
-    tier: "pro",
-    inputSummary: "매물 DB · 지역 특성 · 실거래가 · 매물 설명 200개",
-    processSummary: "매물 스펙 학습 → 패턴 추출 → 자동 설명 생성",
-    resultExample: {
-      question: "역삼동 30평대 추천해주세요",
-      answer: "역삼역 도보 7분, 실평수 28평 남향 4Bay 매물 있습니다. 2024년 풀 리모델링, 학군 OO초 300m. 최근 실거래 9.2억, 관리비 28만원. 주차 1.5대. 현장 방문 가능하세요?",
-    },
-  },
-  {
-    id: "medical",
-    icon: Stethoscope,
-    name: "병원/의원",
-    color: "text-emerald-600",
-    bg: "bg-emerald-50",
-    tier: "pro",
-    inputSummary: "진료과목 · 의료진 소개 · 예약 시스템 · 주의사항",
-    processSummary: "의료 규정 학습 → 안전 답변 규칙 → 예약 연동",
-    resultExample: {
-      question: "피부과 예약하고 싶어요",
-      answer: "어떤 시술이 궁금하세요? 여드름/기미/리프팅 등 분야별 전문의가 계세요. 초진이시면 상담 포함 30분 잡아드릴게요. 이번 주 수목 오후 가능한데 편하신 시간 알려주세요!",
-    },
-  },
-  {
-    id: "beauty",
-    icon: Scissors,
-    name: "미용/뷰티",
-    color: "text-rose-600",
-    bg: "bg-rose-50",
-    tier: "free",
-    inputSummary: "시술 메뉴 · 가격표 · 포트폴리오 · 예약 규정",
-    processSummary: "시술 지식 학습 → 추천 로직 → 예약 안내",
-    resultExample: {
-      question: "볼륨 매직 가격이 어떻게 돼요?",
-      answer: "기장별로 달라요! 숏 8만원 / 미디엄 10만원 / 롱 12만원이에요. 지금 4월 이벤트로 첫 방문 20% 할인 중이에요 ✨ 모발 상태 보고 상담 먼저 드리는데, 원하시는 날짜 있으세요?",
-    },
-  },
+  // 동작 분석
   {
     id: "fitness",
     icon: Dumbbell,
-    name: "헬스/PT",
+    name: "운동 자세 교정 AI",
+    tag: "동작분석",
     color: "text-amber-600",
     bg: "bg-amber-50",
+    border: "border-amber-200",
     tier: "pro",
-    inputSummary: "PT 프로그램 · 가격표 · 트레이너 소개 · 후기",
-    processSummary: "프로그램 매칭 → 목표별 추천 → 체험 안내",
-    resultExample: {
-      question: "다이어트 PT 알아보고 있어요",
-      answer: "목표 체중이나 기간이 있으세요? 저희 3개월 다이어트 프로그램이 평균 -8kg 달성 중이에요. 주 3회 PT + 식단 관리 포함 월 39만원. 무료 체험 PT 1회 가능한데 해보시겠어요? 💪",
-    },
+    inputs: [
+      "올바른 자세 영상 (운동별 20개+)",
+      "잘못된 자세 예시 (운동별 10개+)",
+      "관절 각도 기준표 (정상/위험 범위)",
+      "교정 멘트 가이드 (자세별 피드백)",
+    ],
+    process: [
+      "영상 → 관절 포인트 자동 추출",
+      "정상/위험 각도 라벨링",
+      "분류 모델 학습 (정상 vs 위험)",
+      "실시간 웹캠 → 자세 피드백",
+    ],
+    chat: [
+      { q: "스쿼트 자세 봐주세요", a: "무릎이 발끝보다 앞으로 나갔어요! 각도 75도 → 위험 구간. 엉덩이를 뒤로 더 빼고 무릎 각도 90도 이상 유지해주세요. 코어에 힘주는 것도 잊지 마세요 💪" },
+      { q: "데드리프트 허리가 아파요", a: "허리가 둥글어지고 있을 가능성이 높아요. 가슴을 펴고 허리 중립 유지! 무게를 줄이고 폼부터 교정하는 게 안전해요. 영상 보내주시면 정확히 분석해드릴게요 🎯" },
+    ],
   },
+  // 의료
   {
-    id: "restaurant",
-    icon: UtensilsCrossed,
-    name: "식당/배달",
-    color: "text-red-600",
-    bg: "bg-red-50",
-    tier: "free",
-    inputSummary: "메뉴판 · 원산지 · 알레르기 정보 · 배달 정책",
-    processSummary: "메뉴 학습 → 추천 조합 → 배달/포장 안내",
-    resultExample: {
-      question: "2인 세트 뭐가 좋아요?",
-      answer: "2인이시면 한우 갈비탕 세트(32,000원) 추천드려요! 갈비탕 2그릇 + 공기밥 2 + 반찬 6종이에요. 국물이 24시간 뽑아서 진해요. 매운 거 좋으시면 육개장 세트도 인기예요 🔥",
-    },
-  },
-  {
-    id: "car",
-    icon: Car,
-    name: "자동차/정비",
-    color: "text-slate-600",
-    bg: "bg-slate-50",
+    id: "medical",
+    icon: Stethoscope,
+    name: "병원 예약·안내 AI",
+    tag: "서비스",
+    color: "text-emerald-600",
+    bg: "bg-emerald-50",
+    border: "border-emerald-200",
     tier: "pro",
-    inputSummary: "정비 항목 · 가격표 · 차종별 매뉴얼 · 후기",
-    processSummary: "정비 지식 학습 → 증상별 진단 → 견적 안내",
-    resultExample: {
-      question: "엔진오일 교환 얼마예요?",
-      answer: "차종이 어떻게 되세요? 일반 합성유 기준 7~9만원, 풀합성유 12~15만원이에요. 주행거리 1만km 또는 6개월마다 추천드려요. 지금 예약하시면 에어컨 필터 무료 점검도 해드립니다!",
-    },
+    inputs: [
+      "진료과목·의료진 소개·전문 분야",
+      "예약 가능 시간대 (실시간 연동)",
+      "진료 전 준비사항·주의사항",
+      "자주 묻는 질문 100건 + 의료 규정",
+    ],
+    process: [
+      "의료 규정 학습 (진단·처방 금지)",
+      "예약 시스템 API 연동",
+      "증상→진료과 매칭 로직",
+      "안전 답변 규칙 + 에스컬레이션",
+    ],
+    chat: [
+      { q: "피부과 예약하고 싶어요", a: "어떤 시술이 궁금하세요? 여드름/기미/리프팅 등 분야별 전문의가 계세요. 초진은 상담 포함 30분, 이번 주 수목 오후 가능합니다. 원하시는 시간 알려주세요!" },
+      { q: "두통이 계속돼요", a: "두통 증상이 지속되시면 신경과 진료를 추천드려요. 다만 정확한 진단은 의사 선생님이 직접 해주셔야 해요. 내일 오전 예약 도와드릴까요?" },
+    ],
   },
-  {
-    id: "consulting",
-    icon: Briefcase,
-    name: "전문 서비스",
-    color: "text-indigo-600",
-    bg: "bg-indigo-50",
-    tier: "pro",
-    inputSummary: "서비스 목록 · 사례 · 자격/경력 · FAQ",
-    processSummary: "전문 지식 학습 → 상담 시뮬레이션 → 예약 연동",
-    resultExample: {
-      question: "세무상담 받고 싶어요",
-      answer: "어떤 분야 상담이 필요하세요? 종합소득세/부가세/법인세/양도세 등 분야별 세무사가 계세요. 초기 상담은 30분 무료이고, 자료 준비하실 것도 안내드릴게요. 편하신 시간대 알려주세요!",
-    },
-  },
-  {
-    id: "pet",
-    icon: Dog,
-    name: "반려동물",
-    color: "text-teal-600",
-    bg: "bg-teal-50",
-    tier: "free",
-    inputSummary: "서비스 목록 · 품종별 정보 · 가격표 · 주의사항",
-    processSummary: "품종 지식 → 서비스 매칭 → 예약/상담 안내",
-    resultExample: {
-      question: "소형견 미용 가격이요?",
-      answer: "품종이 어떻게 되나요? 말티즈 기준 전체 미용 4만원, 부분(얼굴+발) 2만원이에요. 첫 방문이시면 10% 할인! 예민한 아이는 1:1 케어도 가능해요. 원하시는 날짜 있으세요? 🐕",
-    },
-  },
+  // 이미지 생성
   {
     id: "studio",
     icon: Camera,
-    name: "스튜디오/사진",
+    name: "AI 상품 사진 생성",
+    tag: "이미지생성",
     color: "text-purple-600",
     bg: "bg-purple-50",
+    border: "border-purple-200",
     tier: "pro",
-    inputSummary: "촬영 패키지 · 포트폴리오 · 가격표 · 예약 정책",
-    processSummary: "패키지 학습 → 용도별 추천 → 예약 안내",
-    resultExample: {
-      question: "증명사진 촬영 가능한가요?",
-      answer: "네! 증명사진 패키지 2만원이에요 — 촬영 + 보정 + 6장 인화 + 파일 제공. 취업용이시면 정장 대여도 무료예요. 보통 20분 소요되고, 당일 예약도 가능합니다. 오늘 오실 수 있으세요? 📸",
-    },
+    inputs: [
+      "상품 사진 20장+ (다양한 각도·조명)",
+      "원하는 스타일 참조 이미지 5장",
+      "프롬프트: 'clean product shot, soft shadow'",
+      "부정 프롬프트: 'blurry, distorted'",
+    ],
+    process: [
+      "상품 사진 → LoRA 모델 학습 (20분)",
+      "스타일 참조 → 톤·분위기 추출",
+      "프롬프트 입력 → 이미지 생성",
+      "시즌별 컨셉 무한 변경 가능",
+    ],
+    chat: [
+      { q: "크리스마스 컨셉으로", a: "생성 완료! 빨간 리본 + 눈 배경 + 따뜻한 조명으로 상품 이미지 20장 만들었어요. 마음에 드는 것 골라주시면 고해상도로 내보내드릴게요 🎄" },
+      { q: "카페 배경으로 바꿔줘", a: "원목 테이블 + 라떼아트 + 자연광 배경으로 변경했어요! 3가지 앵글(정면/45도/탑뷰) 중 선택하실 수 있어요 ☕📸" },
+    ],
   },
 ];
 
 /* ------------------------------------------------------------------ */
-/*  업종 카드 컴포넌트                                                   */
+/*  업종 카드 — 좌 50% 학습정보 / 우 50% 결과 미리보기                     */
 /* ------------------------------------------------------------------ */
 function IndustryCard({ demo, index }: { demo: IndustryDemo; index: number }) {
-  const [expanded, setExpanded] = useState(false);
+  const [chatIdx, setChatIdx] = useState(0);
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.03 }}
-      className={`rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg hover:border-indigo-200 transition-all cursor-pointer group ${
-        expanded ? "row-span-2" : ""
-      }`}
-      onClick={() => setExpanded(!expanded)}
+      transition={{ delay: index * 0.06 }}
+      className={`rounded-xl border ${demo.border} overflow-hidden hover:shadow-lg transition-all`}
     >
       {/* Header */}
-      <div className={`flex items-center justify-between px-4 py-3 ${demo.bg}`}>
+      <div className={`flex items-center justify-between px-4 py-2.5 ${demo.bg}`}>
         <div className="flex items-center gap-2">
           <demo.icon className={`size-5 ${demo.color}`} />
           <span className="text-sm font-bold text-gray-800">{demo.name}</span>
         </div>
-        <Badge
-          variant="secondary"
-          className={`text-[10px] ${
-            demo.tier === "free"
-              ? "bg-emerald-100 text-emerald-700"
-              : "bg-gray-100 text-gray-500"
-          }`}
-        >
-          {demo.tier === "free" ? "무료" : "프로"}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="text-[10px] bg-white/80 text-gray-500">{demo.tag}</Badge>
+          <Badge
+            variant="secondary"
+            className={`text-[10px] ${demo.tier === "free" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}
+          >
+            {demo.tier === "free" ? "무료" : "프로"}
+          </Badge>
+        </div>
       </div>
 
-      {/* 3-Step Flow */}
-      <div className="px-4 py-3 space-y-2">
-        {/* Step 1: Input */}
-        <div className="flex items-start gap-2">
-          <div className="flex items-center justify-center size-5 rounded bg-blue-50 shrink-0 mt-0.5">
-            <Database className="size-3 text-blue-500" />
-          </div>
+      {/* Body: Left 50% + Right 50% */}
+      <div className="flex divide-x divide-gray-100">
+        {/* LEFT: 학습 데이터 + 학습 과정 */}
+        <div className="w-1/2 p-4 space-y-3">
+          {/* 학습 데이터 */}
           <div>
-            <div className="text-[10px] font-semibold text-blue-600">학습 데이터</div>
-            <div className="text-[11px] text-gray-500 leading-snug">{demo.inputSummary}</div>
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <Database className="size-3.5 text-blue-500" />
+              <span className="text-[11px] font-bold text-blue-600">학습 데이터</span>
+            </div>
+            <ul className="space-y-1">
+              {demo.inputs.map((item, i) => (
+                <li key={i} className="flex items-start gap-1.5 text-[11px] text-gray-600">
+                  <span className="text-gray-300 mt-0.5 shrink-0">•</span>
+                  <span className="leading-snug">{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* 학습 과정 */}
+          <div>
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <Sparkles className="size-3.5 text-amber-500" />
+              <span className="text-[11px] font-bold text-amber-600">학습 과정</span>
+            </div>
+            <ol className="space-y-1">
+              {demo.process.map((step, i) => (
+                <li key={i} className="flex items-start gap-1.5 text-[11px] text-gray-600">
+                  <span className="text-amber-400 font-bold mt-0.5 shrink-0 text-[10px]">{i + 1}</span>
+                  <span className="leading-snug">{step}</span>
+                </li>
+              ))}
+            </ol>
           </div>
         </div>
 
-        {/* Step 2: Process */}
-        <div className="flex items-start gap-2">
-          <div className="flex items-center justify-center size-5 rounded bg-amber-50 shrink-0 mt-0.5">
-            <Sparkles className="size-3 text-amber-500" />
+        {/* RIGHT: 결과 미리보기 (채팅) */}
+        <div className="w-1/2 p-4 flex flex-col">
+          <div className="flex items-center gap-1.5 mb-2">
+            <MessageSquare className="size-3.5 text-emerald-500" />
+            <span className="text-[11px] font-bold text-emerald-600">결과 미리보기</span>
           </div>
-          <div>
-            <div className="text-[10px] font-semibold text-amber-600">학습 과정</div>
-            <div className="text-[11px] text-gray-500 leading-snug">{demo.processSummary}</div>
-          </div>
-        </div>
 
-        {/* Step 3: Result */}
-        <div className="flex items-start gap-2">
-          <div className="flex items-center justify-center size-5 rounded bg-emerald-50 shrink-0 mt-0.5">
-            <MessageSquare className="size-3 text-emerald-500" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-[10px] font-semibold text-emerald-600">결과</div>
-            <div className="mt-1 bg-gray-50 rounded-lg p-2">
-              <div className="text-[10px] text-gray-400 mb-1">고객: "{demo.resultExample.question}"</div>
-              <div className={`text-[11px] leading-snug ${expanded ? "text-gray-700" : "text-gray-600 line-clamp-2"}`}>
-                AI: {demo.resultExample.answer}
+          <div className="flex-1 space-y-2">
+            {/* Question */}
+            <div className="flex justify-end">
+              <div className="bg-indigo-600 text-white rounded-2xl rounded-br-sm px-3 py-1.5 max-w-[90%]">
+                <p className="text-[11px]">{demo.chat[chatIdx].q}</p>
+              </div>
+            </div>
+
+            {/* Answer */}
+            <div className="flex gap-1.5">
+              <div className={`size-6 rounded-full ${demo.bg} flex items-center justify-center shrink-0`}>
+                <Bot className={`size-3 ${demo.color}`} />
+              </div>
+              <div className="bg-gray-50 border border-gray-100 rounded-2xl rounded-bl-sm px-3 py-2 max-w-[90%]">
+                <p className="text-[11px] text-gray-700 leading-relaxed">{demo.chat[chatIdx].a}</p>
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Footer */}
-      <div className="px-4 py-2 border-t border-gray-100 flex items-center justify-between">
-        <span className="text-[10px] text-gray-400">
-          {expanded ? "접기" : "전체 응답 보기"}
-        </span>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            window.location.href = `/learn?template=text-cs-${demo.id}`;
-          }}
-          className="flex items-center gap-1 text-[11px] text-indigo-600 hover:text-indigo-800 font-medium"
-        >
-          학습 시작 <ChevronRight className="size-3" />
-        </button>
+          {/* Chat toggle + CTA */}
+          <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
+            <div className="flex gap-1">
+              {demo.chat.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setChatIdx(i)}
+                  className={`size-5 rounded text-[9px] font-bold transition-colors ${
+                    chatIdx === i ? "bg-indigo-100 text-indigo-600" : "bg-gray-100 text-gray-400 hover:bg-gray-200"
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => { window.location.href = `/learn?template=text-cs-${demo.id}`; }}
+              className="flex items-center gap-1 text-[11px] text-indigo-600 hover:text-indigo-800 font-semibold"
+            >
+              학습 시작 <ChevronRight className="size-3" />
+            </button>
+          </div>
+        </div>
       </div>
     </motion.div>
   );
@@ -310,31 +328,24 @@ function IndustryCard({ demo, index }: { demo: IndustryDemo; index: number }) {
 export default function HomeView() {
   return (
     <div className="h-full overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
-      {/* Header */}
       <div className="px-6 pt-6 pb-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">
-              AI가 고객을 응대합니다
-            </h1>
+            <h1 className="text-xl font-bold text-gray-900">AI가 고객을 응대합니다</h1>
             <p className="text-sm text-gray-500 mt-1">
-              업종을 선택하세요. 학습 데이터 → 학습 과정 → 결과를 바로 확인할 수 있습니다.
+              업종별 학습 데이터 → 학습 과정 → AI 응답 결과를 바로 확인하세요.
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 text-xs">
-              무료 업종 6개
-            </Badge>
-            <Badge variant="secondary" className="bg-gray-100 text-gray-500 text-xs">
-              전체 12개 업종
-            </Badge>
+            <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 text-xs">무료 3개</Badge>
+            <Badge variant="secondary" className="bg-gray-100 text-gray-500 text-xs">전체 6개 업종</Badge>
           </div>
         </div>
       </div>
 
-      {/* Grid: 4 columns × 3 rows */}
+      {/* Grid: 3 columns × 2 rows */}
       <div className="px-6 pb-6">
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           {INDUSTRIES.map((demo, i) => (
             <IndustryCard key={demo.id} demo={demo} index={i} />
           ))}
