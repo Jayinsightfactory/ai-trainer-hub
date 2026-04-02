@@ -23,6 +23,11 @@ import {
   AudioLines,
   Combine,
   Workflow,
+  Wrench,
+  Smartphone,
+  FlaskConical,
+  Code,
+  Database,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +57,11 @@ const CATEGORY_ICONS: Record<string, React.ElementType> = {
   "voice-clone-learning": AudioLines,
   "multimodal-learning": Combine,
   "agent-learning": Workflow,
+  "rag-learning": Database,
+  "finetune-learning": Wrench,
+  "edge-learning": Smartphone,
+  "synthetic-learning": FlaskConical,
+  "code-learning": Code,
 };
 
 const TIER_CONFIG = {
