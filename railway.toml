@@ -1,0 +1,12 @@
+[build]
+builder = "nixpacks"
+buildCommand = "npx prisma generate && npx prisma db push && npm run build"
+
+[deploy]
+startCommand = "npm run start"
+healthcheckPath = "/"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
+
+[deploy.variables]
+PORT = "3000"
