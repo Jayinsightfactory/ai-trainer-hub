@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type ViewId = "home" | "templates" | "learn" | "my-learning" | "onboarding" | "settings";
+export type ViewId = "home" | "templates" | "learn" | "my-learning" | "onboarding" | "settings" | "camera";
 export type BottomTab = "chat" | "logs" | "notifications";
 export type RightContent = "preview" | "properties" | "details" | null;
 

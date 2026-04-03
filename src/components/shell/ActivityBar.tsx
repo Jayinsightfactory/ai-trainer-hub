@@ -9,6 +9,7 @@ import {
   Settings,
   Bot,
   PanelLeft,
+  Camera,
 } from "lucide-react";
 import { useWorkspace, type ViewId } from "@/store/workspace";
 
@@ -17,6 +18,7 @@ const NAV_ITEMS: { id: ViewId; icon: React.ElementType; label: string; href: str
   { id: "templates", icon: Layers, label: "템플릿", href: "/templates" },
   { id: "my-learning", icon: BookOpen, label: "내 학습", href: "/my-learning" },
   { id: "onboarding", icon: Sparkles, label: "온보딩", href: "/onboarding" },
+  { id: "camera" as ViewId, icon: Camera, label: "카메라 학습", href: "/camera" },
 ];
 
 export default function ActivityBar() {
