@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useWorkspace } from "@/store/workspace";
 import {
   Activity,
@@ -14,10 +16,16 @@ import {
   CheckCircle2,
   Clock,
   AlertTriangle,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 function HomeSidebar() {
+  const [statsOpen, setStatsOpen] = useState(true);
+  const [topCasesOpen, setTopCasesOpen] = useState(true);
+  const router = useRouter();
+
   const cases = [
     { label: "카페 고객응대", score: "87%", badge: "인기" },
     { label: "쇼핑몰 CS", score: "92%", badge: "" },
@@ -27,32 +35,50 @@ function HomeSidebar() {
   ];
 
   return (
-    <div className="flex flex-col gap-4 p-3">
-      <div className="text-xs font-bold text-gray-500 uppercase tracking-wider">학습 성과</div>
+    <div className="flex flex-col gap-3 p-3">
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-2">
-        <div className="bg-gray-100 rounded-lg p-2.5">
-          <div className="text-lg font-bold text-emerald-400">87%</div>
-          <div className="text-[10px] text-gray-500">평균 정확도</div>
-        </div>
-        <div className="bg-gray-100 rounded-lg p-2.5">
-          <div className="text-lg font-bold text-indigo-400">21</div>
-          <div className="text-[10px] text-gray-500">학습 사례</div>
-        </div>
-        <div className="bg-gray-100 rounded-lg p-2.5">
-          <div className="text-lg font-bold text-amber-400">42</div>
-          <div className="text-[10px] text-gray-500">템플릿</div>
-        </div>
-        <div className="bg-gray-100 rounded-lg p-2.5">
-          <div className="text-lg font-bold text-pink-400">15</div>
-          <div className="text-[10px] text-gray-500">카테고리</div>
-        </div>
-      </div>
+      {/* 학습 성과 — 토글 헤더 */}
+      <button
+        onClick={() => setStatsOpen((o) => !o)}
+        className="flex items-center justify-between w-full text-xs font-bold text-gray-500 uppercase tracking-wider hover:text-gray-700 transition-colors"
+      >
+        학습 성과
+        {statsOpen ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
+      </button>
 
-      {/* Top Cases */}
-      <div>
-        <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">성과 TOP 사례</div>
+      {/* Stats — 접기/펼치기 */}
+      {statsOpen && (
+        <div className="grid grid-cols-2 gap-2">
+          <div className="bg-gray-100 rounded-lg p-2.5">
+            <div className="text-lg font-bold text-emerald-400">87%</div>
+            <div className="text-[10px] text-gray-500">평균 정확도</div>
+          </div>
+          <div className="bg-gray-100 rounded-lg p-2.5">
+            <div className="text-lg font-bold text-indigo-400">21</div>
+            <div className="text-[10px] text-gray-500">학습 사례</div>
+          </div>
+          <div className="bg-gray-100 rounded-lg p-2.5">
+            <div className="text-lg font-bold text-amber-400">42</div>
+            <div className="text-[10px] text-gray-500">템플릿</div>
+          </div>
+          <div className="bg-gray-100 rounded-lg p-2.5">
+            <div className="text-lg font-bold text-pink-400">15</div>
+            <div className="text-[10px] text-gray-500">카테고리</div>
+          </div>
+        </div>
+      )}
+
+      {/* 성과 TOP 사례 — 토글 헤더 */}
+      <button
+        onClick={() => setTopCasesOpen((o) => !o)}
+        className="flex items-center justify-between w-full text-xs font-bold text-gray-500 uppercase tracking-wider hover:text-gray-700 transition-colors"
+      >
+        성과 TOP 사례
+        {topCasesOpen ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
+      </button>
+
+      {/* Top Cases — 접기/펼치기 */}
+      {topCasesOpen && (
         <div className="space-y-1">
           {cases.map((c) => (
             <div key={c.label} className="flex items-center justify-between bg-gray-100 rounded-lg px-2.5 py-2 hover:bg-gray-100 cursor-pointer transition-colors">
@@ -64,19 +90,24 @@ function HomeSidebar() {
             </div>
           ))}
         </div>
-      </div>
+      )}
 
       {/* Quick Actions */}
       <div>
         <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">빠른 시작</div>
         <div className="space-y-1">
-          {["새 학습 시작", "템플릿 둘러보기", "사례 더 보기"].map((action) => (
+          {[
+            { label: "새 학습 시작", href: "/learn" },
+            { label: "템플릿 둘러보기", href: "/templates" },
+            { label: "사례 더 보기", href: "/" },
+          ].map(({ label, href }) => (
             <button
-              key={action}
+              key={label}
+              onClick={() => router.push(href)}
               className="w-full text-left text-xs text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded px-2 py-1.5 transition-colors"
             >
               <Zap className="size-3 inline mr-1.5" />
-              {action}
+              {label}
             </button>
           ))}
         </div>
