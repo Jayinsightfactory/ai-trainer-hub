@@ -28,6 +28,7 @@ import {
   FlaskConical,
   Code,
   Database,
+  MessageSquare,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -390,46 +391,104 @@ function CategorySection({
                 ))}
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 ml-4">
+              <div className="grid gap-4 sm:grid-cols-2 ml-4">
                 {sub.templates.map((tpl) => {
                   const tier = TIER_CONFIG[tpl.tier];
                   const diff = DIFFICULTY_CONFIG[tpl.difficulty];
+                  const CatIcon = CATEGORY_ICONS[cat.id] || FileText;
                   return (
-                    <Card
+                    <div
                       key={tpl.id}
-                      className="cursor-pointer transition-all hover:shadow-md hover:border-indigo-200"
-                      onClick={() => onSelect(tpl, sub, cat)}
+                      className={`rounded-xl border overflow-hidden hover:shadow-lg transition-all ${
+                        tpl.tier === "free" ? "border-emerald-200" : "border-gray-200"
+                      }`}
                     >
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between mb-2">
-                          <h4 className="text-sm font-bold leading-tight">{tpl.name}</h4>
-                          <Badge className={`${tier.color} border-0 text-[9px] shrink-0 ml-2`}>
-                            {tpl.tier === "free" ? "무료" : tier.label}
+                      {/* 카드 헤더 */}
+                      <div className={`flex items-center justify-between px-4 py-2.5 bg-gradient-to-r ${cat.gradient} text-white`}>
+                        <div className="flex items-center gap-2">
+                          <CatIcon className="size-4" />
+                          <span className="text-sm font-bold">{tpl.name}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Badge className={`${tier.color} border-0 text-[9px]`}>{tpl.tier === "free" ? "무료" : tier.label}</Badge>
+                          <Badge className="bg-white/20 text-white border-0 text-[9px]">{diff.label}</Badge>
+                          <Badge className="bg-white/20 text-white border-0 text-[9px] flex items-center gap-0.5">
+                            <Clock className="size-2.5" />{tpl.estimatedTime}
                           </Badge>
                         </div>
-                        <p className="text-[11px] text-gray-500 mb-3 line-clamp-2">{tpl.description}</p>
+                      </div>
 
-                        <div className="flex items-center gap-2 text-[10px] text-gray-400">
-                          <span className={diff.color}>{diff.label}</span>
-                          <span>·</span>
-                          <span className="flex items-center gap-0.5"><Clock className="size-3" />{tpl.estimatedTime}</span>
-                          <span>·</span>
-                          <span>{tpl.dataRequirements.length}개 데이터</span>
+                      {/* 카드 바디: 좌 / 우 */}
+                      <div className="flex divide-x divide-gray-100">
+                        {/* 좌: 학습 데이터 + 단계 */}
+                        <div className="w-1/2 p-4 space-y-3">
+                          <div>
+                            <div className="flex items-center gap-1.5 mb-1.5">
+                              <Database className="size-3.5 text-blue-500" />
+                              <span className="text-[11px] font-bold text-blue-600">학습 데이터</span>
+                            </div>
+                            <ul className="space-y-1">
+                              {tpl.dataRequirements.slice(0, 4).map((req, i) => (
+                                <li key={i} className="flex items-start gap-1.5 text-[11px] text-gray-600">
+                                  <span className={`mt-0.5 shrink-0 ${req.required ? "text-red-400" : "text-gray-300"}`}>•</span>
+                                  <span className="leading-snug">{req.item}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5 mb-1.5">
+                              <Sparkles className="size-3.5 text-amber-500" />
+                              <span className="text-[11px] font-bold text-amber-600">학습 단계</span>
+                            </div>
+                            <ol className="space-y-1">
+                              {tpl.guide.filter(s => !s.startsWith("참고") && !s.startsWith("⚠")).slice(0, 4).map((step, i) => (
+                                <li key={i} className="flex items-start gap-1.5 text-[11px] text-gray-600">
+                                  <span className="text-amber-400 font-bold shrink-0 text-[10px] mt-0.5">{i + 1}</span>
+                                  <span className="leading-snug">{step.replace(/^\d+단계:\s*/, "")}</span>
+                                </li>
+                              ))}
+                            </ol>
+                          </div>
                         </div>
 
-                        {tpl.tier === "free" ? (
-                          <Link href={`/learn?template=${tpl.id}`} onClick={(e) => e.stopPropagation()}>
-                            <Button size="sm" className="w-full mt-3 h-8 text-xs gap-1">
-                              학습 시작 <ArrowRight className="size-3" />
-                            </Button>
-                          </Link>
-                        ) : (
-                          <Button size="sm" variant="outline" className="w-full mt-3 h-8 text-xs gap-1">
-                            <Lock className="size-3" /> 미리보기
-                          </Button>
-                        )}
-                      </CardContent>
-                    </Card>
+                        {/* 우: Before → After 미리보기 */}
+                        <div className="w-1/2 p-4 flex flex-col">
+                          <div className="flex items-center gap-1.5 mb-2">
+                            <MessageSquare className="size-3.5 text-emerald-500" />
+                            <span className="text-[11px] font-bold text-emerald-600">학습 전 → 후</span>
+                          </div>
+                          <div className="flex-1 space-y-2">
+                            <div className="rounded-lg bg-red-50 border border-red-100 p-2.5">
+                              <span className="text-[9px] font-bold text-red-400 uppercase">Before</span>
+                              <p className="text-[11px] text-gray-600 mt-1 leading-snug line-clamp-3">{tpl.beforeAfter.before}</p>
+                            </div>
+                            <div className="rounded-lg bg-emerald-50 border border-emerald-100 p-2.5">
+                              <span className="text-[9px] font-bold text-emerald-500 uppercase">After</span>
+                              <p className="text-[11px] text-gray-600 mt-1 leading-snug line-clamp-3">{tpl.beforeAfter.after}</p>
+                            </div>
+                          </div>
+                          <div className="mt-3 pt-2 border-t border-gray-100">
+                            {tpl.tier === "free" ? (
+                              <Link href={`/learn?template=${tpl.id}`}>
+                                <Button size="sm" className="w-full h-7 text-xs gap-1">
+                                  학습 시작 <ArrowRight className="size-3" />
+                                </Button>
+                              </Link>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="w-full h-7 text-xs gap-1"
+                                onClick={() => onSelect(tpl, sub, cat)}
+                              >
+                                <Lock className="size-3" /> 상세보기
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   );
                 })}
               </div>
