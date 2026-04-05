@@ -40,6 +40,19 @@ export interface SubCategory {
   templates: LearnTemplate[];
 }
 
+export interface LearningMethod {
+  id: string;
+  name: string;
+  tag: string;            // 한줄 분류 (예: "모방학습", "강화학습")
+  summary: string;        // 한 문장 설명
+  pros: string[];
+  cons: string[];
+  dataNeeded: string;     // 어떤 데이터가 필요한지
+  difficulty: "beginner" | "intermediate" | "advanced";
+  bestFor: string;        // 언제 선택하면 좋은지
+  paperRef?: string;      // 논문/프레임워크 참고
+}
+
 export interface LearnTemplate {
   id: string;
   name: string;
@@ -52,6 +65,7 @@ export interface LearnTemplate {
   beforeAfter: { before: string; after: string };
   guide: string[];
   keywords: string[];
+  methods?: LearningMethod[];   // 선택 가능한 학습 방법 (복수 존재 시)
 }
 
 export interface DataRequirement {
@@ -1113,6 +1127,68 @@ export const CATALOG: TopCategory[] = [
               "⚠️ 실제 로봇 하드웨어 없이 시뮬레이터(MuJoCo, IsaacGym)에서도 학습 검증 가능",
             ],
             keywords: ["수건접기 AI", "Physical AI", "pi0", "VLA", "모방학습", "가정용로봇", "ACT"],
+            methods: [
+              {
+                id: "method-act",
+                name: "ACT (Action Chunking Transformer)",
+                tag: "모방학습",
+                summary: "사람 시범 50~100회로 빠르게 학습, 가장 보편적인 시작점",
+                pros: ["적은 시범 데이터(50회)로도 작동", "오픈소스 코드 공개(LeRobot)", "설정이 비교적 간단"],
+                cons: ["새로운 환경에 일반화 약함", "시범 품질에 결과가 크게 좌우됨"],
+                dataNeeded: "텔레오퍼레이션 시범 영상 50~100회 + 관절 각도 데이터",
+                difficulty: "intermediate",
+                bestFor: "처음 시작하는 경우, 하드웨어가 제한적인 경우",
+                paperRef: "Zhao et al. 2023 / HuggingFace LeRobot",
+              },
+              {
+                id: "method-diffusion-policy",
+                name: "Diffusion Policy",
+                tag: "모방학습",
+                summary: "이미지 확산 원리로 복잡한 멀티모달 행동을 부드럽게 학습",
+                pros: ["복잡하고 다양한 행동 패턴에 강함", "ACT보다 다중 해결책 표현력이 높음", "천 이상 품질에서 특히 강점"],
+                cons: ["추론 속도 느림 (실시간 제어에 한계)", "ACT보다 더 많은 데이터 필요"],
+                dataNeeded: "시범 영상 100~200회 + RGB 카메라 + 관절 데이터",
+                difficulty: "advanced",
+                bestFor: "수건 재질/크기 변화가 크고 정확한 동작이 필요한 경우",
+                paperRef: "Chi et al. 2023 (Columbia) / diffusion-policy 공식 레포",
+              },
+              {
+                id: "method-vla",
+                name: "VLA — Vision-Language-Action (pi0 / OpenVLA)",
+                tag: "파운데이션 모델 파인튜닝",
+                summary: "GPT처럼 언어+비전+행동을 통합한 대형 모델을 파인튜닝",
+                pros: ["'수건 접어줘' 같은 언어 명령 직접 이해", "처음 보는 물체도 일반화 강함", "하나의 모델로 여러 작업 처리"],
+                cons: ["GPU 자원 많이 필요 (최소 A100 권장)", "파인튜닝 비용이 높음"],
+                dataNeeded: "시범 영상 50~500회 + 언어 지시문 페어링",
+                difficulty: "advanced",
+                bestFor: "다양한 가사 작업을 하나의 로봇으로 처리하고 싶을 때",
+                paperRef: "Black et al. 2024 (pi0) / Kim et al. 2024 (OpenVLA)",
+              },
+              {
+                id: "method-rl-sim",
+                name: "강화학습 (RL) + 시뮬레이터",
+                tag: "강화학습",
+                summary: "시뮬레이터에서 수백만 번 시행착오로 스스로 최적 행동 탐색",
+                pros: ["시범 데이터 불필요", "시뮬에서 무한 반복 학습 가능", "보상 설계에 따라 성능 한계 없음"],
+                cons: ["보상 함수 설계가 어려움 (Reward Hacking 위험)", "Sim-to-Real 갭 극복이 핵심 과제", "학습 시간 매우 오래 걸림"],
+                dataNeeded: "시뮬레이션 환경(MuJoCo/IsaacGym) + 보상 함수 설계",
+                difficulty: "advanced",
+                bestFor: "수백만 에피소드가 가능한 시뮬 환경이 있고, 극한의 성능이 필요할 때",
+                paperRef: "IsaacGym (NVIDIA) / MuJoCo / OpenAI Gym",
+              },
+              {
+                id: "method-hybrid",
+                name: "하이브리드 (모방학습 → RL 파인튜닝)",
+                tag: "하이브리드",
+                summary: "시범으로 빠르게 기초 행동 학습 후, RL로 성능 끌어올리기",
+                pros: ["ACT 초기 성능 + RL 최적화 결합", "시범 50회로 시작해 RL로 90%+로 향상", "현재 업계 가장 많이 쓰는 방식"],
+                cons: ["두 단계 파이프라인 설정 복잡", "두 방법 모두 이해해야 함"],
+                dataNeeded: "텔레오퍼레이션 시범 50~100회 + 시뮬레이션 환경",
+                difficulty: "advanced",
+                bestFor: "시범 데이터로 빠르게 시작하되 최고 성능을 원할 때 (추천)",
+                paperRef: "Tesla FSD 방식 / pi0 + RL 조합",
+              },
+            ],
           },
           {
             id: "action-home-dish-washing",

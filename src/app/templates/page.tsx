@@ -38,6 +38,7 @@ import {
   type TopCategory,
   type SubCategory,
   type LearnTemplate,
+  type LearningMethod,
   searchTemplates,
   getTotalTemplateCount,
   getFreeTemplates,
@@ -79,6 +80,112 @@ const DIFFICULTY_CONFIG = {
 /* ------------------------------------------------------------------ */
 /*  Template Detail Modal                                              */
 /* ------------------------------------------------------------------ */
+const DIFFICULTY_BADGE: Record<string, string> = {
+  beginner: "bg-emerald-100 text-emerald-700",
+  intermediate: "bg-amber-100 text-amber-700",
+  advanced: "bg-red-100 text-red-700",
+};
+
+const TAG_COLOR: Record<string, string> = {
+  "모방학습": "bg-indigo-100 text-indigo-700",
+  "강화학습": "bg-orange-100 text-orange-700",
+  "파운데이션 모델 파인튜닝": "bg-purple-100 text-purple-700",
+  "하이브리드": "bg-teal-100 text-teal-700",
+};
+
+function MethodCards({ methods }: { methods: LearningMethod[] }) {
+  const [selected, setSelected] = useState<string | null>(null);
+  const active = methods.find((m) => m.id === selected);
+
+  return (
+    <div>
+      <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
+        학습 방법 선택
+        <span className="text-[10px] font-normal text-gray-400">({methods.length}가지 방법)</span>
+      </h3>
+
+      {/* 방법 선택 카드 그리드 */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+        {methods.map((m) => (
+          <button
+            key={m.id}
+            onClick={() => setSelected(selected === m.id ? null : m.id)}
+            className={`text-left rounded-xl border-2 p-3 transition-all ${
+              selected === m.id
+                ? "border-indigo-500 bg-indigo-50"
+                : "border-gray-200 hover:border-indigo-200 bg-white"
+            }`}
+          >
+            <div className="flex items-start justify-between gap-2 mb-1">
+              <span className="text-sm font-bold leading-tight">{m.name}</span>
+              <span className={`text-[9px] px-1.5 py-0.5 rounded-full shrink-0 font-medium ${TAG_COLOR[m.tag] ?? "bg-gray-100 text-gray-600"}`}>
+                {m.tag}
+              </span>
+            </div>
+            <p className="text-[11px] text-gray-500">{m.summary}</p>
+            <div className="flex items-center gap-2 mt-2">
+              <span className={`text-[9px] px-1.5 py-0.5 rounded ${DIFFICULTY_BADGE[m.difficulty]}`}>
+                {DIFFICULTY_CONFIG[m.difficulty].label}
+              </span>
+              {selected === m.id && (
+                <span className="text-[9px] text-indigo-500 font-medium">선택됨 ▲ 상세보기</span>
+              )}
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* 선택된 방법 상세 */}
+      {active && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-4 space-y-3"
+        >
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-[10px] font-bold text-emerald-600 mb-1">장점</p>
+              <ul className="space-y-0.5">
+                {active.pros.map((p, i) => (
+                  <li key={i} className="text-[11px] text-gray-600 flex gap-1.5">
+                    <span className="text-emerald-500 shrink-0">✓</span>{p}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-red-500 mb-1">단점</p>
+              <ul className="space-y-0.5">
+                {active.cons.map((c, i) => (
+                  <li key={i} className="text-[11px] text-gray-600 flex gap-1.5">
+                    <span className="text-red-400 shrink-0">✗</span>{c}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-2 pt-2 border-t border-indigo-100">
+            <div className="flex gap-2">
+              <span className="text-[10px] font-bold text-gray-500 shrink-0">필요 데이터:</span>
+              <span className="text-[11px] text-gray-600">{active.dataNeeded}</span>
+            </div>
+            <div className="flex gap-2">
+              <span className="text-[10px] font-bold text-gray-500 shrink-0">추천 상황:</span>
+              <span className="text-[11px] text-gray-600">{active.bestFor}</span>
+            </div>
+            {active.paperRef && (
+              <div className="flex gap-2">
+                <span className="text-[10px] font-bold text-gray-500 shrink-0">참고:</span>
+                <span className="text-[11px] text-indigo-600">{active.paperRef}</span>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
 function TemplateModal({
   template,
   sub,
@@ -184,6 +291,11 @@ function TemplateModal({
               ))}
             </div>
           </div>
+
+          {/* Learning Methods */}
+          {template.methods && template.methods.length > 0 && (
+            <MethodCards methods={template.methods} />
+          )}
 
           {/* Keywords */}
           <div className="flex flex-wrap gap-1">
