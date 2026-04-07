@@ -8,6 +8,9 @@ export interface KnowledgeItem {
   effectAfter: string;
   value: string;
   filled: boolean;
+  // 이미지 업로드 지원
+  type?: "text" | "image" | "file";
+  imageUrls?: string[];   // base64 또는 object URL
 }
 
 export interface TestResult {
@@ -38,6 +41,7 @@ interface LearnState {
   knowledgeItems: KnowledgeItem[];
   setKnowledgeItems: (items: KnowledgeItem[]) => void;
   updateKnowledgeItem: (id: string, value: string) => void;
+  updateKnowledgeImages: (id: string, imageUrls: string[]) => void;
   qualityScore: number;
   filledCount: number;
 
@@ -72,6 +76,22 @@ export const useLearnStore = create<LearnState>((set, get) => ({
 
   knowledgeItems: [],
   setKnowledgeItems: (items) => set({ knowledgeItems: items }),
+  updateKnowledgeImages: (id, imageUrls) => {
+    const items = get().knowledgeItems.map((item) =>
+      item.id === id
+        ? { ...item, imageUrls, filled: imageUrls.length > 0, value: `[이미지 ${imageUrls.length}장]` }
+        : item
+    );
+    const filledCount = items.filter((i) => i.filled).length;
+    const requiredFilled = items.filter((i) => i.required && i.filled).length;
+    const requiredTotal = items.filter((i) => i.required).length;
+    const optionalFilled = items.filter((i) => !i.required && i.filled).length;
+    const baseScore = requiredTotal > 0 ? (requiredFilled / requiredTotal) * 60 : 0;
+    const bonusScore = optionalFilled * 10;
+    const qualityScore = Math.min(98, Math.round(baseScore + bonusScore));
+    const learningLevel = filledCount === 0 ? 1 : filledCount <= 2 ? 2 : filledCount <= 4 ? 3 : 4;
+    set({ knowledgeItems: items, filledCount, qualityScore, learningLevel });
+  },
   updateKnowledgeItem: (id, value) => {
     const items = get().knowledgeItems.map((item) =>
       item.id === id ? { ...item, value, filled: value.trim().length > 0 } : item

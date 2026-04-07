@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Upload,
@@ -10,13 +10,17 @@ import {
   Lightbulb,
   Brain,
   Loader2,
+  ImagePlus,
+  X,
+  FileText,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Card } from "@/components/ui/card";
-import { useLearnStore } from "@/store/learn";
+import { useLearnStore, type KnowledgeItem } from "@/store/learn";
 import { RESEARCH_FACTS, ACCURACY_BENCHMARKS } from "@/lib/learning-data";
+import Image from "next/image";
 
 export default function KnowledgeStep() {
   const { knowledgeItems, updateKnowledgeItem, qualityScore, filledCount } = useLearnStore();
@@ -27,7 +31,6 @@ export default function KnowledgeStep() {
   const optionalItems = knowledgeItems.filter((i) => !i.required);
   const requiredFilled = requiredItems.filter((i) => i.filled).length;
 
-  // Determine current accuracy level
   const currentAccuracy =
     filledCount === 0
       ? ACCURACY_BENCHMARKS.systemPrompt
@@ -73,11 +76,7 @@ export default function KnowledgeStep() {
             .map(([key, val]) => (
               <div
                 key={key}
-                className={`text-center ${
-                  val.accuracy <= currentAccuracy.accuracy
-                    ? "text-indigo-600"
-                    : "text-gray-300"
-                }`}
+                className={`text-center ${val.accuracy <= currentAccuracy.accuracy ? "text-indigo-600" : "text-gray-300"}`}
               >
                 <div className="text-[9px] font-bold">{val.accuracy}%</div>
                 <div className="text-[8px]">{val.label}</div>
@@ -98,17 +97,12 @@ export default function KnowledgeStep() {
           <svg viewBox="0 0 36 36" className="size-16 -rotate-90">
             <path
               d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-              fill="none"
-              stroke="#e5e7eb"
-              strokeWidth="3"
+              fill="none" stroke="#e5e7eb" strokeWidth="3"
             />
             <path
               d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-              fill="none"
-              stroke="#6366f1"
-              strokeWidth="3"
-              strokeDasharray={`${qualityScore}, 100`}
-              strokeLinecap="round"
+              fill="none" stroke="#6366f1" strokeWidth="3"
+              strokeDasharray={`${qualityScore}, 100`} strokeLinecap="round"
             />
           </svg>
           <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-indigo-600">
@@ -172,7 +166,138 @@ export default function KnowledgeStep() {
   );
 }
 
-/* ------------------------------------------------------------------ */
+/* ─────────────────────────────────────────────────────────── */
+/*  이미지 업로드 컴포넌트                                        */
+/* ─────────────────────────────────────────────────────────── */
+function ImageUploader({ item }: { item: KnowledgeItem }) {
+  const { updateKnowledgeImages } = useLearnStore();
+  const [dragging, setDragging] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const images = item.imageUrls || [];
+
+  const processFiles = useCallback(
+    async (files: FileList | null) => {
+      if (!files || files.length === 0) return;
+
+      const newUrls: string[] = [];
+      for (const file of Array.from(files)) {
+        if (!file.type.startsWith("image/")) continue;
+        const url = URL.createObjectURL(file);
+        newUrls.push(url);
+      }
+
+      if (newUrls.length === 0) return;
+
+      const merged = [...images, ...newUrls].slice(0, 20); // 최대 20장
+      updateKnowledgeImages(item.id, merged);
+
+      // 업로드 후 잠깐 분석 중 표시
+      setAnalyzing(true);
+      setTimeout(() => setAnalyzing(false), 1800);
+    },
+    [images, item.id, updateKnowledgeImages]
+  );
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragging(false);
+    processFiles(e.dataTransfer.files);
+  };
+
+  const removeImage = (idx: number) => {
+    const next = images.filter((_, i) => i !== idx);
+    updateKnowledgeImages(item.id, next);
+  };
+
+  return (
+    <div className="space-y-3">
+      {/* 드롭존 */}
+      <div
+        onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={handleDrop}
+        onClick={() => fileRef.current?.click()}
+        className={`relative border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all
+          ${dragging
+            ? "border-indigo-500 bg-indigo-50"
+            : images.length > 0
+              ? "border-emerald-300 bg-emerald-50/40"
+              : "border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/30"
+          }`}
+      >
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={(e) => processFiles(e.target.files)}
+        />
+        <ImagePlus className={`size-8 mx-auto mb-2 ${images.length > 0 ? "text-emerald-500" : "text-gray-300"}`} />
+        <p className="text-sm font-medium text-gray-600">
+          {images.length > 0 ? `${images.length}장 업로드됨 · 더 추가하기` : "이미지를 끌어다 놓거나 클릭하여 업로드"}
+        </p>
+        <p className="text-[11px] text-gray-400 mt-1">JPG, PNG, WebP · 최대 20장</p>
+      </div>
+
+      {/* 분석 중 표시 */}
+      {analyzing && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex items-center gap-2 rounded-lg bg-indigo-50 p-3"
+        >
+          <Loader2 className="size-4 text-indigo-500 animate-spin" />
+          <div>
+            <p className="text-xs font-semibold text-indigo-600">이미지 분석 중...</p>
+            <p className="text-[10px] text-indigo-400">특징을 추출하고 있습니다</p>
+          </div>
+          <Brain className="size-4 text-indigo-400 ml-auto animate-pulse" />
+        </motion.div>
+      )}
+
+      {/* 이미지 그리드 */}
+      {images.length > 0 && (
+        <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+          {images.map((url, i) => (
+            <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200">
+              <Image
+                src={url}
+                alt={`학습 이미지 ${i + 1}`}
+                fill
+                className="object-cover"
+                unoptimized
+              />
+              <button
+                onClick={(e) => { e.stopPropagation(); removeImage(i); }}
+                className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <X className="size-2.5" />
+              </button>
+              <div className="absolute bottom-0 left-0 right-0 bg-black/40 text-white text-[8px] text-center py-0.5">
+                #{i + 1}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {images.length >= 4 && !analyzing && (
+        <div className="flex items-center gap-2 rounded-lg bg-emerald-50 p-2">
+          <CheckCircle className="size-4 text-emerald-500" />
+          <p className="text-xs text-emerald-600">
+            {images.length}장 학습 완료! 더 많은 이미지일수록 정확도가 높아집니다.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────── */
+/*  지식 아이템 카드                                             */
+/* ─────────────────────────────────────────────────────────── */
 function KnowledgeItemCard({
   item,
   expanded,
@@ -180,16 +305,20 @@ function KnowledgeItemCard({
   onToggle,
   onChange,
 }: {
-  item: { id: string; label: string; required: boolean; effectBefore: string; effectAfter: string; value: string; filled: boolean };
+  item: KnowledgeItem;
   expanded: boolean;
   learning: boolean;
   onToggle: () => void;
   onChange: (id: string, value: string) => void;
 }) {
+  const isImageType = item.type === "image";
+  const hasImages = (item.imageUrls?.length ?? 0) > 0;
+  const isFilled = item.filled;
+
   return (
     <div
       className={`rounded-lg border transition-all ${
-        item.filled
+        isFilled
           ? "border-emerald-200 bg-emerald-50/50"
           : expanded
             ? "border-indigo-200 bg-white"
@@ -200,21 +329,28 @@ function KnowledgeItemCard({
         onClick={onToggle}
         className="w-full flex items-center gap-3 p-3 text-left"
       >
-        {item.filled ? (
+        {isFilled ? (
           <CheckCircle className="size-5 text-emerald-500 shrink-0" />
         ) : (
           <Circle className="size-5 text-gray-300 shrink-0" />
         )}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm font-medium truncate">{item.label}</span>
             {item.required && (
               <Badge variant="destructive" className="text-[8px] px-1 py-0">필수</Badge>
             )}
+            {isImageType && (
+              <Badge className="bg-purple-100 text-purple-700 border-0 text-[8px] px-1 py-0 flex items-center gap-0.5">
+                <ImagePlus className="size-2.5" /> 이미지
+              </Badge>
+            )}
           </div>
-          {!expanded && item.filled && (
+          {!expanded && isFilled && (
             <p className="text-[10px] text-emerald-600 truncate mt-0.5">
-              학습 완료 — {item.value.slice(0, 40)}...
+              {isImageType
+                ? `✓ 이미지 ${item.imageUrls?.length}장 학습 완료`
+                : `✓ ${item.value.slice(0, 40)}...`}
             </p>
           )}
         </div>
@@ -245,14 +381,37 @@ function KnowledgeItemCard({
                 </div>
               </div>
 
-              {/* Input */}
-              <Textarea
-                placeholder={`${item.label} 데이터를 입력하세요...`}
-                value={item.value}
-                onChange={(e) => onChange(item.id, e.target.value)}
-                rows={3}
-                className="text-xs"
-              />
+              {/* 입력 UI: 이미지 or 텍스트 */}
+              {isImageType ? (
+                <ImageUploader item={item} />
+              ) : (
+                <>
+                  <Textarea
+                    placeholder={`${item.label} 데이터를 입력하세요...`}
+                    value={item.value}
+                    onChange={(e) => onChange(item.id, e.target.value)}
+                    rows={3}
+                    className="text-xs"
+                  />
+
+                  {/* 파일 업로드 보조 (텍스트 타입에서도 파일 첨부 가능) */}
+                  <label className="flex items-center gap-2 text-xs text-gray-400 hover:text-gray-600 cursor-pointer w-fit">
+                    <FileText className="size-3.5" />
+                    <span>파일로 업로드 (txt, pdf, csv)</span>
+                    <input
+                      type="file"
+                      accept=".txt,.pdf,.csv,.doc,.docx"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const text = await file.text().catch(() => "");
+                        if (text) onChange(item.id, text.slice(0, 5000));
+                      }}
+                    />
+                  </label>
+                </>
+              )}
 
               {/* Learning Animation */}
               {learning && (
@@ -270,7 +429,7 @@ function KnowledgeItemCard({
                 </motion.div>
               )}
 
-              {item.filled && !learning && (
+              {isFilled && !learning && !isImageType && (
                 <div className="flex items-center gap-2 rounded bg-emerald-50 p-2">
                   <CheckCircle className="size-4 text-emerald-500" />
                   <p className="text-xs text-emerald-600">학습 완료! 오른쪽 미리보기에서 변화를 확인하세요.</p>
