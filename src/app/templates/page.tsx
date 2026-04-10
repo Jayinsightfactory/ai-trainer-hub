@@ -37,6 +37,24 @@ import {
   RefreshCw,
   Activity,
   Brain,
+  Coffee,
+  ShoppingCart,
+  Factory,
+  GraduationCap,
+  Rocket,
+  Building2,
+  Headphones,
+  Scale,
+  Stethoscope,
+  Share2,
+  Users,
+  Briefcase,
+  BookOpen,
+  Target,
+  DollarSign,
+  Calendar,
+  ChevronRight,
+  Package,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +75,13 @@ import {
   hasPerformanceData,
   type TemplatePerformance,
 } from "@/lib/template-performance";
+import {
+  WORKFLOW_SETS,
+  getAudienceLabel,
+  getDifficultyLabel,
+  type WorkflowSet,
+  type TargetAudience,
+} from "@/lib/template-workflows";
 
 /* ------------------------------------------------------------------ */
 /*  Icon Map                                                           */
@@ -491,6 +516,425 @@ function TemplateModal({
 }
 
 /* ------------------------------------------------------------------ */
+/*  Workflow Icon Map                                                   */
+/* ------------------------------------------------------------------ */
+const WORKFLOW_ICONS: Record<string, React.ElementType> = {
+  Coffee,
+  ShoppingCart,
+  Factory,
+  GraduationCap,
+  Rocket,
+  Building2,
+  Headphones,
+  Scale,
+  Stethoscope,
+  Share2,
+};
+
+const AUDIENCE_ICON: Record<TargetAudience, React.ElementType> = {
+  "self-employed": Briefcase,
+  enterprise: Factory,
+  student: GraduationCap,
+  general: Users,
+};
+
+const AUDIENCE_COLOR: Record<TargetAudience, string> = {
+  "self-employed": "bg-amber-100 text-amber-700",
+  enterprise: "bg-slate-100 text-slate-700",
+  student: "bg-violet-100 text-violet-700",
+  general: "bg-rose-100 text-rose-700",
+};
+
+/* ------------------------------------------------------------------ */
+/*  Workflow Detail Modal                                               */
+/* ------------------------------------------------------------------ */
+function WorkflowModal({
+  workflow,
+  onClose,
+}: {
+  workflow: WorkflowSet;
+  onClose: () => void;
+}) {
+  const [activePhase, setActivePhase] = useState(0);
+  const Icon = WORKFLOW_ICONS[workflow.icon] || Package;
+  const AudIcon = AUDIENCE_ICON[workflow.audience];
+  const phase = workflow.phases[activePhase];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 sm:p-4" onClick={onClose}>
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 40 }}
+        className="h-[92vh] sm:max-h-[90vh] w-full sm:max-w-4xl overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className={`bg-gradient-to-r ${workflow.gradient} p-4 md:p-6 text-white rounded-t-2xl`}>
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Icon className="size-6" />
+                <Badge className={`${AUDIENCE_COLOR[workflow.audience]} border-0 text-[10px]`}>
+                  {getAudienceLabel(workflow.audience)}
+                </Badge>
+                <Badge className="bg-white/20 text-white border-0 text-[10px]">
+                  {getDifficultyLabel(workflow.difficulty)}
+                </Badge>
+              </div>
+              <h2 className="text-xl md:text-2xl font-bold">{workflow.name}</h2>
+              <p className="text-sm opacity-80 mt-1">{workflow.subtitle}</p>
+            </div>
+            <button onClick={onClose} className="p-1 rounded hover:bg-white/20">
+              <X className="size-5" />
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2 mt-4">
+            <Badge className="bg-white/20 text-white border-0 text-[10px]">
+              <Calendar className="size-3 mr-1" />{workflow.estimatedWeeks}주 로드맵
+            </Badge>
+            <Badge className="bg-white/20 text-white border-0 text-[10px]">
+              <Package className="size-3 mr-1" />{workflow.templateIds.length}개 템플릿
+            </Badge>
+            <Badge className="bg-emerald-400/30 text-white border-0 text-[10px]">
+              <TrendingUp className="size-3 mr-1" />{workflow.pricing.expectedROI}
+            </Badge>
+          </div>
+        </div>
+
+        <div className="p-4 md:p-6 space-y-6">
+          {/* 설명 */}
+          <p className="text-sm text-gray-600 leading-relaxed">{workflow.description}</p>
+
+          {/* ── 주차별 로드맵 ── */}
+          <div>
+            <h3 className="text-sm font-bold mb-3 flex items-center gap-1.5">
+              <Calendar className="size-4 text-indigo-600" /> 단계별 로드맵
+            </h3>
+
+            {/* Phase Tabs */}
+            <div className="flex gap-1 overflow-x-auto pb-2 mb-3">
+              {workflow.phases.map((p, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActivePhase(i)}
+                  className={`px-3 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap transition-all border ${
+                    activePhase === i
+                      ? "bg-indigo-600 text-white border-indigo-600"
+                      : "bg-white text-gray-600 border-gray-200 hover:border-indigo-300"
+                  }`}
+                >
+                  {p.week}주차
+                </button>
+              ))}
+            </div>
+
+            {/* Active Phase Detail */}
+            <motion.div
+              key={activePhase}
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="rounded-xl border border-indigo-200 bg-indigo-50/30 p-4 space-y-3"
+            >
+              <div>
+                <h4 className="text-sm font-bold text-indigo-800">{phase.title}</h4>
+                <p className="text-[11px] text-gray-600 mt-0.5">{phase.description}</p>
+              </div>
+
+              {/* Tasks */}
+              <div>
+                <span className="text-[10px] font-bold text-gray-500 uppercase">할 일</span>
+                <ul className="mt-1.5 space-y-1">
+                  {phase.tasks.map((task, i) => (
+                    <li key={i} className="flex items-start gap-2 text-[11px] text-gray-700">
+                      <span className="flex items-center justify-center size-4 rounded-full bg-indigo-100 text-indigo-600 text-[9px] font-bold shrink-0 mt-0.5">
+                        {i + 1}
+                      </span>
+                      <span className="leading-snug">{task}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Milestone + Checkpoint */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-indigo-100">
+                <div>
+                  <div className="flex items-center gap-1 mb-1">
+                    <Target className="size-3 text-emerald-600" />
+                    <span className="text-[10px] font-bold text-emerald-700">마일스톤</span>
+                  </div>
+                  <p className="text-[11px] text-gray-600">{phase.milestone}</p>
+                </div>
+                <div>
+                  <div className="flex items-center gap-1 mb-1">
+                    <Shield className="size-3 text-amber-600" />
+                    <span className="text-[10px] font-bold text-amber-700">체크포인트 (통과 필수)</span>
+                  </div>
+                  <p className="text-[11px] text-gray-600">{phase.checkpoint}</p>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* ── 비즈니스 기획서 ── */}
+          <div>
+            <h3 className="text-sm font-bold mb-3 flex items-center gap-1.5">
+              <Briefcase className="size-4 text-blue-600" /> 비즈니스 기획서
+            </h3>
+            <div className="rounded-xl border border-blue-200 bg-blue-50/30 overflow-hidden">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-blue-200">
+                {[
+                  { label: "문제 정의", value: workflow.businessPlan.problem },
+                  { label: "솔루션", value: workflow.businessPlan.solution },
+                  { label: "수익 모델", value: workflow.businessPlan.revenueModel },
+                  { label: "시장 규모", value: workflow.businessPlan.marketSize },
+                  { label: "손익분기", value: workflow.businessPlan.breakEven },
+                  { label: "GTM 전략", value: workflow.businessPlan.gtmStrategy },
+                ].map((item) => (
+                  <div key={item.label} className="bg-white p-3">
+                    <span className="text-[10px] font-bold text-blue-600 uppercase">{item.label}</span>
+                    <p className="text-[11px] text-gray-700 mt-0.5 leading-snug">{item.value}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* 멀티 관점 분석 */}
+              <div className="p-3 bg-blue-50 border-t border-blue-200">
+                <span className="text-[10px] font-bold text-blue-700 uppercase block mb-2">멀티 관점 분석</span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {[
+                    { icon: Briefcase, label: "사업주", value: workflow.businessPlan.perspectives.owner, color: "text-amber-600" },
+                    { icon: Users, label: "고객", value: workflow.businessPlan.perspectives.customer, color: "text-emerald-600" },
+                    { icon: Target, label: "경쟁사 대비", value: workflow.businessPlan.perspectives.competitor, color: "text-red-600" },
+                  ].map((p) => (
+                    <div key={p.label} className="rounded-lg bg-white p-2.5 border border-blue-100">
+                      <div className="flex items-center gap-1 mb-1">
+                        <p.icon className={`size-3 ${p.color}`} />
+                        <span className={`text-[10px] font-bold ${p.color}`}>{p.label}</span>
+                      </div>
+                      <p className="text-[10px] text-gray-600 leading-snug">{p.value}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── 비용 + ROI ── */}
+          <div>
+            <h3 className="text-sm font-bold mb-3 flex items-center gap-1.5">
+              <DollarSign className="size-4 text-emerald-600" /> 비용 & ROI
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3">
+                <span className="text-[10px] font-bold text-emerald-700">월 구독료</span>
+                <p className="text-sm font-bold text-emerald-800 mt-1">{workflow.pricing.monthlyCost}</p>
+              </div>
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                <span className="text-[10px] font-bold text-gray-500">추가 도구 비용</span>
+                <p className="text-[11px] text-gray-700 mt-1">{workflow.pricing.toolsCost}</p>
+              </div>
+              <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-3">
+                <span className="text-[10px] font-bold text-blue-700">예상 ROI</span>
+                <p className="text-[11px] font-bold text-blue-800 mt-1">{workflow.pricing.expectedROI}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* ── 필요 도구 ── */}
+          <div>
+            <h3 className="text-sm font-bold mb-3 flex items-center gap-1.5">
+              <Wrench className="size-4 text-gray-600" /> 필요 도구
+            </h3>
+            <div className="space-y-1.5">
+              {workflow.requiredTools.map((tool, i) => (
+                <div key={i} className="flex items-center gap-3 rounded-lg border p-2.5">
+                  <span className="text-[11px] font-bold text-gray-700 min-w-[100px]">{tool.name}</span>
+                  <Badge variant="outline" className="text-[9px] shrink-0">{tool.cost}</Badge>
+                  <span className="text-[10px] text-gray-500">{tool.purpose}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── 성공 지표 ── */}
+          <div>
+            <h3 className="text-sm font-bold mb-3 flex items-center gap-1.5">
+              <Activity className="size-4 text-violet-600" /> 성공 지표
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {workflow.successMetrics.map((m, i) => (
+                <div key={i} className="rounded-xl border border-violet-200 bg-violet-50/50 p-3 text-center">
+                  <span className="text-[10px] text-gray-500 block">{m.metric}</span>
+                  <span className="text-sm font-bold text-violet-700 mt-0.5 block">{m.target}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── 태그 ── */}
+          <div className="flex flex-wrap gap-1">
+            {workflow.tags.map((tag) => (
+              <Badge key={tag} variant="outline" className="text-[10px]">
+                #{tag}
+              </Badge>
+            ))}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="border-t p-4 flex justify-end gap-3">
+          <Button variant="outline" onClick={onClose}>닫기</Button>
+          <Link href={`/learn?template=${workflow.templateIds[0]}`}>
+            <Button className="gap-2">
+              이 세트로 시작하기 <ArrowRight className="size-4" />
+            </Button>
+          </Link>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Workflow Sets Section                                               */
+/* ------------------------------------------------------------------ */
+type AudienceFilter = "all" | TargetAudience;
+
+function WorkflowSetsSection({
+  onSelectWorkflow,
+}: {
+  onSelectWorkflow: (w: WorkflowSet) => void;
+}) {
+  const [audFilter, setAudFilter] = useState<AudienceFilter>("all");
+
+  const filtered = audFilter === "all"
+    ? WORKFLOW_SETS
+    : WORKFLOW_SETS.filter((w) => w.audience === audFilter);
+
+  return (
+    <div className="mb-10">
+      {/* Section Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center size-10 md:size-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shrink-0">
+            <Workflow className="size-5 md:size-6" />
+          </div>
+          <div>
+            <h2 className="text-base md:text-xl font-bold">추천 워크플로우 세트</h2>
+            <p className="text-xs text-gray-500">템플릿 조합 + 단계별 로드맵 + 비즈니스 기획서 포함</p>
+          </div>
+        </div>
+        <Badge variant="secondary" className="text-[10px] md:text-xs">{WORKFLOW_SETS.length}개 세트</Badge>
+      </div>
+
+      {/* Audience Filter */}
+      <div className="flex gap-1 mb-4 overflow-x-auto pb-1">
+        {(["all", "self-employed", "enterprise", "student", "general"] as AudienceFilter[]).map((a) => {
+          const AIcon = a === "all" ? Sparkles : AUDIENCE_ICON[a];
+          return (
+            <button
+              key={a}
+              onClick={() => setAudFilter(a)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap transition-all border ${
+                audFilter === a
+                  ? "bg-indigo-600 text-white border-indigo-600"
+                  : "bg-white text-gray-600 border-gray-200 hover:border-indigo-300"
+              }`}
+            >
+              <AIcon className="size-3" />
+              {a === "all" ? "전체" : getAudienceLabel(a)}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Workflow Cards Grid */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {filtered.map((w) => {
+          const Icon = WORKFLOW_ICONS[w.icon] || Package;
+          return (
+            <div
+              key={w.id}
+              onClick={() => onSelectWorkflow(w)}
+              className="cursor-pointer rounded-xl border overflow-hidden hover:shadow-lg transition-all group"
+            >
+              {/* Card Header */}
+              <div className={`bg-gradient-to-r ${w.gradient} p-4 text-white`}>
+                <div className="flex items-start justify-between">
+                  <Icon className="size-8 opacity-80" />
+                  <div className="flex gap-1">
+                    <Badge className={`${AUDIENCE_COLOR[w.audience]} border-0 text-[9px]`}>
+                      {getAudienceLabel(w.audience)}
+                    </Badge>
+                  </div>
+                </div>
+                <h3 className="text-base font-bold mt-2">{w.name}</h3>
+                <p className="text-[11px] opacity-80 mt-0.5 line-clamp-1">{w.subtitle}</p>
+              </div>
+
+              {/* Card Body */}
+              <div className="p-4 space-y-3">
+                <p className="text-[11px] text-gray-500 line-clamp-2">{w.description}</p>
+
+                {/* Quick Stats */}
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="text-center">
+                    <span className="text-[9px] text-gray-400 block">기간</span>
+                    <span className="text-[11px] font-bold text-gray-700">{w.estimatedWeeks}주</span>
+                  </div>
+                  <div className="text-center">
+                    <span className="text-[9px] text-gray-400 block">템플릿</span>
+                    <span className="text-[11px] font-bold text-gray-700">{w.templateIds.length}개</span>
+                  </div>
+                  <div className="text-center">
+                    <span className="text-[9px] text-gray-400 block">난이도</span>
+                    <span className="text-[11px] font-bold text-gray-700">{getDifficultyLabel(w.difficulty)}</span>
+                  </div>
+                </div>
+
+                {/* ROI */}
+                <div className="rounded-lg bg-emerald-50 border border-emerald-100 p-2">
+                  <div className="flex items-center gap-1">
+                    <TrendingUp className="size-3 text-emerald-500" />
+                    <span className="text-[10px] font-medium text-emerald-700">{w.pricing.expectedROI}</span>
+                  </div>
+                </div>
+
+                {/* Tags */}
+                <div className="flex flex-wrap gap-1">
+                  {w.tags.slice(0, 3).map((tag) => (
+                    <Badge key={tag} variant="outline" className="text-[9px]">
+                      #{tag}
+                    </Badge>
+                  ))}
+                  {w.tags.length > 3 && (
+                    <Badge variant="outline" className="text-[9px] text-gray-400">
+                      +{w.tags.length - 3}
+                    </Badge>
+                  )}
+                </div>
+
+                {/* CTA */}
+                <div className="pt-2 border-t border-gray-100">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full h-7 text-xs gap-1 group-hover:bg-indigo-50 group-hover:border-indigo-300 group-hover:text-indigo-700"
+                  >
+                    로드맵 + 기획서 보기 <ChevronRight className="size-3" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Category Section (필터 적용)                                        */
 /* ------------------------------------------------------------------ */
 function CategorySection({
@@ -701,6 +1145,7 @@ export default function TemplatesPage() {
     sub: SubCategory;
     cat: TopCategory;
   } | null>(null);
+  const [selectedWorkflow, setSelectedWorkflow] = useState<WorkflowSet | null>(null);
 
   // 카테고리별 섹션 ref 맵
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -973,8 +1418,18 @@ export default function TemplatesPage() {
             )}
           </div>
         ) : (
-          /* Full Catalog — 필터 적용 */
+          /* Full Catalog — 추천 세트 + 개별 템플릿 */
           <>
+            {/* ── 추천 워크플로우 세트 ── */}
+            <WorkflowSetsSection onSelectWorkflow={setSelectedWorkflow} />
+
+            {/* ── 구분선 ── */}
+            <div className="flex items-center gap-3 mb-8">
+              <div className="h-px flex-1 bg-gray-200" />
+              <span className="text-xs text-gray-400 font-medium shrink-0">개별 템플릿 ({totalCount}개)</span>
+              <div className="h-px flex-1 bg-gray-200" />
+            </div>
+
             {CATALOG.map((cat) => (
               <CategorySection
                 key={cat.id}
@@ -1012,6 +1467,16 @@ export default function TemplatesPage() {
             sub={selected.sub}
             cat={selected.cat}
             onClose={() => setSelected(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Workflow Detail Modal */}
+      <AnimatePresence>
+        {selectedWorkflow && (
+          <WorkflowModal
+            workflow={selectedWorkflow}
+            onClose={() => setSelectedWorkflow(null)}
           />
         )}
       </AnimatePresence>
