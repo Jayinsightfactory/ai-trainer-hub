@@ -54,6 +54,29 @@
 
 3. `src/app/templates/page.tsx` — 상단에 "추천 세트" 섹션 추가
 
+## GitHub 고스타 레포 리서치 (반영 대기)
+
+### 핵심 레포
+- everything-claude-code (140K★): 인스팅트 시스템 — 세션 관찰 → 재사용 행동 추출, 신뢰도 0.3~0.9, 28에이전트/119스킬/60커맨드
+- superpowers (94K★): 7단계 강제 워크플로우 Brainstorm→Spec→Plan→TDD→Dev→Review→Finalize, TDD 위반 시 코드 삭제
+- gstack (66K★): Y Combinator CEO, 23개 도구가 CEO/디자이너/QA 역할 수행, 멀티 관점 리뷰
+- GSD (35K★): Plan→Execute→Review 3단계, 클린 컨텍스트 윈도우 분리
+
+### 적용할 하네스 패턴 (12 Agentic Harness Patterns)
+1. 인스팅트 시스템: 세션 관찰 → 재사용 가능 행동 추출 → 신뢰도 관리
+2. 메모리 티어링: 항상 로드(200줄) / 온디맨드 / 디스크 3계층
+3. 생성자-평가자 분리: 작업 에이전트와 판단 에이전트 분리
+4. 점진적 도구 노출: 기본 세트 + 필요시 활성화
+5. 7단계 강제 워크플로우 (Superpowers)
+6. 역할 기반 멀티 관점 리뷰 (gstack)
+7. 클린 컨텍스트 윈도우 분리 (GSD)
+
+### 워크플로우 세트에 반영할 인사이트
+- 각 세트에 Superpowers식 단계 강제 (건너뛰기 불가)
+- gstack식 멀티 관점 검증 (사업주/고객/경쟁사 시각)
+- 인스팅트식 "학습 → 패턴 추출 → 재적용" 루프
+- n8n 스타일 워크플로우 시각화 + 커뮤니티 공유 구조
+
 ## 미커밋 변경 (확인 필요)
 - .gitignore, package.json/lock, KnowledgeStep.tsx, HomeView.tsx, template-catalog.ts, learn.ts
 - docs/gemini-workflow.md, scripts/ (신규)
