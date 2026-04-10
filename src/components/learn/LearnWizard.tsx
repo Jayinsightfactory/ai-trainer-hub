@@ -7,9 +7,8 @@ import { Bot, Check, ChevronLeft, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useLearnStore } from "@/store/learn";
-import { TEMPLATES } from "@/lib/templates";
-import { matchTemplate } from "@/lib/templates/matcher";
 import { getSampleData } from "@/lib/sample-data";
+import { CATALOG, getTemplateById, LearnTemplate } from "@/lib/template-catalog";
 
 import IdentityStep from "./IdentityStep";
 import KnowledgeStep from "./KnowledgeStep";
@@ -32,24 +31,41 @@ export default function LearnWizard({ templateId }: { templateId: string }) {
 
   // Initialize template data + sample data
   useEffect(() => {
-    const tpl =
-      TEMPLATES.find((t) => t.id === templateId) ||
-      matchTemplate(templateId.split("_")[0] || "cafe", "customer_service");
+    let learnTemplate: LearnTemplate | undefined;
+    if (templateId) {
+      learnTemplate = getTemplateById(templateId);
+    }
 
-    setTemplateId(tpl.id);
-    setSystemPrompt(tpl.systemPrompt);
+    // Fallback if templateId is invalid or not found (e.g., direct access without param)
+    if (!learnTemplate) {
+        // Fallback to a default template, e.g., the cafe customer service template
+        // Find 'text-cs-cafe' from CATALOG
+        learnTemplate = getTemplateById("text-cs-cafe");
+        if (!learnTemplate) {
+            console.error("Default template 'text-cs-cafe' not found in catalog.");
+            // Optionally, redirect to an error page or templates list
+            // router.push("/templates"); // Requires useRouter, not imported here yet
+            return;
+        }
+    }
+
+    setTemplateId(learnTemplate.id);
+    setSystemPrompt(learnTemplate.systemPromptPreview);
 
     // Check for sample data
-    const sample = getSampleData(templateId) || getSampleData(tpl.id);
+    const sample = getSampleData(learnTemplate.id); // Use learnTemplate.id for sample data lookup
 
-    const items = tpl.dataChecklist.map((d, i) => {
-      const sampleValue = sample?.knowledgeValues[i] || "";
+    const items = learnTemplate.dataRequirements.map((d, i) => {
+      const sampleValue = sample?.knowledgeValues?.[i] || "";
       return {
-        id: `item_${i}`,
+        id: `item_${i}`, // Ensure unique ID
         label: d.item,
         required: d.required,
-        effectBefore: d.effectBefore,
-        effectAfter: d.effectAfter,
+        type: d.type,
+        description: d.description,
+        example: d.example,
+        effectBefore: d.effectBefore ?? "",
+        effectAfter: d.effectAfter ?? "",
         value: sampleValue,
         filled: sampleValue.length > 0,
       };
