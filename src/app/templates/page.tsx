@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -29,6 +29,7 @@ import {
   Code,
   Database,
   MessageSquare,
+  SlidersHorizontal,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -78,6 +79,9 @@ const DIFFICULTY_CONFIG = {
   advanced: { label: "고급", color: "text-red-600" },
 };
 
+type TierFilter = "all" | "free" | "starter" | "pro";
+type DiffFilter = "all" | "beginner" | "intermediate" | "advanced";
+
 /* ------------------------------------------------------------------ */
 /*  Template Detail Modal                                              */
 /* ------------------------------------------------------------------ */
@@ -105,7 +109,6 @@ function MethodCards({ methods }: { methods: LearningMethod[] }) {
         <span className="text-[10px] font-normal text-gray-400">({methods.length}가지 방법)</span>
       </h3>
 
-      {/* 방법 선택 카드 그리드 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
         {methods.map((m) => (
           <button
@@ -136,7 +139,6 @@ function MethodCards({ methods }: { methods: LearningMethod[] }) {
         ))}
       </div>
 
-      {/* 선택된 방법 상세 */}
       {active && (
         <motion.div
           initial={{ opacity: 0, y: -8 }}
@@ -298,6 +300,16 @@ function TemplateModal({
             <MethodCards methods={template.methods} />
           )}
 
+          {/* System Prompt Preview */}
+          {template.systemPromptPreview && (
+            <div>
+              <h3 className="text-sm font-bold mb-3">시스템 프롬프트 미리보기</h3>
+              <pre className="rounded-lg bg-gray-900 text-gray-100 p-4 text-[11px] leading-relaxed overflow-x-auto whitespace-pre-wrap">
+                {template.systemPromptPreview}
+              </pre>
+            </div>
+          )}
+
           {/* Keywords */}
           <div className="flex flex-wrap gap-1">
             {template.keywords.map((kw) => (
@@ -329,20 +341,42 @@ function TemplateModal({
 }
 
 /* ------------------------------------------------------------------ */
-/*  Category Section                                                   */
+/*  Category Section (필터 적용)                                        */
 /* ------------------------------------------------------------------ */
 function CategorySection({
   cat,
   onSelect,
+  tierFilter,
+  diffFilter,
+  sectionRef,
 }: {
   cat: TopCategory;
   onSelect: (t: LearnTemplate, s: SubCategory, c: TopCategory) => void;
+  tierFilter: TierFilter;
+  diffFilter: DiffFilter;
+  sectionRef: (el: HTMLDivElement | null) => void;
 }) {
   const [expanded, setExpanded] = useState(true);
   const CatIcon = CATEGORY_ICONS[cat.id] || FileText;
 
+  // 필터 적용된 서브카테고리
+  const filteredSubs = cat.subcategories
+    .map((sub) => ({
+      ...sub,
+      templates: sub.templates.filter((tpl) => {
+        if (tierFilter !== "all" && tpl.tier !== tierFilter) return false;
+        if (diffFilter !== "all" && tpl.difficulty !== diffFilter) return false;
+        return true;
+      }),
+    }))
+    .filter((sub) => sub.templates.length > 0);
+
+  if (filteredSubs.length === 0) return null;
+
+  const totalVisible = filteredSubs.reduce((a, s) => a + s.templates.length, 0);
+
   return (
-    <div className="mb-10">
+    <div className="mb-10" ref={sectionRef}>
       {/* Category Header */}
       <button
         onClick={() => setExpanded(!expanded)}
@@ -356,7 +390,7 @@ function CategorySection({
           <p className="text-xs md:text-sm text-gray-500 hidden sm:block">{cat.description}</p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          <Badge variant="secondary" className="text-[10px] md:text-xs">{cat.subcategories.reduce((a, s) => a + s.templates.length, 0)}개</Badge>
+          <Badge variant="secondary" className="text-[10px] md:text-xs">{totalVisible}개</Badge>
           <ChevronDown className={`size-4 md:size-5 text-gray-400 transition-transform ${expanded ? "rotate-180" : ""}`} />
         </div>
       </button>
@@ -380,7 +414,7 @@ function CategorySection({
           </div>
 
           {/* Subcategories */}
-          {cat.subcategories.map((sub) => (
+          {filteredSubs.map((sub) => (
             <div key={sub.id} className="mb-6">
               <div className="flex items-center gap-2 mb-3 ml-2">
                 <div className="size-1.5 rounded-full bg-indigo-500" />
@@ -395,7 +429,7 @@ function CategorySection({
                 {sub.templates.map((tpl) => {
                   const tier = TIER_CONFIG[tpl.tier];
                   const diff = DIFFICULTY_CONFIG[tpl.difficulty];
-                  const CatIcon = CATEGORY_ICONS[cat.id] || FileText;
+                  const Icon = CATEGORY_ICONS[cat.id] || FileText;
                   return (
                     <div
                       key={tpl.id}
@@ -406,7 +440,7 @@ function CategorySection({
                       {/* 카드 헤더 */}
                       <div className={`flex items-center justify-between px-4 py-2.5 bg-gradient-to-r ${cat.gradient} text-white`}>
                         <div className="flex items-center gap-2">
-                          <CatIcon className="size-4" />
+                          <Icon className="size-4" />
                           <span className="text-sm font-bold">{tpl.name}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
@@ -418,7 +452,7 @@ function CategorySection({
                         </div>
                       </div>
 
-                      {/* 카드 바디: 좌 / 우 — 모바일 세로 스택 */}
+                      {/* 카드 바디: 좌 / 우 */}
                       <div className="flex flex-col sm:flex-row sm:divide-x divide-gray-100">
                         {/* 좌: 학습 데이터 + 단계 */}
                         <div className="w-full sm:w-1/2 p-4 space-y-3 border-b border-gray-100 sm:border-b-0">
@@ -452,7 +486,7 @@ function CategorySection({
                           </div>
                         </div>
 
-                        {/* 우: Before → After 미리보기 */}
+                        {/* 우: Before → After */}
                         <div className="w-full sm:w-1/2 p-4 flex flex-col">
                           <div className="flex items-center gap-1.5 mb-2">
                             <MessageSquare className="size-3.5 text-emerald-500" />
@@ -505,25 +539,65 @@ function CategorySection({
 /* ------------------------------------------------------------------ */
 export default function TemplatesPage() {
   const [query, setQuery] = useState("");
+  const [tierFilter, setTierFilter] = useState<TierFilter>("all");
+  const [diffFilter, setDiffFilter] = useState<DiffFilter>("all");
   const [selected, setSelected] = useState<{
     template: LearnTemplate;
     sub: SubCategory;
     cat: TopCategory;
   } | null>(null);
 
+  // 카테고리별 섹션 ref 맵
+  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const setSectionRef = useCallback(
+    (catId: string) => (el: HTMLDivElement | null) => {
+      sectionRefs.current[catId] = el;
+    },
+    []
+  );
+
+  const scrollToCategory = useCallback((catId: string) => {
+    const el = sectionRefs.current[catId];
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      // 검색/필터 초기화 시 카테고리 이동
+      setQuery("");
+    }
+  }, []);
+
+  // 검색
   const searchResults = useMemo(() => {
     if (!query.trim()) return null;
-    return searchTemplates(query);
-  }, [query]);
+    let results = searchTemplates(query);
+    if (tierFilter !== "all") results = results.filter((t) => t.tier === tierFilter);
+    if (diffFilter !== "all") results = results.filter((t) => t.difficulty === diffFilter);
+    return results;
+  }, [query, tierFilter, diffFilter]);
+
+  // 필터 적용 후 총 개수
+  const filteredCount = useMemo(() => {
+    let count = 0;
+    for (const cat of CATALOG) {
+      for (const sub of cat.subcategories) {
+        for (const tpl of sub.templates) {
+          if (tierFilter !== "all" && tpl.tier !== tierFilter) continue;
+          if (diffFilter !== "all" && tpl.difficulty !== diffFilter) continue;
+          count++;
+        }
+      }
+    }
+    return count;
+  }, [tierFilter, diffFilter]);
 
   const totalCount = getTotalTemplateCount();
   const freeCount = getFreeTemplates().length;
+  const hasFilter = tierFilter !== "all" || diffFilter !== "all";
 
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Header */}
       <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-fuchsia-500 text-white">
-        <div className="mx-auto max-w-6xl px-4 md:px-6 py-6 md:py-12">
+        <div className="mx-auto max-w-6xl px-4 md:px-6 py-6 md:py-10">
           <h1 className="text-2xl md:text-3xl font-bold">학습 템플릿</h1>
           <p className="mt-2 text-indigo-100 max-w-2xl text-sm md:text-base hidden sm:block">
             {totalCount}개 템플릿으로 AI를 학습시키세요.
@@ -545,6 +619,102 @@ export default function TemplatesPage() {
               placeholder="카페, 불량검출, 로봇, 법률..."
               className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-indigo-300 focus:bg-white/20 text-sm"
             />
+            {query && (
+              <button
+                onClick={() => setQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-300 hover:text-white"
+              >
+                <X className="size-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── 카테고리 퀵 탭 (sticky) ── */}
+      <div className="sticky top-0 z-30 bg-white border-b shadow-sm">
+        <div className="mx-auto max-w-6xl px-4 md:px-6">
+          <div className="flex items-center gap-1 overflow-x-auto py-2 scrollbar-hide">
+            {CATALOG.map((cat) => {
+              const Icon = CATEGORY_ICONS[cat.id] || FileText;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => scrollToCategory(cat.id)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all
+                    text-gray-600 hover:text-indigo-700 hover:bg-indigo-50 border border-transparent hover:border-indigo-200"
+                >
+                  <Icon className="size-3.5 shrink-0" />
+                  {cat.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* ── 필터 바 ── */}
+      <div className="bg-gray-50 border-b">
+        <div className="mx-auto max-w-6xl px-4 md:px-6 py-2.5 flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1.5 text-xs text-gray-500 shrink-0">
+            <SlidersHorizontal className="size-3.5" />
+            <span className="font-medium">필터</span>
+          </div>
+
+          {/* 티어 필터 */}
+          <div className="flex items-center gap-1">
+            {(["all", "free", "starter", "pro"] as TierFilter[]).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTierFilter(t)}
+                className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all border ${
+                  tierFilter === t
+                    ? "bg-indigo-600 text-white border-indigo-600"
+                    : "bg-white text-gray-600 border-gray-200 hover:border-indigo-300"
+                }`}
+              >
+                {t === "all" ? "전체" : TIER_CONFIG[t].label}
+              </button>
+            ))}
+          </div>
+
+          <div className="h-4 border-l border-gray-300 hidden sm:block" />
+
+          {/* 난이도 필터 */}
+          <div className="flex items-center gap-1">
+            {(["all", "beginner", "intermediate", "advanced"] as DiffFilter[]).map((d) => (
+              <button
+                key={d}
+                onClick={() => setDiffFilter(d)}
+                className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all border ${
+                  diffFilter === d
+                    ? "bg-indigo-600 text-white border-indigo-600"
+                    : "bg-white text-gray-600 border-gray-200 hover:border-indigo-300"
+                }`}
+              >
+                {d === "all" ? "전체 난이도" : DIFFICULTY_CONFIG[d].label}
+              </button>
+            ))}
+          </div>
+
+          {/* 필터 결과 카운트 / 초기화 */}
+          <div className="ml-auto flex items-center gap-2">
+            {hasFilter && (
+              <>
+                <span className="text-[11px] text-gray-500">
+                  {filteredCount}개 표시 중
+                </span>
+                <button
+                  onClick={() => { setTierFilter("all"); setDiffFilter("all"); }}
+                  className="text-[11px] text-indigo-600 hover:underline flex items-center gap-0.5"
+                >
+                  <X className="size-3" /> 초기화
+                </button>
+              </>
+            )}
+            {!hasFilter && (
+              <span className="text-[11px] text-gray-400">{totalCount}개 전체</span>
+            )}
           </div>
         </div>
       </div>
@@ -552,41 +722,94 @@ export default function TemplatesPage() {
       {/* Content */}
       <div className="mx-auto max-w-6xl px-4 md:px-6 py-4 md:py-8">
         {/* Search Results */}
-        {searchResults ? (
+        {searchResults !== null ? (
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold">
-                &quot;{query}&quot; 검색 결과 ({searchResults.length}건)
+                &quot;{query}&quot; 검색 결과
+                <span className="text-base font-normal text-gray-500 ml-2">({searchResults.length}건)</span>
               </h2>
               <Button variant="ghost" size="sm" onClick={() => setQuery("")}>
-                전체 보기
+                <X className="size-3.5 mr-1" /> 검색 닫기
               </Button>
             </div>
             {searchResults.length === 0 ? (
               <div className="py-20 text-center text-gray-400">
-                <p>검색 결과가 없습니다.</p>
-                <p className="text-sm mt-1">다른 키워드를 시도해보세요.</p>
+                <Search className="size-10 mx-auto mb-3 opacity-30" />
+                <p className="font-medium">검색 결과가 없습니다.</p>
+                <p className="text-sm mt-1">다른 키워드를 시도하거나 필터를 조정해보세요.</p>
+                {hasFilter && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3"
+                    onClick={() => { setTierFilter("all"); setDiffFilter("all"); }}
+                  >
+                    필터 초기화
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {searchResults.map((tpl) => {
                   const tier = TIER_CONFIG[tpl.tier];
-                  return (
-                    <Card key={tpl.id} className="cursor-pointer hover:shadow-md" onClick={() => {
-                      // Find parent cat/sub
-                      for (const cat of CATALOG) {
-                        for (const sub of cat.subcategories) {
-                          const found = sub.templates.find((t) => t.id === tpl.id);
-                          if (found) { setSelected({ template: found, sub, cat }); return; }
-                        }
+                  const diff = DIFFICULTY_CONFIG[tpl.difficulty];
+                  // Find parent cat/sub for breadcrumb
+                  let breadcrumb = { catName: "", subName: "", catGradient: "from-indigo-500 to-purple-500" };
+                  for (const cat of CATALOG) {
+                    for (const sub of cat.subcategories) {
+                      if (sub.templates.find((t) => t.id === tpl.id)) {
+                        breadcrumb = { catName: cat.name, subName: sub.name, catGradient: cat.gradient };
+                        break;
                       }
-                    }}>
+                    }
+                  }
+                  return (
+                    <Card
+                      key={tpl.id}
+                      className="cursor-pointer hover:shadow-md transition-all border-0 overflow-hidden"
+                      onClick={() => {
+                        for (const cat of CATALOG) {
+                          for (const sub of cat.subcategories) {
+                            const found = sub.templates.find((t) => t.id === tpl.id);
+                            if (found) { setSelected({ template: found, sub, cat }); return; }
+                          }
+                        }
+                      }}
+                    >
+                      {/* 카드 상단 그라데이션 띠 */}
+                      <div className={`h-1.5 bg-gradient-to-r ${breadcrumb.catGradient}`} />
                       <CardContent className="p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="text-sm font-bold">{tpl.name}</h4>
-                          <Badge className={`${tier.color} border-0 text-[9px]`}>{tier.label}</Badge>
+                        {/* Breadcrumb */}
+                        <div className="flex items-center gap-1 text-[10px] text-gray-400 mb-2">
+                          <span>{breadcrumb.catName}</span>
+                          <span>›</span>
+                          <span>{breadcrumb.subName}</span>
                         </div>
-                        <p className="text-[11px] text-gray-500 line-clamp-2">{tpl.description}</p>
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <h4 className="text-sm font-bold leading-tight">{tpl.name}</h4>
+                          <Badge className={`${tier.color} border-0 text-[9px] shrink-0`}>{tier.label}</Badge>
+                        </div>
+                        <p className="text-[11px] text-gray-500 line-clamp-2 mb-3">{tpl.description}</p>
+                        <div className="flex items-center justify-between">
+                          <div className="flex gap-1">
+                            <Badge variant="outline" className={`text-[9px] ${diff.color}`}>{diff.label}</Badge>
+                            <Badge variant="outline" className="text-[9px] text-gray-400">
+                              <Clock className="size-2.5 mr-0.5" />{tpl.estimatedTime}
+                            </Badge>
+                          </div>
+                          {tpl.tier === "free" ? (
+                            <Link href={`/learn?template=${tpl.id}`} onClick={(e) => e.stopPropagation()}>
+                              <Button size="sm" className="h-6 text-[10px] px-2 gap-0.5">
+                                학습 시작 <ArrowRight className="size-2.5" />
+                              </Button>
+                            </Link>
+                          ) : (
+                            <span className="text-[10px] text-gray-400 flex items-center gap-0.5">
+                              <Lock className="size-3" /> 상세보기
+                            </span>
+                          )}
+                        </div>
                       </CardContent>
                     </Card>
                   );
@@ -595,14 +818,34 @@ export default function TemplatesPage() {
             )}
           </div>
         ) : (
-          /* Full Catalog */
-          CATALOG.map((cat) => (
-            <CategorySection
-              key={cat.id}
-              cat={cat}
-              onSelect={(t, s, c) => setSelected({ template: t, sub: s, cat: c })}
-            />
-          ))
+          /* Full Catalog — 필터 적용 */
+          <>
+            {CATALOG.map((cat) => (
+              <CategorySection
+                key={cat.id}
+                cat={cat}
+                onSelect={(t, s, c) => setSelected({ template: t, sub: s, cat: c })}
+                tierFilter={tierFilter}
+                diffFilter={diffFilter}
+                sectionRef={setSectionRef(cat.id)}
+              />
+            ))}
+            {/* 필터 결과 없음 */}
+            {hasFilter && filteredCount === 0 && (
+              <div className="py-20 text-center text-gray-400">
+                <SlidersHorizontal className="size-10 mx-auto mb-3 opacity-30" />
+                <p className="font-medium">조건에 맞는 템플릿이 없습니다.</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3"
+                  onClick={() => { setTierFilter("all"); setDiffFilter("all"); }}
+                >
+                  필터 초기화
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
 
