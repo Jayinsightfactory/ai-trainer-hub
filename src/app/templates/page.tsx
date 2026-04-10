@@ -30,6 +30,13 @@ import {
   Database,
   MessageSquare,
   SlidersHorizontal,
+  Zap,
+  Shield,
+  TrendingUp,
+  AlertTriangle,
+  RefreshCw,
+  Activity,
+  Brain,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +52,11 @@ import {
   getTotalTemplateCount,
   getFreeTemplates,
 } from "@/lib/template-catalog";
+import {
+  getTemplatePerformance,
+  hasPerformanceData,
+  type TemplatePerformance,
+} from "@/lib/template-performance";
 
 /* ------------------------------------------------------------------ */
 /*  Icon Map                                                           */
@@ -203,6 +215,7 @@ function TemplateModal({
   const tier = TIER_CONFIG[template.tier];
   const diff = DIFFICULTY_CONFIG[template.difficulty];
   const CatIcon = CATEGORY_ICONS[cat.id] || FileText;
+  const perf = getTemplatePerformance(template.id);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 sm:p-4" onClick={onClose}>
@@ -254,6 +267,143 @@ function TemplateModal({
               </div>
             </div>
           </div>
+
+          {/* ── 알고리즘 / 성능 / 신뢰도 (성능 데이터 있을 때만) ── */}
+          {perf && (
+            <>
+              {/* 알고리즘 스택 */}
+              <div>
+                <h3 className="text-sm font-bold mb-3 flex items-center gap-1.5">
+                  <Brain className="size-4 text-violet-600" /> 알고리즘 스택
+                </h3>
+                <div className="rounded-xl border border-violet-200 bg-violet-50/50 overflow-hidden">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-violet-200">
+                    {[
+                      { label: "핵심 알고리즘", value: perf.algorithmStack.core },
+                      { label: "학습 기법", value: perf.algorithmStack.technique },
+                      { label: "AI 모델", value: perf.algorithmStack.model },
+                      { label: "프레임워크", value: perf.algorithmStack.framework },
+                    ].map((item) => (
+                      <div key={item.label} className="bg-white p-3">
+                        <span className="text-[10px] font-bold text-violet-600 uppercase">{item.label}</span>
+                        <p className="text-[11px] text-gray-700 mt-0.5 leading-snug">{item.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                  {perf.algorithmStack.paperRef && (
+                    <div className="px-3 py-2 bg-violet-100/50 text-[10px] text-violet-700">
+                      <span className="font-bold">참고 논문:</span> {perf.algorithmStack.paperRef}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 성능 벤치마크 */}
+              <div>
+                <h3 className="text-sm font-bold mb-3 flex items-center gap-1.5">
+                  <Activity className="size-4 text-blue-600" /> 성능 벤치마크
+                </h3>
+                <div className="rounded-xl border border-blue-200 bg-blue-50/30 p-4 space-y-3">
+                  {/* 메트릭 테이블 */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-[11px]">
+                      <thead>
+                        <tr className="border-b border-blue-200">
+                          <th className="text-left py-1.5 pr-2 text-gray-500 font-medium">지표</th>
+                          <th className="text-center py-1.5 px-2 text-red-400 font-medium">Before</th>
+                          <th className="text-center py-1.5 px-2 text-emerald-500 font-medium">After</th>
+                          <th className="text-left py-1.5 pl-2 text-gray-400 font-medium hidden sm:table-cell">기준</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {perf.benchmark.metrics.map((m, i) => (
+                          <tr key={i} className="border-b border-blue-100 last:border-0">
+                            <td className="py-2 pr-2 font-medium text-gray-700">{m.name}</td>
+                            <td className="py-2 px-2 text-center text-red-500 bg-red-50/50 font-mono">{m.before}</td>
+                            <td className="py-2 px-2 text-center text-emerald-600 bg-emerald-50/50 font-mono font-bold">{m.after}</td>
+                            <td className="py-2 pl-2 text-gray-400 hidden sm:table-cell">{m.benchmark}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {/* 테스트 조건 + ROI */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-blue-100">
+                    <div className="flex gap-1.5">
+                      <span className="text-[10px] font-bold text-gray-500 shrink-0">테스트 환경:</span>
+                      <span className="text-[10px] text-gray-600">{perf.benchmark.testCondition}</span>
+                    </div>
+                    <div className="flex gap-1.5">
+                      <span className="text-[10px] font-bold text-gray-500 shrink-0">학습 데이터:</span>
+                      <span className="text-[10px] text-gray-600">{perf.benchmark.dataSize}</span>
+                    </div>
+                    {perf.benchmark.roi && (
+                      <div className="flex gap-1.5">
+                        <TrendingUp className="size-3 text-emerald-500 shrink-0 mt-0.5" />
+                        <span className="text-[10px] text-emerald-700 font-medium">{perf.benchmark.roi}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* 신뢰도 스펙 */}
+              <div>
+                <h3 className="text-sm font-bold mb-3 flex items-center gap-1.5">
+                  <Shield className="size-4 text-amber-600" /> 신뢰도 & 안전성
+                </h3>
+                <div className="rounded-xl border border-amber-200 bg-amber-50/30 p-4 space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <div className="flex items-center gap-1 mb-1">
+                        <Zap className="size-3 text-amber-600" />
+                        <span className="text-[10px] font-bold text-amber-700">신뢰도 임계값</span>
+                      </div>
+                      <p className="text-[11px] text-gray-600 leading-snug">{perf.reliability.confidenceThreshold}</p>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1 mb-1">
+                        <Shield className="size-3 text-amber-600" />
+                        <span className="text-[10px] font-bold text-amber-700">폴백 동작</span>
+                      </div>
+                      <p className="text-[11px] text-gray-600 leading-snug">{perf.reliability.fallbackBehavior}</p>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1 mb-1">
+                        <Check className="size-3 text-amber-600" />
+                        <span className="text-[10px] font-bold text-amber-700">검증 방법</span>
+                      </div>
+                      <p className="text-[11px] text-gray-600 leading-snug">{perf.reliability.validationMethod}</p>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1 mb-1">
+                        <RefreshCw className="size-3 text-amber-600" />
+                        <span className="text-[10px] font-bold text-amber-700">재학습 주기</span>
+                      </div>
+                      <p className="text-[11px] text-gray-600 leading-snug">{perf.reliability.updateCycle}</p>
+                    </div>
+                  </div>
+                  {/* 주의 사항 */}
+                  {perf.reliability.riskFactors.length > 0 && (
+                    <div className="pt-2 border-t border-amber-200">
+                      <div className="flex items-center gap-1 mb-1.5">
+                        <AlertTriangle className="size-3 text-red-500" />
+                        <span className="text-[10px] font-bold text-red-600">주의 사항</span>
+                      </div>
+                      <ul className="space-y-1">
+                        {perf.reliability.riskFactors.map((r, i) => (
+                          <li key={i} className="text-[11px] text-gray-600 flex items-start gap-1.5">
+                            <span className="text-red-400 shrink-0 mt-0.5">•</span>
+                            <span className="leading-snug">{r}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Data Requirements */}
           <div>
@@ -444,6 +594,11 @@ function CategorySection({
                           <span className="text-sm font-bold">{tpl.name}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
+                          {hasPerformanceData(tpl.id) && (
+                            <Badge className="bg-violet-500/80 text-white border-0 text-[9px] flex items-center gap-0.5">
+                              <Activity className="size-2.5" />성능
+                            </Badge>
+                          )}
                           <Badge className={`${tier.color} border-0 text-[9px]`}>{tpl.tier === "free" ? "무료" : tier.label}</Badge>
                           <Badge className="bg-white/20 text-white border-0 text-[9px]">{diff.label}</Badge>
                           <Badge className="bg-white/20 text-white border-0 text-[9px] flex items-center gap-0.5">
