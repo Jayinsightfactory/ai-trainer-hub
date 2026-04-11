@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#9333ea"/>
+    </linearGradient>
+    <linearGradient id="screenGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e1b4b"/>
+      <stop offset="100%" stop-color="#312e81"/>
+    </linearGradient>
+    <linearGradient id="brainGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a78bfa"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="300" rx="16" fill="#faf5ff"/>
+
+  <!-- Large gradient circle -->
+  <circle cx="200" cy="150" r="115" fill="url(#bgGrad)" opacity="0.08"/>
+  <circle cx="200" cy="150" r="85" fill="url(#bgGrad)" opacity="0.06"/>
+
+  <!-- Decorative dots -->
+  <circle cx="55" cy="45" r="4" fill="#8b5cf6" opacity="0.25"/>
+  <circle cx="345" cy="55" r="3.5" fill="#9333ea" opacity="0.3"/>
+  <circle cx="50" cy="250" r="3" fill="#8b5cf6" opacity="0.2"/>
+  <circle cx="360" cy="245" r="4" fill="#9333ea" opacity="0.2"/>
+  <circle cx="85" cy="95" r="2.5" fill="#a78bfa" opacity="0.3"/>
+  <circle cx="325" cy="260" r="3" fill="#7c3aed" opacity="0.15"/>
+
+  <!-- Laptop body -->
+  <rect x="120" y="110" width="155" height="105" rx="10" fill="#ffffff" stroke="#e2e8f0" stroke-width="2"/>
+  <!-- Laptop screen -->
+  <rect x="128" y="118" width="139" height="85" rx="6" fill="url(#screenGrad)"/>
+  <!-- Laptop base -->
+  <path d="M110 215 L290 215 L300 230 L100 230 Z" fill="#e2e8f0" stroke="#d1d5db" stroke-width="1"/>
+  <rect x="175" y="218" width="45" height="5" rx="2.5" fill="#d1d5db"/>
+
+  <!-- Code brackets on screen -->
+  <path d="M155 145 L145 155 L155 165" stroke="#a78bfa" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M240 145 L250 155 L240 165" stroke="#a78bfa" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Code lines on screen -->
+  <rect x="162" y="142" width="50" height="4" rx="2" fill="#8b5cf6" opacity="0.6"/>
+  <rect x="168" y="152" width="60" height="4" rx="2" fill="#a78bfa" opacity="0.5"/>
+  <rect x="162" y="162" width="40" height="4" rx="2" fill="#c4b5fd" opacity="0.5"/>
+  <rect x="170" y="172" width="55" height="4" rx="2" fill="#8b5cf6" opacity="0.4"/>
+  <rect x="162" y="182" width="35" height="4" rx="2" fill="#a78bfa" opacity="0.4"/>
+
+  <!-- Brain/AI icon (top right) -->
+  <circle cx="320" cy="90" r="30" fill="#ffffff" stroke="#8b5cf6" stroke-width="2" opacity="0.95"/>
+  <!-- Brain shape simplified -->
+  <path d="M308 82 C305 78, 308 72, 314 73 C316 68, 324 68, 326 73 C332 72, 335 78, 332 82 C336 85, 336 92, 332 95 C335 99, 332 105, 326 104 C324 108, 316 108, 314 104 C308 105, 305 99, 308 95 C304 92, 304 85, 308 82Z" fill="url(#brainGrad)" opacity="0.7"/>
+  <!-- Brain center line -->
+  <line x1="320" y1="73" x2="320" y2="105" stroke="#ffffff" stroke-width="1.5" opacity="0.6"/>
+  <!-- Neural nodes -->
+  <circle cx="312" cy="84" r="2" fill="#ffffff" opacity="0.8"/>
+  <circle cx="328" cy="84" r="2" fill="#ffffff" opacity="0.8"/>
+  <circle cx="315" cy="96" r="2" fill="#ffffff" opacity="0.8"/>
+  <circle cx="325" cy="96" r="2" fill="#ffffff" opacity="0.8"/>
+
+  <!-- Graduation cap (top left) -->
+  <polygon points="80,120 80,105 110,92 140,105 140,120 110,130" fill="url(#bgGrad)" opacity="0.8"/>
+  <polygon points="90,108 110,100 130,108 130,125 110,132 90,125" fill="#7c3aed" opacity="0.6"/>
+  <!-- Cap tassel -->
+  <line x1="110" y1="92" x2="110" y2="82" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="110" cy="80" r="3" fill="#8b5cf6"/>
+  <line x1="110" y1="82" x2="100" y2="90" stroke="#8b5cf6" stroke-width="1.5" stroke-linecap="round"/>
+
+  <!-- Floating sparkles -->
+  <path d="M70 180 L73 174 L76 180 L82 183 L76 186 L73 192 L70 186 L64 183 Z" fill="#8b5cf6" opacity="0.4"/>
+  <path d="M340 180 L342 176 L344 180 L348 182 L344 184 L342 188 L340 184 L336 182 Z" fill="#9333ea" opacity="0.35"/>
+  <path d="M290 250 L292 247 L294 250 L297 252 L294 254 L292 257 L290 254 L287 252 Z" fill="#a78bfa" opacity="0.3"/>
+
+  <!-- Decorative lines -->
+  <line x1="50" y1="170" x2="65" y2="170" stroke="#8b5cf6" stroke-width="1.5" stroke-linecap="round" opacity="0.25"/>
+  <line x1="340" y1="140" x2="360" y2="140" stroke="#9333ea" stroke-width="1.5" stroke-linecap="round" opacity="0.2"/>
+  <line x1="345" y1="148" x2="355" y2="148" stroke="#9333ea" stroke-width="1.5" stroke-linecap="round" opacity="0.15"/>
+</svg>

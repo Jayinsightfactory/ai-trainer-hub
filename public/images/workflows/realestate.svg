@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <defs>
+    <linearGradient id="re-grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#0d9488"/>
+    </linearGradient>
+    <linearGradient id="re-grad2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#0d9488" stop-opacity="0.1"/>
+    </linearGradient>
+    <linearGradient id="re-grad3" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#0d9488" stop-opacity="0.6"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="400" height="300" rx="16" fill="#f0fdf4"/>
+  <rect x="20" y="20" width="360" height="260" rx="12" fill="url(#re-grad2)" opacity="0.5"/>
+  <!-- Decorative circles -->
+  <circle cx="50" cy="50" r="4" fill="#10b981" opacity="0.3"/>
+  <circle cx="370" cy="80" r="3" fill="#0d9488" opacity="0.4"/>
+  <circle cx="340" cy="240" r="5" fill="#10b981" opacity="0.2"/>
+  <circle cx="80" cy="260" r="3" fill="#0d9488" opacity="0.3"/>
+  <circle cx="300" cy="50" r="4" fill="#10b981" opacity="0.25"/>
+  <circle cx="120" cy="40" r="2.5" fill="#0d9488" opacity="0.35"/>
+  <!-- Building silhouette -->
+  <rect x="80" y="100" width="80" height="130" rx="8" fill="url(#re-grad1)" opacity="0.85"/>
+  <rect x="90" y="115" width="18" height="22" rx="4" fill="white" opacity="0.6"/>
+  <rect x="115" y="115" width="18" height="22" rx="4" fill="white" opacity="0.6"/>
+  <rect x="140" y="115" width="12" height="22" rx="4" fill="white" opacity="0.4"/>
+  <rect x="90" y="148" width="18" height="22" rx="4" fill="white" opacity="0.6"/>
+  <rect x="115" y="148" width="18" height="22" rx="4" fill="white" opacity="0.6"/>
+  <rect x="140" y="148" width="12" height="22" rx="4" fill="white" opacity="0.4"/>
+  <rect x="105" y="192" width="24" height="38" rx="4" fill="white" opacity="0.8"/>
+  <!-- House shape -->
+  <polygon points="220,90 260,65 300,90" fill="url(#re-grad1)" opacity="0.9"/>
+  <rect x="228" y="90" width="64" height="55" rx="4" fill="url(#re-grad1)" opacity="0.75"/>
+  <rect x="240" y="100" width="16" height="16" rx="3" fill="white" opacity="0.6"/>
+  <rect x="265" y="100" width="16" height="16" rx="3" fill="white" opacity="0.6"/>
+  <rect x="250" y="122" width="18" height="23" rx="3" fill="white" opacity="0.8"/>
+  <!-- Key icon -->
+  <circle cx="320" cy="110" r="14" stroke="#0d9488" stroke-width="3" fill="none" opacity="0.8"/>
+  <circle cx="320" cy="110" r="5" fill="#0d9488" opacity="0.4"/>
+  <rect x="330" y="107" width="25" height="6" rx="3" fill="#0d9488" opacity="0.8"/>
+  <rect x="348" y="107" width="4" height="12" rx="2" fill="#0d9488" opacity="0.7"/>
+  <rect x="341" y="107" width="4" height="9" rx="2" fill="#0d9488" opacity="0.6"/>
+  <!-- Chat bubble -->
+  <rect x="200" y="170" width="70" height="45" rx="12" fill="url(#re-grad1)" opacity="0.7"/>
+  <circle cx="220" cy="192" r="4" fill="white" opacity="0.7"/>
+  <circle cx="235" cy="192" r="4" fill="white" opacity="0.7"/>
+  <circle cx="250" cy="192" r="4" fill="white" opacity="0.7"/>
+  <polygon points="210,215 220,215 208,228" fill="url(#re-grad1)" opacity="0.7"/>
+  <!-- Location pin -->
+  <path d="M330,170 C330,155 345,148 352,155 C359,162 359,175 345,192 C345,192 338,182 330,170 Z" fill="url(#re-grad1)" opacity="0.8"/>
+  <circle cx="345" cy="168" r="6" fill="white" opacity="0.8"/>
+  <!-- Accent lines -->
+  <rect x="60" y="245" width="50" height="3" rx="1.5" fill="#10b981" opacity="0.3"/>
+  <rect x="290" y="245" width="60" height="3" rx="1.5" fill="#0d9488" opacity="0.25"/>
+</svg>

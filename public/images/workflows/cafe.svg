@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#ea580c"/>
+    </linearGradient>
+    <linearGradient id="cupGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#fef3c7"/>
+    </linearGradient>
+    <linearGradient id="steamGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="300" rx="16" fill="#fffbeb"/>
+
+  <!-- Large gradient circle -->
+  <circle cx="200" cy="155" r="110" fill="url(#bgGrad)" opacity="0.15"/>
+  <circle cx="200" cy="155" r="85" fill="url(#bgGrad)" opacity="0.1"/>
+
+  <!-- Decorative dots -->
+  <circle cx="60" cy="45" r="4" fill="#f59e0b" opacity="0.3"/>
+  <circle cx="340" cy="60" r="3" fill="#ea580c" opacity="0.25"/>
+  <circle cx="45" cy="220" r="5" fill="#f59e0b" opacity="0.2"/>
+  <circle cx="355" cy="240" r="4" fill="#ea580c" opacity="0.3"/>
+  <circle cx="90" cy="260" r="3" fill="#f59e0b" opacity="0.15"/>
+  <circle cx="310" cy="45" r="2.5" fill="#ea580c" opacity="0.2"/>
+
+  <!-- Coffee cup body -->
+  <rect x="150" y="140" width="90" height="85" rx="12" fill="url(#cupGrad)" stroke="#f59e0b" stroke-width="2.5"/>
+  <!-- Cup bottom -->
+  <rect x="155" y="215" width="80" height="10" rx="5" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+  <!-- Saucer -->
+  <ellipse cx="195" cy="232" rx="55" ry="10" fill="#fde68a" stroke="#f59e0b" stroke-width="1.5"/>
+  <!-- Cup handle -->
+  <path d="M240 160 C265 160, 265 200, 240 200" stroke="#f59e0b" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+  <!-- Steam swirls -->
+  <path d="M170 130 C170 115, 180 115, 180 105 C180 95, 170 95, 170 80" stroke="url(#steamGrad)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M190 125 C190 108, 200 108, 200 95 C200 82, 190 82, 190 65" stroke="url(#steamGrad)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M210 128 C210 112, 220 112, 220 100 C220 88, 210 88, 210 72" stroke="url(#steamGrad)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Chat bubble (top right) -->
+  <rect x="270" y="70" width="65" height="45" rx="14" fill="#f59e0b" opacity="0.85"/>
+  <polygon points="280,115 288,115 275,128" fill="#f59e0b" opacity="0.85"/>
+  <!-- Chat dots -->
+  <circle cx="290" cy="92" r="4" fill="#ffffff" opacity="0.9"/>
+  <circle cx="303" cy="92" r="4" fill="#ffffff" opacity="0.9"/>
+  <circle cx="316" cy="92" r="4" fill="#ffffff" opacity="0.9"/>
+
+  <!-- Clock icon (top left) suggesting 24/7 -->
+  <circle cx="95" cy="90" r="28" fill="#ffffff" stroke="#f59e0b" stroke-width="2.5" opacity="0.9"/>
+  <circle cx="95" cy="90" r="22" fill="none" stroke="#ea580c" stroke-width="1.5" opacity="0.5"/>
+  <!-- Clock hands -->
+  <line x1="95" y1="90" x2="95" y2="74" stroke="#ea580c" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="95" y1="90" x2="107" y2="95" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"/>
+  <!-- Clock center dot -->
+  <circle cx="95" cy="90" r="2.5" fill="#ea580c"/>
+
+  <!-- Small decorative lines -->
+  <line x1="55" y1="170" x2="70" y2="170" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round" opacity="0.3"/>
+  <line x1="330" y1="180" x2="350" y2="180" stroke="#ea580c" stroke-width="1.5" stroke-linecap="round" opacity="0.3"/>
+  <line x1="335" y1="190" x2="345" y2="190" stroke="#ea580c" stroke-width="1.5" stroke-linecap="round" opacity="0.2"/>
+
+  <!-- Sparkle accents -->
+  <path d="M320 150 L323 145 L326 150 L323 155 Z" fill="#f59e0b" opacity="0.5"/>
+  <path d="M70 140 L72 136 L74 140 L72 144 Z" fill="#ea580c" opacity="0.4"/>
+</svg>

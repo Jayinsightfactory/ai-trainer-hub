@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f43f5e"/>
+      <stop offset="100%" stop-color="#ec4899"/>
+    </linearGradient>
+    <linearGradient id="rocketGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#f43f5e"/>
+      <stop offset="100%" stop-color="#fda4af"/>
+    </linearGradient>
+    <linearGradient id="flameGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f43f5e"/>
+      <stop offset="50%" stop-color="#fb923c"/>
+      <stop offset="100%" stop-color="#fbbf24"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="300" rx="16" fill="#fff1f2"/>
+
+  <!-- Large gradient circle -->
+  <circle cx="200" cy="155" r="110" fill="url(#bgGrad)" opacity="0.08"/>
+  <circle cx="200" cy="155" r="80" fill="url(#bgGrad)" opacity="0.06"/>
+
+  <!-- Decorative dots -->
+  <circle cx="50" cy="50" r="4" fill="#f43f5e" opacity="0.25"/>
+  <circle cx="350" cy="45" r="3" fill="#ec4899" opacity="0.3"/>
+  <circle cx="45" cy="240" r="3.5" fill="#f43f5e" opacity="0.2"/>
+  <circle cx="360" cy="260" r="4" fill="#ec4899" opacity="0.2"/>
+  <circle cx="90" cy="80" r="2.5" fill="#fb7185" opacity="0.25"/>
+  <circle cx="310" cy="270" r="3" fill="#f43f5e" opacity="0.15"/>
+
+  <!-- Laptop base -->
+  <rect x="115" y="165" width="150" height="95" rx="10" fill="#ffffff" stroke="#e2e8f0" stroke-width="2"/>
+  <rect x="123" y="173" width="134" height="75" rx="6" fill="#fef2f2"/>
+  <!-- Laptop keyboard area -->
+  <path d="M100 260 L280 260 L290 275 L90 275 Z" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="170" y="263" width="40" height="5" rx="2.5" fill="#e2e8f0"/>
+  <!-- Screen content dots -->
+  <rect x="135" y="185" width="45" height="5" rx="2.5" fill="#f43f5e" opacity="0.3"/>
+  <rect x="135" y="195" width="60" height="5" rx="2.5" fill="#ec4899" opacity="0.2"/>
+  <rect x="135" y="205" width="35" height="5" rx="2.5" fill="#f43f5e" opacity="0.25"/>
+
+  <!-- Rocket -->
+  <g transform="translate(190, 60) rotate(15)">
+    <!-- Rocket body -->
+    <ellipse cx="0" cy="0" rx="14" ry="40" fill="url(#rocketGrad)"/>
+    <!-- Rocket nose -->
+    <ellipse cx="0" cy="-38" rx="8" ry="15" fill="#fda4af"/>
+    <!-- Rocket window -->
+    <circle cx="0" cy="-10" r="7" fill="#ffffff" opacity="0.9"/>
+    <circle cx="0" cy="-10" r="4.5" fill="#0ea5e9" opacity="0.7"/>
+    <!-- Rocket fins -->
+    <path d="M-14 20 L-24 35 L-14 30 Z" fill="#f43f5e" opacity="0.8"/>
+    <path d="M14 20 L24 35 L14 30 Z" fill="#f43f5e" opacity="0.8"/>
+    <!-- Rocket flame -->
+    <ellipse cx="0" cy="45" rx="8" ry="15" fill="url(#flameGrad)" opacity="0.8"/>
+    <ellipse cx="0" cy="50" rx="5" ry="10" fill="#fbbf24" opacity="0.6"/>
+  </g>
+
+  <!-- Smoke trail -->
+  <circle cx="200" cy="145" r="5" fill="#fda4af" opacity="0.3"/>
+  <circle cx="195" cy="155" r="7" fill="#fda4af" opacity="0.2"/>
+  <circle cx="203" cy="163" r="6" fill="#fda4af" opacity="0.15"/>
+
+  <!-- Dollar sign (left) -->
+  <circle cx="80" cy="160" r="25" fill="#ffffff" stroke="#f43f5e" stroke-width="2"/>
+  <line x1="80" y1="148" x2="80" y2="172" stroke="#f43f5e" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M72 155 C72 151, 88 151, 88 156 C88 161, 72 161, 72 166 C72 170, 88 170, 88 167" stroke="#f43f5e" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+
+  <!-- Sparkles scattered -->
+  <path d="M300 100 L303 93 L306 100 L313 103 L306 106 L303 113 L300 106 L293 103 Z" fill="url(#bgGrad)" opacity="0.6"/>
+  <path d="M330 150 L332 145 L334 150 L339 152 L334 154 L332 159 L330 154 L325 152 Z" fill="#f43f5e" opacity="0.5"/>
+  <path d="M100 100 L102 96 L104 100 L108 102 L104 104 L102 108 L100 104 L96 102 Z" fill="#ec4899" opacity="0.45"/>
+  <path d="M350 190 L352 187 L354 190 L357 192 L354 194 L352 197 L350 194 L347 192 Z" fill="#f43f5e" opacity="0.35"/>
+  <path d="M60 130 L62 127 L64 130 L67 131 L64 133 L62 136 L60 133 L57 131 Z" fill="#ec4899" opacity="0.3"/>
+
+  <!-- Small accent stars -->
+  <circle cx="270" cy="75" r="2" fill="#f43f5e" opacity="0.5"/>
+  <circle cx="285" cy="60" r="1.5" fill="#ec4899" opacity="0.4"/>
+  <circle cx="140" cy="70" r="2" fill="#f43f5e" opacity="0.35"/>
+
+  <!-- Decorative lines -->
+  <line x1="310" y1="220" x2="330" y2="220" stroke="#f43f5e" stroke-width="1.5" stroke-linecap="round" opacity="0.25"/>
+  <line x1="315" y1="228" x2="325" y2="228" stroke="#ec4899" stroke-width="1.5" stroke-linecap="round" opacity="0.2"/>
+  <line x1="55" y1="200" x2="75" y2="200" stroke="#f43f5e" stroke-width="1.5" stroke-linecap="round" opacity="0.2"/>
+</svg>

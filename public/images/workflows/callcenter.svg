@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <defs>
+    <linearGradient id="cc-grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0ea5e9"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="cc-grad2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0ea5e9" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#1d4ed8" stop-opacity="0.08"/>
+    </linearGradient>
+    <linearGradient id="cc-grad3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0ea5e9" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#1d4ed8" stop-opacity="0.5"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="400" height="300" rx="16" fill="#f0f9ff"/>
+  <rect x="20" y="20" width="360" height="260" rx="12" fill="url(#cc-grad2)" opacity="0.6"/>
+  <!-- Decorative circles -->
+  <circle cx="60" cy="60" r="4" fill="#0ea5e9" opacity="0.3"/>
+  <circle cx="350" cy="55" r="3" fill="#1d4ed8" opacity="0.25"/>
+  <circle cx="370" cy="250" r="5" fill="#0ea5e9" opacity="0.2"/>
+  <circle cx="40" cy="240" r="3" fill="#1d4ed8" opacity="0.3"/>
+  <circle cx="200" cy="35" r="2.5" fill="#0ea5e9" opacity="0.35"/>
+  <circle cx="150" cy="270" r="3.5" fill="#1d4ed8" opacity="0.2"/>
+  <!-- Headset icon (main element) -->
+  <path d="M160,130 C160,100 185,75 210,75 C235,75 260,100 260,130" stroke="url(#cc-grad1)" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.9"/>
+  <rect x="148" y="125" width="22" height="35" rx="11" fill="url(#cc-grad1)" opacity="0.85"/>
+  <rect x="250" y="125" width="22" height="35" rx="11" fill="url(#cc-grad1)" opacity="0.85"/>
+  <path d="M155,160 C155,175 180,180 200,180" stroke="url(#cc-grad1)" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.6"/>
+  <circle cx="200" cy="180" r="5" fill="url(#cc-grad1)" opacity="0.7"/>
+  <!-- Sound waves -->
+  <path d="M285,110 C295,120 295,140 285,150" stroke="#0ea5e9" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.6"/>
+  <path d="M295,100 C310,115 310,145 295,160" stroke="#0ea5e9" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.4"/>
+  <path d="M305,92 C325,110 325,150 305,168" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.25"/>
+  <!-- AI speech bubble (left) -->
+  <rect x="55" y="80" width="65" height="42" rx="12" fill="url(#cc-grad1)" opacity="0.7"/>
+  <rect x="68" y="94" width="28" height="4" rx="2" fill="white" opacity="0.7"/>
+  <rect x="68" y="103" width="38" height="4" rx="2" fill="white" opacity="0.5"/>
+  <polygon points="100,122 110,122 95,134" fill="url(#cc-grad1)" opacity="0.7"/>
+  <!-- Human speech bubble (right) -->
+  <rect x="290" y="185" width="70" height="42" rx="12" fill="#1d4ed8" opacity="0.5"/>
+  <rect x="303" y="199" width="32" height="4" rx="2" fill="white" opacity="0.6"/>
+  <rect x="303" y="208" width="44" height="4" rx="2" fill="white" opacity="0.4"/>
+  <polygon points="310,227 320,227 305,239" fill="#1d4ed8" opacity="0.5"/>
+  <!-- Phone icon -->
+  <rect x="60" y="180" width="42" height="72" rx="8" fill="url(#cc-grad1)" opacity="0.6"/>
+  <rect x="66" y="192" width="30" height="45" rx="4" fill="white" opacity="0.3"/>
+  <circle cx="81" cy="244" r="4" fill="white" opacity="0.4"/>
+  <!-- Connection lines -->
+  <path d="M120,200 C150,200 160,180 200,180" stroke="#0ea5e9" stroke-width="1.5" stroke-dasharray="4,4" fill="none" opacity="0.4"/>
+  <path d="M272,140 C280,160 285,180 290,200" stroke="#1d4ed8" stroke-width="1.5" stroke-dasharray="4,4" fill="none" opacity="0.3"/>
+  <!-- Accent elements -->
+  <rect x="180" y="250" width="40" height="3" rx="1.5" fill="#0ea5e9" opacity="0.3"/>
+  <rect x="310" y="260" width="50" height="3" rx="1.5" fill="#1d4ed8" opacity="0.2"/>
+</svg>

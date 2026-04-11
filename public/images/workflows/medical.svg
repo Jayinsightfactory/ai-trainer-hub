@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <defs>
+    <linearGradient id="md-grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4"/>
+      <stop offset="100%" stop-color="#2563eb"/>
+    </linearGradient>
+    <linearGradient id="md-grad2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#2563eb" stop-opacity="0.08"/>
+    </linearGradient>
+    <linearGradient id="md-grad3" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#2563eb" stop-opacity="0.6"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="400" height="300" rx="16" fill="#ecfeff"/>
+  <rect x="20" y="20" width="360" height="260" rx="12" fill="url(#md-grad2)" opacity="0.5"/>
+  <!-- Decorative circles -->
+  <circle cx="50" cy="55" r="4" fill="#06b6d4" opacity="0.3"/>
+  <circle cx="365" cy="65" r="3" fill="#2563eb" opacity="0.25"/>
+  <circle cx="355" cy="250" r="4.5" fill="#06b6d4" opacity="0.2"/>
+  <circle cx="55" cy="255" r="3" fill="#2563eb" opacity="0.3"/>
+  <circle cx="200" cy="30" r="2.5" fill="#06b6d4" opacity="0.35"/>
+  <circle cx="310" cy="40" r="3" fill="#2563eb" opacity="0.2"/>
+  <!-- Stethoscope -->
+  <path d="M120,85 C120,85 100,110 100,140 C100,165 118,175 135,175 C152,175 165,160 165,145" stroke="url(#md-grad1)" stroke-width="5" stroke-linecap="round" fill="none" opacity="0.85"/>
+  <path d="M170,85 C170,85 190,110 190,140 C190,155 180,165 170,168 C165,170 165,145 165,145" stroke="url(#md-grad1)" stroke-width="5" stroke-linecap="round" fill="none" opacity="0.85"/>
+  <circle cx="165" cy="145" r="8" fill="url(#md-grad1)" opacity="0.9"/>
+  <circle cx="165" cy="145" r="4" fill="white" opacity="0.6"/>
+  <circle cx="120" cy="80" r="6" fill="url(#md-grad1)" opacity="0.8"/>
+  <circle cx="170" cy="80" r="6" fill="url(#md-grad1)" opacity="0.8"/>
+  <!-- Heart with pulse line -->
+  <path d="M250,110 C250,95 265,88 275,98 C285,88 300,95 300,110 C300,130 275,148 275,148 C275,148 250,130 250,110 Z" fill="url(#md-grad1)" opacity="0.7"/>
+  <!-- Pulse line -->
+  <polyline points="230,130 250,130 258,115 268,145 278,105 288,140 298,125 320,125" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.85"/>
+  <!-- Calendar for appointments -->
+  <rect x="60" y="195" width="72" height="65" rx="8" fill="white" opacity="0.9" stroke="#06b6d4" stroke-width="2" stroke-opacity="0.5"/>
+  <rect x="60" y="195" width="72" height="18" rx="8" fill="url(#md-grad1)" opacity="0.7"/>
+  <rect x="60" y="205" width="72" height="8" rx="0" fill="url(#md-grad1)" opacity="0.7"/>
+  <!-- Calendar dots (days) -->
+  <circle cx="76" cy="225" r="3" fill="#06b6d4" opacity="0.4"/>
+  <circle cx="92" cy="225" r="3" fill="#06b6d4" opacity="0.4"/>
+  <circle cx="108" cy="225" r="3" fill="#06b6d4" opacity="0.4"/>
+  <circle cx="120" cy="225" r="3" fill="#06b6d4" opacity="0.3"/>
+  <circle cx="76" cy="240" r="3" fill="#06b6d4" opacity="0.4"/>
+  <circle cx="92" cy="240" r="3" fill="url(#md-grad1)" opacity="0.9"/>
+  <circle cx="108" cy="240" r="3" fill="#06b6d4" opacity="0.4"/>
+  <circle cx="120" cy="240" r="3" fill="#06b6d4" opacity="0.3"/>
+  <circle cx="76" cy="250" r="3" fill="#06b6d4" opacity="0.3"/>
+  <circle cx="92" cy="250" r="3" fill="#06b6d4" opacity="0.3"/>
+  <!-- Chat bubble -->
+  <rect x="260" y="180" width="85" height="52" rx="14" fill="url(#md-grad1)" opacity="0.65"/>
+  <circle cx="282" cy="206" r="5" fill="white" opacity="0.7"/>
+  <circle cx="300" cy="206" r="5" fill="white" opacity="0.7"/>
+  <circle cx="318" cy="206" r="5" fill="white" opacity="0.7"/>
+  <polygon points="275,232 288,232 270,246" fill="url(#md-grad1)" opacity="0.65"/>
+  <!-- Cross/plus medical symbol accent -->
+  <rect x="330" y="70" width="6" height="24" rx="3" fill="url(#md-grad1)" opacity="0.5"/>
+  <rect x="321" y="79" width="24" height="6" rx="3" fill="url(#md-grad1)" opacity="0.5"/>
+  <!-- Accent elements -->
+  <rect x="160" y="260" width="40" height="3" rx="1.5" fill="#06b6d4" opacity="0.3"/>
+  <rect x="280" y="265" width="50" height="3" rx="1.5" fill="#2563eb" opacity="0.2"/>
+</svg>

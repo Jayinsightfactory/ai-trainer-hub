@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 240" fill="none">
+  <defs>
+    <linearGradient id="brainGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#6366f1" stop-opacity="0.8"/>
+    </linearGradient>
+    <linearGradient id="playGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#4f46e5" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="glowBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ede9fe" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#e0e7ff" stop-opacity="0.3"/>
+    </linearGradient>
+    <radialGradient id="sparkleGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#a78bfa" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <!-- Background glow -->
+  <circle cx="150" cy="115" r="85" fill="url(#glowBg)"/>
+  <!-- Brain outline -->
+  <path d="M130 90 C130 75 140 65 150 65 C160 65 170 75 170 90 C180 88 190 95 190 108 C190 118 183 125 175 127 C177 135 172 143 164 145 C160 152 153 155 148 155 C143 155 136 152 132 145 C124 143 119 135 121 127 C113 125 106 118 106 108 C106 95 116 88 130 90 Z" stroke="url(#brainGrad)" stroke-width="2.5" fill="#f5f3ff" opacity="0.8"/>
+  <!-- Brain detail lines -->
+  <path d="M148 70 L148 150" stroke="#a78bfa" stroke-width="1" opacity="0.4"/>
+  <path d="M120 108 Q135 100 148 108 Q161 116 176 108" stroke="#a78bfa" stroke-width="1" opacity="0.4"/>
+  <path d="M125 125 Q137 118 148 125 Q159 132 171 125" stroke="#a78bfa" stroke-width="1" opacity="0.3"/>
+  <!-- Play button -->
+  <circle cx="150" cy="185" r="18" fill="url(#playGrad)" opacity="0.8"/>
+  <path d="M144 176 L160 185 L144 194 Z" fill="white" opacity="0.9"/>
+  <!-- Lightbulb -->
+  <path d="M215 85 C215 75 225 68 232 75 C239 68 249 75 249 85 C249 95 240 100 232 108 C224 100 215 95 215 85 Z" stroke="#a78bfa" stroke-width="1.5" fill="#ede9fe" opacity="0.6"/>
+  <line x1="228" y1="112" x2="236" y2="112" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+  <line x1="229" y1="116" x2="235" y2="116" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+  <!-- Sparkles -->
+  <path d="M85 75 L87 80 L92 82 L87 84 L85 89 L83 84 L78 82 L83 80 Z" fill="#a78bfa" opacity="0.6"/>
+  <path d="M200 55 L201.5 59 L205.5 60.5 L201.5 62 L200 66 L198.5 62 L194.5 60.5 L198.5 59 Z" fill="#818cf8" opacity="0.5"/>
+  <path d="M75 140 L76 143 L79 144 L76 145 L75 148 L74 145 L71 144 L74 143 Z" fill="#c4b5fd" opacity="0.5"/>
+  <path d="M230 145 L231.5 149 L235.5 150.5 L231.5 152 L230 156 L228.5 152 L224.5 150.5 L228.5 149 Z" fill="#a78bfa" opacity="0.4"/>
+  <!-- Glow circles -->
+  <circle cx="100" cy="100" r="12" fill="url(#sparkleGlow)"/>
+  <circle cx="200" cy="140" r="10" fill="url(#sparkleGlow)"/>
+</svg>

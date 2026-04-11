@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#475569"/>
+      <stop offset="100%" stop-color="#27272a"/>
+    </linearGradient>
+    <linearGradient id="factoryGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#64748b"/>
+      <stop offset="100%" stop-color="#334155"/>
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="300" rx="16" fill="#f8fafc"/>
+
+  <!-- Dark background shape -->
+  <rect x="30" y="30" width="340" height="240" rx="20" fill="url(#bgGrad)" opacity="0.06"/>
+
+  <!-- Decorative dots -->
+  <circle cx="50" cy="40" r="3" fill="#475569" opacity="0.2"/>
+  <circle cx="355" cy="50" r="4" fill="#27272a" opacity="0.15"/>
+  <circle cx="45" cy="260" r="3.5" fill="#475569" opacity="0.2"/>
+  <circle cx="360" cy="255" r="3" fill="#27272a" opacity="0.15"/>
+
+  <!-- Factory building -->
+  <rect x="80" y="140" width="120" height="90" rx="6" fill="url(#factoryGrad)" opacity="0.9"/>
+  <!-- Factory roof triangles -->
+  <polygon points="80,140 110,100 140,140" fill="#64748b"/>
+  <polygon points="130,140 160,105 190,140" fill="#475569"/>
+  <!-- Chimney -->
+  <rect x="95" y="85" width="15" height="30" rx="3" fill="#334155"/>
+  <!-- Chimney smoke -->
+  <circle cx="102" cy="72" r="6" fill="#94a3b8" opacity="0.3"/>
+  <circle cx="108" cy="62" r="5" fill="#94a3b8" opacity="0.2"/>
+  <circle cx="104" cy="52" r="4" fill="#94a3b8" opacity="0.1"/>
+  <!-- Factory windows -->
+  <rect x="92" y="155" width="18" height="22" rx="4" fill="#38bdf8" opacity="0.6"/>
+  <rect x="118" y="155" width="18" height="22" rx="4" fill="#38bdf8" opacity="0.5"/>
+  <rect x="144" y="155" width="18" height="22" rx="4" fill="#38bdf8" opacity="0.6"/>
+  <!-- Factory door -->
+  <rect x="115" y="200" width="25" height="30" rx="5" fill="#1e293b"/>
+
+  <!-- Gear/cog (right side) -->
+  <circle cx="280" cy="110" r="28" fill="none" stroke="#475569" stroke-width="4" opacity="0.8"/>
+  <circle cx="280" cy="110" r="18" fill="none" stroke="#475569" stroke-width="3" opacity="0.6"/>
+  <circle cx="280" cy="110" r="6" fill="#475569" opacity="0.7"/>
+  <!-- Gear teeth -->
+  <rect x="275" y="78" width="10" height="12" rx="2" fill="#475569" opacity="0.8"/>
+  <rect x="275" y="134" width="10" height="12" rx="2" fill="#475569" opacity="0.8"/>
+  <rect x="248" y="105" width="12" height="10" rx="2" fill="#475569" opacity="0.8"/>
+  <rect x="300" y="105" width="12" height="10" rx="2" fill="#475569" opacity="0.8"/>
+  <!-- Diagonal teeth -->
+  <rect x="258" y="85" width="10" height="10" rx="2" fill="#475569" opacity="0.7" transform="rotate(45 263 90)"/>
+  <rect x="293" y="85" width="10" height="10" rx="2" fill="#475569" opacity="0.7" transform="rotate(45 298 90)"/>
+  <rect x="258" y="125" width="10" height="10" rx="2" fill="#475569" opacity="0.7" transform="rotate(45 263 130)"/>
+  <rect x="293" y="125" width="10" height="10" rx="2" fill="#475569" opacity="0.7" transform="rotate(45 298 130)"/>
+
+  <!-- Camera lens (vision inspection) -->
+  <circle cx="300" cy="195" r="24" fill="#ffffff" stroke="#475569" stroke-width="3"/>
+  <circle cx="300" cy="195" r="17" fill="none" stroke="#64748b" stroke-width="2"/>
+  <circle cx="300" cy="195" r="10" fill="url(#accentGrad)" opacity="0.7"/>
+  <circle cx="300" cy="195" r="4" fill="#0e7490" opacity="0.9"/>
+  <!-- Lens reflection -->
+  <circle cx="293" cy="188" r="3" fill="#ffffff" opacity="0.6"/>
+
+  <!-- Data chart (bottom right) -->
+  <rect x="250" y="235" width="100" height="50" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+  <!-- Chart bars -->
+  <rect x="262" y="260" width="8" height="18" rx="2" fill="url(#accentGrad)" opacity="0.6"/>
+  <rect x="275" y="252" width="8" height="26" rx="2" fill="url(#accentGrad)" opacity="0.7"/>
+  <rect x="288" y="256" width="8" height="22" rx="2" fill="url(#accentGrad)" opacity="0.8"/>
+  <rect x="301" y="248" width="8" height="30" rx="2" fill="url(#accentGrad)" opacity="0.9"/>
+  <rect x="314" y="244" width="8" height="34" rx="2" fill="url(#accentGrad)"/>
+  <!-- Chart trend line -->
+  <polyline points="266,258 279,250 292,254 305,246 318,242" stroke="#06b6d4" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Accent sparkle -->
+  <path d="M340 80 L343 73 L346 80 L353 83 L346 86 L343 93 L340 86 L333 83 Z" fill="url(#accentGrad)" opacity="0.5"/>
+  <line x1="60" y1="180" x2="75" y2="180" stroke="#475569" stroke-width="1.5" stroke-linecap="round" opacity="0.2"/>
+
+  <!-- Small decorative lines -->
+  <line x1="230" y1="60" x2="250" y2="60" stroke="#475569" stroke-width="1.5" stroke-linecap="round" opacity="0.2"/>
+  <line x1="235" y1="68" x2="245" y2="68" stroke="#475569" stroke-width="1.5" stroke-linecap="round" opacity="0.15"/>
+</svg>

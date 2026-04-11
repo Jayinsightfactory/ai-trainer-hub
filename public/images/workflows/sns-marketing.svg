@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <defs>
+    <linearGradient id="sm-grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ec4899"/>
+      <stop offset="100%" stop-color="#e11d48"/>
+    </linearGradient>
+    <linearGradient id="sm-grad2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ec4899" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#e11d48" stop-opacity="0.08"/>
+    </linearGradient>
+    <linearGradient id="sm-grad3" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ec4899" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#e11d48" stop-opacity="0.6"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="400" height="300" rx="16" fill="#fdf2f8"/>
+  <rect x="20" y="20" width="360" height="260" rx="12" fill="url(#sm-grad2)" opacity="0.5"/>
+  <!-- Decorative circles -->
+  <circle cx="55" cy="50" r="4" fill="#ec4899" opacity="0.3"/>
+  <circle cx="360" cy="60" r="3" fill="#e11d48" opacity="0.25"/>
+  <circle cx="350" cy="255" r="4.5" fill="#ec4899" opacity="0.2"/>
+  <circle cx="50" cy="260" r="3" fill="#e11d48" opacity="0.3"/>
+  <circle cx="280" cy="35" r="2.5" fill="#ec4899" opacity="0.35"/>
+  <circle cx="130" cy="275" r="3" fill="#e11d48" opacity="0.2"/>
+  <!-- Phone screen -->
+  <rect x="100" y="55" width="80" height="145" rx="12" fill="white" opacity="0.95" stroke="#ec4899" stroke-width="2" stroke-opacity="0.5"/>
+  <rect x="106" y="68" width="68" height="118" rx="6" fill="url(#sm-grad2)" opacity="0.8"/>
+  <!-- Phone notch -->
+  <rect x="125" y="58" width="30" height="5" rx="2.5" fill="#ec4899" opacity="0.3"/>
+  <!-- Content on phone screen -->
+  <rect x="112" y="78" width="56" height="40" rx="4" fill="url(#sm-grad1)" opacity="0.4"/>
+  <rect x="112" y="125" width="40" height="4" rx="2" fill="#ec4899" opacity="0.4"/>
+  <rect x="112" y="135" width="52" height="4" rx="2" fill="#ec4899" opacity="0.3"/>
+  <!-- Floating hearts/likes -->
+  <path d="M185,95 C185,89 191,86 194,90 C197,86 203,89 203,95 C203,102 194,108 194,108 C194,108 185,102 185,95 Z" fill="url(#sm-grad1)" opacity="0.8"/>
+  <path d="M192,70 C192,65 197,63 199,66 C201,63 206,65 206,70 C206,76 199,80 199,80 C199,80 192,76 192,70 Z" fill="url(#sm-grad1)" opacity="0.6"/>
+  <path d="M175,55 C175,51 179,49 181,52 C183,49 187,51 187,55 C187,60 181,63 181,63 C181,63 175,60 175,55 Z" fill="url(#sm-grad1)" opacity="0.45"/>
+  <!-- Like/thumbs up icon floating -->
+  <circle cx="198" cy="125" r="10" fill="url(#sm-grad1)" opacity="0.7"/>
+  <path d="M193,127 L196,122 C196,121 198,120 199,121 L199,124 L202,124 C203,124 204,125 203,126 L202,129 C202,130 201,130 200,130 L196,130 C195,130 193,129 193,128 Z" fill="white" opacity="0.85"/>
+  <!-- Chart trending up -->
+  <rect x="245" y="100" width="110" height="80" rx="8" fill="white" opacity="0.9" stroke="#ec4899" stroke-width="1.5" stroke-opacity="0.4"/>
+  <!-- Chart bars -->
+  <rect x="260" y="150" width="12" height="20" rx="3" fill="url(#sm-grad1)" opacity="0.5"/>
+  <rect x="278" y="140" width="12" height="30" rx="3" fill="url(#sm-grad1)" opacity="0.6"/>
+  <rect x="296" y="128" width="12" height="42" rx="3" fill="url(#sm-grad1)" opacity="0.7"/>
+  <rect x="314" y="115" width="12" height="55" rx="3" fill="url(#sm-grad1)" opacity="0.85"/>
+  <rect x="332" y="108" width="12" height="62" rx="3" fill="url(#sm-grad1)" opacity="0.95"/>
+  <!-- Trend line -->
+  <polyline points="266,148 284,138 302,126 320,113 338,106" stroke="#e11d48" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.7"/>
+  <!-- Arrow on trend line -->
+  <polygon points="338,106 342,112 336,112" fill="#e11d48" opacity="0.7" transform="rotate(-25,338,106)"/>
+  <!-- Share icon -->
+  <circle cx="280" cy="220" r="22" fill="url(#sm-grad1)" opacity="0.6"/>
+  <circle cx="274" cy="214" r="4" fill="white" opacity="0.8"/>
+  <circle cx="289" cy="208" r="4" fill="white" opacity="0.8"/>
+  <circle cx="289" cy="228" r="4" fill="white" opacity="0.8"/>
+  <line x1="277" y1="212" x2="286" y2="209" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+  <line x1="277" y1="217" x2="286" y2="226" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+  <!-- Notification badges -->
+  <circle cx="178" cy="150" r="8" fill="#e11d48" opacity="0.85"/>
+  <rect x="175" y="147" width="6" height="6" rx="1" fill="white" opacity="0.9"/>
+  <!-- Stars/sparkles -->
+  <path d="M340,55 L343,62 L350,62 L344,67 L346,74 L340,70 L334,74 L336,67 L330,62 L337,62 Z" fill="url(#sm-grad1)" opacity="0.5"/>
+  <path d="M70,100 L72,105 L77,105 L73,108 L74,113 L70,110 L66,113 L67,108 L63,105 L68,105 Z" fill="url(#sm-grad1)" opacity="0.35"/>
+  <!-- Accent elements -->
+  <rect x="100" y="255" width="45" height="3" rx="1.5" fill="#ec4899" opacity="0.3"/>
+  <rect x="310" y="260" width="50" height="3" rx="1.5" fill="#e11d48" opacity="0.25"/>
+</svg>
