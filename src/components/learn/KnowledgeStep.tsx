@@ -381,6 +381,20 @@ function KnowledgeItemCard({
                 </div>
               </div>
 
+              {/* Description */}
+              {item.description && (
+                <div className="rounded bg-gray-50 p-2">
+                  <p className="text-[10px] text-gray-500">{item.description}</p>
+                </div>
+              )}
+
+              {/* Example */}
+              {item.example && (
+                <div className="rounded bg-gray-50 p-2">
+                  <p className="text-[10px] text-gray-500">예시: {item.example}</p>
+                </div>
+              )}
+
               {/* 입력 UI: 이미지 or 텍스트 */}
               {isImageType ? (
                 <ImageUploader item={item} />
