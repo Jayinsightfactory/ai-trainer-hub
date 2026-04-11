@@ -43,3 +43,4 @@ USER nextjs
 EXPOSE 3000
 
 CMD ["sh", "-c", "[ -n \"$DATABASE_URL\" ] && prisma db push --skip-generate; node server.js"]
+# 재배포 트리거 (Sat Apr 11 11:19:12     2026)
