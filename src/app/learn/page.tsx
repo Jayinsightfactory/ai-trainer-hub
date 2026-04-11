@@ -3,6 +3,7 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import Image from "next/image";
 import { Bot, Lock, LogIn } from "lucide-react";
 import LearnWizard from "@/components/learn/LearnWizard";
 
@@ -11,9 +12,7 @@ function LoginRequired({ templateId }: { templateId: string }) {
   const router = useRouter();
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center">
-      <div className="size-16 rounded-2xl bg-indigo-100 flex items-center justify-center mb-4">
-        <Lock className="size-8 text-indigo-500" />
-      </div>
+      <Image src="/images/empty-states/start-learning.svg" alt="" width={200} height={160} className="mb-4" />
       <h2 className="text-xl font-bold text-gray-900 mb-2">로그인이 필요합니다</h2>
       <p className="text-sm text-gray-500 mb-6 max-w-xs">
         AI 학습을 시작하려면 소셜 계정으로 로그인하세요.
