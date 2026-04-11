@@ -8,9 +8,10 @@ export interface KnowledgeItem {
   effectAfter: string;
   value: string;
   filled: boolean;
-  // 이미지 업로드 지원
-  type?: "text" | "image" | "file";
-  imageUrls?: string[];   // base64 또는 object URL
+  type?: "text" | "image" | "audio" | "file" | "data"; // DataRequirement의 type 반영
+  description?: string; // DataRequirement의 description 반영
+  example?: string;     // DataRequirement의 example 반영
+  imageUrls?: string[];
 }
 
 export interface TestResult {
