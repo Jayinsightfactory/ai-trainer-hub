@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import Image from "next/image";
+import NextImage from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronDown,
@@ -167,7 +167,7 @@ export default function SolutionsPage() {
 
           {filtered.length === 0 && (
             <div className="text-center py-16 text-slate-500">
-              <Image src="/images/empty-states/no-results.svg" alt="" width={180} height={144} className="mx-auto mb-4" />
+              <NextImage src="/images/empty-states/no-results.svg" alt="" width={180} height={144} className="mx-auto mb-4" />
               <p>검색 결과가 없습니다.</p>
             </div>
           )}
