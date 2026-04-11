@@ -1,0 +1,32 @@
+{
+  "fix": {
+    "label": "Bug Fix",
+    "instruction": "Identify root cause, patch minimally, and include a regression guard.",
+    "verify": "Run only targeted checks that validate the fix path."
+  },
+  "feature": {
+    "label": "Feature",
+    "instruction": "Implement the smallest complete vertical slice with no unrelated refactor.",
+    "verify": "Run focused checks and list manual validation steps."
+  },
+  "review": {
+    "label": "Code Review",
+    "instruction": "Prioritize risks, regressions, and missing tests; propose minimal corrective patches.",
+    "verify": "Provide reproducible verification commands for each finding."
+  },
+  "learn": {
+    "label": "Learn Wizard Flow",
+    "instruction": "Preserve the 4-step wizard behavior and Zustand state shape; avoid UI pattern drift from existing learn components.",
+    "verify": "Run targeted checks for step transitions, validation, and mobile/desktop layout consistency."
+  },
+  "auth": {
+    "label": "Auth and Session",
+    "instruction": "Keep NextAuth provider behavior stable, avoid callback regressions, and preserve signin UX continuity.",
+    "verify": "Validate signin flow, callback handling, and session-guarded route behavior."
+  },
+  "catalog": {
+    "label": "Template Catalog",
+    "instruction": "Apply minimal edits that maintain IndustryCard pattern and existing catalog taxonomy conventions.",
+    "verify": "Run TypeScript check focused on catalog integrity and confirm template rendering assumptions."
+  }
+}
