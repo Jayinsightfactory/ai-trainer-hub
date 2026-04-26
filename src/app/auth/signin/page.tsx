@@ -3,6 +3,7 @@
 import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, Suspense } from "react";
+import Link from "next/link";
 import { Bot, Shield, Zap, BarChart3 } from "lucide-react";
 
 /* ── 실제 로그인 폼 ── */
@@ -110,9 +111,9 @@ function SignInForm() {
           <div className="px-6 pb-6 text-center">
             <p className="text-[11px] text-gray-400">
               로그인 시{" "}
-              <span className="underline cursor-pointer text-gray-500">이용약관</span>
+              <Link href="/terms" className="underline text-gray-500 hover:text-indigo-500">이용약관</Link>
               {" "}및{" "}
-              <span className="underline cursor-pointer text-gray-500">개인정보처리방침</span>
+              <Link href="/privacy" className="underline text-gray-500 hover:text-indigo-500">개인정보처리방침</Link>
               에 동의합니다
             </p>
           </div>

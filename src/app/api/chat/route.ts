@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { streamText } from "ai";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 interface ChatContext {
   industry?: string;
@@ -12,6 +14,22 @@ interface ChatContext {
 interface ChatMessage {
   role: "user" | "assistant" | "system";
   content: string;
+}
+
+// ── 인메모리 Rate Limiter (IP당 분당 20회) ──────────────────────
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + 60_000 });
+    return true;
+  }
+  if (entry.count >= 20) return false;
+  entry.count++;
+  return true;
 }
 
 function buildSystemPrompt(context: ChatContext): string {
@@ -53,6 +71,28 @@ function buildSystemPrompt(context: ChatContext): string {
 
 export async function POST(request: NextRequest) {
   try {
+    // ── 인증 가드 ──────────────────────────────────────────────
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return new Response(
+        JSON.stringify({ error: "로그인이 필요합니다." }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // ── Rate Limit ─────────────────────────────────────────────
+    const ip =
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      request.headers.get("x-real-ip") ??
+      "unknown";
+
+    if (!checkRateLimit(ip)) {
+      return new Response(
+        JSON.stringify({ error: "요청이 너무 많습니다. 잠시 후 다시 시도해주세요." }),
+        { status: 429, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     const body = await request.json();
     const { messages, context } = body as {
       messages: ChatMessage[];
@@ -75,15 +115,15 @@ export async function POST(request: NextRequest) {
       apiKey: process.env.ANTHROPIC_API_KEY,
     });
 
+    const model = process.env.AI_MODEL ?? "claude-sonnet-4-6";
     const systemPrompt = buildSystemPrompt(context || {});
 
-    // system 메시지 제거 후 user/assistant만 추출
     const filteredMessages = messages
       .filter((m) => m.role === "user" || m.role === "assistant")
       .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
 
     const result = streamText({
-      model: anthropic("claude-sonnet-4-6"),
+      model: anthropic(model),
       system: systemPrompt,
       messages: filteredMessages,
       maxOutputTokens: 1024,
@@ -100,7 +140,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// API 키 없을 때 사용하는 mock 스트림 (기존 로직 유지)
 function mockStream(messages: ChatMessage[], context: ChatContext) {
   const lastMessage = messages[messages.length - 1];
   const userText = lastMessage?.content?.toLowerCase() || "";

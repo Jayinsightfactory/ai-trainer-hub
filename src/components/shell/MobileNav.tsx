@@ -47,7 +47,7 @@ export default function MobileNav() {
             onClick={() => handleClick(item)}
             className={`
               flex-1 flex flex-col items-center justify-center
-              py-2 gap-0.5 relative
+              py-3 min-h-[56px] gap-0.5 relative
               transition-colors
               ${isActive ? "text-indigo-600" : "text-gray-400"}
             `}

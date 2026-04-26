@@ -1,4 +1,6 @@
 import { NextRequest } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import type { AgentType, AgentStatus } from "@/types";
 
 // ─── Types ────────────────────────────────────────────────
@@ -140,6 +142,14 @@ function simulateAgentRun(runId: string, industry: string) {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return new Response(
+        JSON.stringify({ error: "로그인이 필요합니다." }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     const body = await request.json();
     const { industry, businessName } = body as {
       industry: string;
@@ -216,6 +226,14 @@ export async function POST(request: NextRequest) {
 // ─── GET: Get Agent Run Status ────────────────────────────
 
 export async function GET(request: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return new Response(
+      JSON.stringify({ error: "로그인이 필요합니다." }),
+      { status: 401, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
   const { searchParams } = new URL(request.url);
   const runId = searchParams.get("runId");
 
