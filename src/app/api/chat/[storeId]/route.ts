@@ -259,9 +259,17 @@ function buildSystemPrompt(
     restaurant: "음식점",
     retail: "소매점",
     beauty: "미용/뷰티",
-    fitness: "피트니스",
+    fitness: "피트니스/헬스",
+    pilates: "필라테스",
+    study_cafe: "스터디카페",
+    nail: "네일샵",
     education: "교육/학원",
+    academy: "학원/교육",
     medical: "의료/병원",
+    pet: "반려동물 케어",
+    realestate: "부동산",
+    shopping: "쇼핑몰/이커머스",
+    car_repair: "자동차 정비",
     general: "일반 매장",
   };
 

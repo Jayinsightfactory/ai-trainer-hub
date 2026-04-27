@@ -6,12 +6,21 @@ export type OnboardingStep = 0 | 1 | 2 | 3;
 
 export const INDUSTRIES = {
   cafe: "카페/음식점",
-  shopping: "쇼핑몰",
+  restaurant: "음식점",
+  fitness: "피트니스/헬스",
+  pilates: "필라테스",
+  study_cafe: "스터디카페",
+  beauty: "미용/뷰티",
+  nail: "네일샵",
+  academy: "학원/교육",
+  medical: "의료/병원",
+  pet: "반려동물 케어",
   realestate: "부동산",
+  shopping: "쇼핑몰/이커머스",
+  car_repair: "자동차 정비",
   education: "교육",
   marketing: "마케팅",
   legal: "법률",
-  medical: "의료",
 } as const;
 
 export type Industry = keyof typeof INDUSTRIES;

@@ -28,6 +28,11 @@ const CATEGORY_LABELS: Record<string, string> = {
   beauty: "미용실",
   nail: "네일샵",
   academy: "학원",
+  medical: "병원/의원",
+  pet: "반려동물 케어",
+  realestate: "부동산",
+  shopping: "쇼핑몰",
+  car_repair: "자동차 정비",
 };
 
 const STATUS_CONFIG: Record<
