@@ -266,6 +266,30 @@ model TokenPurchase {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+// ─── 출장 설치 서비스 예약 ──────────────────────────────────────
+
+model InstallRequest {
+  id          String @id @default(cuid())
+  userId      String?          // 로그인한 경우
+  name        String           // 신청자 이름
+  phone       String           // 연락처
+  email       String           // 이메일
+  businessName String          // 업체명
+  businessType String          // 업종
+  address     String           // 방문 주소
+  region      String           // 지역: seoul | gyeonggi | other
+  packageId   String           // basic_install | standard | expert
+  preferDate  String           // 희망 방문일
+  preferTime  String           // 희망 시간대
+  memo        String @default("") // 추가 요청사항
+  status      String @default("pending") // pending | confirmed | completed | cancelled
+  adminNote   String @default("") // 관리자 메모
+  totalAmount Int    @default(0)  // 최종 견적 (KRW)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 // ─── 구독/결제 ──────────────────────────────────────────────
 
 model Subscription {

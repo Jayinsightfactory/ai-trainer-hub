@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { Bot, Lock, LogIn } from "lucide-react";
 import LearnWizard from "@/components/learn/LearnWizard";
+import { PricingNotice } from "@/components/pricing-notice";
 
 /* ── 로그인 유도 화면 ── */
 function LoginRequired({ templateId }: { templateId: string }) {
@@ -59,7 +60,14 @@ function LearnContent() {
   }
 
   // 로그인 → 위저드 표시
-  return <LearnWizard templateId={templateId} />;
+  return (
+    <div>
+      <div className="max-w-4xl mx-auto px-4 pt-6">
+        <PricingNotice variant="banner" showInstallCta />
+      </div>
+      <LearnWizard templateId={templateId} />
+    </div>
+  );
 }
 
 export default function LearnPage() {

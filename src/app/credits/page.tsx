@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CREDIT_PACKAGES, MODEL_PRICING } from "@/lib/token-broker";
+import { PricingNotice } from "@/components/pricing-notice";
 
 interface BalanceData {
   balance: number;
@@ -158,12 +159,15 @@ export default function CreditsPage() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
         {/* 헤더 */}
-        <div className="mb-8">
+        <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">토큰 크레딧</h1>
           <p className="text-sm text-gray-500 mt-1">
             직접 API 키 없이 크레딧으로 AI 기능을 바로 사용하세요
           </p>
         </div>
+
+        {/* 요금 명시 배너 */}
+        <PricingNotice variant="banner" showInstallCta className="mb-6" />
 
         {/* 잔액 카드 */}
         <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl p-6 text-white mb-8 shadow-lg">
