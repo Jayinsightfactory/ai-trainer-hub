@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+export const dynamic = "force-dynamic";
+
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CREDIT_PACKAGES, MODEL_PRICING } from "@/lib/token-broker";
@@ -37,7 +39,7 @@ const FEATURE_LABELS: Record<string, string> = {
   rag: "RAG 검색",
 };
 
-export default function CreditsPage() {
+function CreditsContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -367,5 +369,17 @@ export default function CreditsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CreditsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <CreditsContent />
+    </Suspense>
   );
 }
