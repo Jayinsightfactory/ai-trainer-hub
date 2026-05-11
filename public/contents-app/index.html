@@ -438,6 +438,12 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:22px 0}
   <div class="section-title"><div class="dot"></div> 1페이지(커버) 임팩트 4유형<span class="count">📝 펼치면 영문 프롬프트 / 📋 복사 가능</span></div>
   <div class="tt-matrix" id="coverPatterns"></div>
 
+  <div class="section-title"><div class="dot"></div> 🌱 다음 콘텐츠 시드 20개<span class="count">자고 일어났을 때 골라 쓰는 풀 · 클릭 → 상세 보기</span></div>
+  <div id="seedsPanel" style="background:linear-gradient(180deg,#0A1F2E,#0E2A24);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:20px;color:#F5F5F5;position:relative;overflow:hidden">
+    <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.04) 0px,rgba(255,255,255,.04) 1px,transparent 1px,transparent 8px);pointer-events:none"></div>
+    <div id="seedsGrid" style="position:relative;display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px"></div>
+  </div>
+
   <div class="section-title"><div class="dot"></div> 🎨 1페이지 커버 카피 작업장<span class="count">패키지 선택 → 자동 프롬프트</span></div>
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:20px">
     <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
@@ -1025,6 +1031,30 @@ let copyState={
   customL1:'',customL2:'',customAccent:'',customAccentColor:'',customHook:'',
   edited:false,
 };
+
+// ═══ 다음 콘텐츠 시드 20개 (자고 일어났을 때 골라쓰는 풀) ═══
+const CONTENT_SEEDS=[
+  {n:1, kw:'Claude vs ChatGPT 활용 가이드', claim:'2026년 직장인은 Claude가 더 적합', tone:'경험담', hook:'Day 7에 결국 결제 끊음', tier:'⭐⭐⭐⭐⭐ 현재 진행 중'},
+  {n:2, kw:'AI 자동화로 야근 끊기', claim:'반복 업무 70%는 프롬프트 5개로 끝남', tone:'직장인 페인', hook:'9시 퇴근 7일 만에 적응', tier:'⭐⭐⭐⭐⭐'},
+  {n:3, kw:'PDF·엑셀 5초 분석 프롬프트 10개', claim:'복잡한 분석도 한 줄 명령으로 끝', tone:'실용 가이드', hook:'10번째가 진짜', tier:'⭐⭐⭐⭐⭐'},
+  {n:4, kw:'회의록 1페이지 요약 자동화', claim:'2시간 회의 → 30초 요약', tone:'결과 강조', hook:'팀장이 "이거 누가 적었어?"', tier:'⭐⭐⭐⭐'},
+  {n:5, kw:'코드 디버깅 단축 명령', claim:'Stack Overflow보다 빠른 답', tone:'개발자 타깃', hook:'3번 시도 안 해도 됨', tier:'⭐⭐⭐⭐'},
+  {n:6, kw:'기획서 초안 5분 만에', claim:'템플릿 3개만 알면 끝', tone:'노하우', hook:'5분째에 깜짝 놀람', tier:'⭐⭐⭐⭐⭐'},
+  {n:7, kw:'AI 자소서 면접관도 못 잡는 패턴', claim:'AI 티 나는 7가지 회피법', tone:'취준 페인', hook:'마지막 1개가 핵심', tier:'⭐⭐⭐⭐ 취준생 타깃'},
+  {n:8, kw:'AI 부수익 월 50만원 만든 루틴', claim:'하루 1시간, 30일이면 도달', tone:'성공담', hook:'24일째 본 화면', tier:'⭐⭐⭐⭐⭐ 클릭률 끌어줌'},
+  {n:9, kw:'GPT 결제 끊고 무료 조합으로 살기', claim:'한 달 $20 → 0원, 효율 유지', tone:'경험담', hook:'무료 4개 조합', tier:'⭐⭐⭐⭐'},
+  {n:10,kw:'AI로 영어 회의 통역', claim:'실시간 자막 + 회의록까지', tone:'스킬 가이드', hook:'외국 임원이 와도 OK', tier:'⭐⭐⭐⭐'},
+  {n:11,kw:'30대 직장인 AI 학습 로드맵', claim:'3개월에 사내 AI 전문가', tone:'커리어', hook:'3개월째에 승진 면담', tier:'⭐⭐⭐⭐'},
+  {n:12,kw:'노션·슬랙에 AI 붙이는 법', claim:'설치 0초, 효율 2배', tone:'툴 가이드', hook:'설치 후 30분 만에', tier:'⭐⭐⭐'},
+  {n:13,kw:'데이터 분석 AI에 시키는 법', claim:'Excel 함수 몰라도 분석 가능', tone:'문턱 낮춤', hook:'팀장이 "어떻게 알았어?"', tier:'⭐⭐⭐⭐⭐'},
+  {n:14,kw:'AI 이미지 무료 5개 비교', claim:'유료 미드저니 안 사도 됨', tone:'가성비', hook:'5번째가 유료 수준', tier:'⭐⭐⭐'},
+  {n:15,kw:'사장님이 모르는 AI 활용 7가지', claim:'몰래 쓰면 칭찬 받는 7가지', tone:'시크릿', hook:'7번째는 회사에 알리지 말 것', tier:'⭐⭐⭐⭐⭐ 시크릿 톤'},
+  {n:16,kw:'보고서·기획서 글쓰기 AI 톤 잡기', claim:'AI 티 없애는 4단계 프롬프트', tone:'노하우', hook:'4단계가 진짜 노하우', tier:'⭐⭐⭐⭐'},
+  {n:17,kw:'AI 음성 회의록 자동 정리', claim:'녹음만 하면 끝, 정리 0초', tone:'시간 절약', hook:'다음 회의부터 손 안 댐', tier:'⭐⭐⭐⭐'},
+  {n:18,kw:'신입사원 첫 한 달 AI로 살아남기', claim:'경력 3년처럼 보이는 비밀', tone:'신입 페인', hook:'30일째 사수가 한 말', tier:'⭐⭐⭐⭐⭐ 신입 타깃'},
+  {n:19,kw:'AI 엑셀 함수 없이 분석', claim:'VLOOKUP 몰라도 분석 끝', tone:'문턱 낮춤', hook:'엑셀 못해도 됨 (진짜)', tier:'⭐⭐⭐⭐'},
+  {n:20,kw:'ChatGPT 5 vs 무료 대안 비교', claim:'유료 결제 전 꼭 봐야 할 비교', tone:'결정 도움', hook:'유료보다 나은 무료가 있음', tier:'⭐⭐⭐⭐'},
+];
 function effMain(){
   if(copyState.edited&&copyState.customL1){
     return {l1:copyState.customL1,l2:copyState.customL2,accent:copyState.customAccent,accentColor:copyState.customAccentColor||'#FF8A3D'};
@@ -1260,20 +1290,26 @@ function buildBodyPrompt(idx){
   return `Vertical 9:16 Instagram body page.
 
 [STYLE]
-Clean minimal editorial poster aesthetic, soft off-white background (#FAFAFA),
-very subtle paper texture, magazine editorial layout with strong typographic
-hierarchy. NO photos, NO people, NO human figures — just bold Korean
-typography on a light background.
+Premium editorial poster aesthetic on a DEEP NAVY ↔ DARK GREEN background.
+The base color is a smooth gradient from deep navy (#0A1F2E) on the upper area
+to dark forest green (#0E2A24) on the lower area — never busy, never loud.
+On top of this base, lay a very subtle, faint geometric pattern overlay
+(thin diagonal lines OR tiny dot grid OR soft topographic contours) at
+~6-10% opacity, so it reads as ambient texture, not foreground decoration.
+Soft film grain. Add a faint dark vignette on the outer edges.
+NO photos, NO people, NO human figures, NO illustrations — just bold Korean
+typography on this rich dark background.
 
 [TEXT — render this Korean text directly into the image, sharp and clean,
 do not stylize as graffiti or handwriting. Maintain clear visual hierarchy:
 headline largest, subheadline medium, body text smallest. All text is
-left-aligned with consistent generous left margin.]
+left-aligned with consistent generous left margin. All text is light-colored
+to stand out against the dark navy/green background.]
 
 ═══ BLOCK 1 — HEADLINE (upper third of frame) ═══
 Very large extra-bold Korean headline in ${headlineLines.length} line${headlineLines.length>1?'s':''},
-thick sans-serif typography (similar to Pretendard Black), color #111111,
-tight line spacing:
+thick sans-serif typography (similar to Pretendard Black), color near-white
+#F5F5F5, tight line spacing:
 ${headlineLines.map((l,i)=>`Line ${i+1}:  ${l}`).join('\n')}
 
 ${accent?`The word "${accent}" in the headline must be highlighted with a
@@ -1283,13 +1319,13 @@ Only this one word gets the color box.`:''}
 
 ═══ BLOCK 2 — SUBHEADLINE (just below headline) ═══
 One line of medium-weight Korean text, smaller than the headline, color
-#555555, italic optional:
+soft warm gray #C7CED8, italic optional:
 "${b.sub||''}"
 
 ═══ BLOCK 3 — INSIGHT BODY TEXT (middle-lower area) ═══
 ${bodyLines.length} lines of regular-weight Korean body text, noticeably
-smaller than the subheadline, color #333333, comfortable line spacing,
-left-aligned:
+smaller than the subheadline, color soft light gray #D8DCE2, comfortable
+line spacing, left-aligned:
 ${bodyLines.map((l,i)=>`L${i+1}:  ${l}`).join('\n')}
 
 This block delivers the actual insight and information. Each line should
@@ -1297,7 +1333,7 @@ read clearly and not be cut off. Lines stay left-aligned, evenly spaced,
 with relaxed reading rhythm.
 
 ═══ BLOCK 4 — HANDLE (bottom-right corner, very small) ═══
-Tiny gray text (#888888):
+Tiny muted gray text (#7A8493):
 "${copyState.handle}"
 
 ═══ LAYOUT RULES ═══
@@ -1338,10 +1374,11 @@ function renderBodyWorkbench(){
         <div style="font-size:11px;color:var(--accent4);font-weight:700">${b.p}</div>
         <button class="btn" style="font-size:10px;padding:3px 8px" onclick="copyBodyPrompt(${i})">📋 프롬프트</button>
       </div>
-      <div style="background:#FAFAFA;color:#111;padding:10px;border-radius:6px;font-size:11px;line-height:1.4;margin-bottom:8px;min-height:60px">
-        <div style="font-weight:800;font-size:12px;line-height:1.3">${previewLines}</div>
-        <div style="font-size:9px;color:#666;margin-top:5px;font-weight:500;font-style:italic">${b.sub||''}</div>
-        ${b.body?`<div style="font-size:8px;color:#444;margin-top:6px;line-height:1.55;white-space:pre-line">${b.body}</div>`:''}
+      <div style="background:linear-gradient(180deg,#0A1F2E,#0E2A24);color:#F5F5F5;padding:10px;border-radius:6px;font-size:11px;line-height:1.4;margin-bottom:8px;min-height:60px;position:relative;overflow:hidden">
+        <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.04) 0px,rgba(255,255,255,.04) 1px,transparent 1px,transparent 8px);pointer-events:none"></div>
+        <div style="position:relative;font-weight:800;font-size:12px;line-height:1.3">${previewLines}</div>
+        <div style="position:relative;font-size:9px;color:#C7CED8;margin-top:5px;font-weight:500;font-style:italic">${b.sub||''}</div>
+        ${b.body?`<div style="position:relative;font-size:8px;color:#D8DCE2;margin-top:6px;line-height:1.55;white-space:pre-line">${b.body}</div>`:''}
       </div>
       <div style="font-size:10px;color:var(--muted);margin-bottom:3px">메인 (Enter로 줄바꿈)</div>
       <textarea oninput="BODY[${i}].h=this.value;renderBodyWorkbench();updateFullResultLater()" style="width:100%;background:#06060c;border:1px solid var(--border);color:var(--text);padding:7px 9px;border-radius:5px;font-size:13px;font-weight:700;resize:vertical;min-height:48px;line-height:1.4;font-family:inherit">${b.h}</textarea>
@@ -1789,7 +1826,30 @@ function exportAll(){
 // ════════════ 초기화 ════════════════════════════════════════════
 renderSeeds();renderSuggest();renderScores();renderVideos();renderComments();
 renderLongtail();renderPhases();renderThesis();renderAuto();renderSheets();
-syncCustomFromSelection();renderCoverPatterns();renderCopyWorkbench();renderBodyWorkbench();renderFullResult();
+function renderSeedsPanel(){
+  const el=document.getElementById('seedsGrid');if(!el)return;
+  el.innerHTML=CONTENT_SEEDS.map(s=>`
+    <div onclick="useSeed(${s.n})" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 12px;cursor:pointer;transition:all .15s;line-height:1.4" onmouseover="this.style.borderColor='#FF8A3D'" onmouseout="this.style.borderColor='rgba(255,255,255,.1)'">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:#7A8493;margin-bottom:4px">
+        <span>#${String(s.n).padStart(2,'0')}</span><span>${s.tier}</span>
+      </div>
+      <div style="font-size:13px;font-weight:700;color:#F5F5F5;margin-bottom:4px">${s.kw}</div>
+      <div style="font-size:11px;color:#C7CED8;margin-bottom:6px">💬 ${s.claim}</div>
+      <div style="font-size:10px;color:#FFD93D;font-style:italic">↳ ${s.hook}</div>
+      <div style="font-size:9px;color:#7A8493;margin-top:6px">톤: ${s.tone}</div>
+    </div>`).join('');
+}
+function useSeed(n){
+  const s=CONTENT_SEEDS.find(x=>x.n===n);if(!s)return;
+  appendLog('🌱 시드 #'+n+' 선택: '+s.kw,'warn');
+  // 후크 영역에 자동 채우기 → 사용자가 직접 패키지 선택해서 작업 시작
+  copyState.edited=true;
+  copyState.customHook=s.hook;
+  if(typeof renderCopyWorkbench==='function')renderCopyWorkbench();
+  alert('시드 #'+n+' "'+s.kw+'" 선택됨.\n\n후크 입력란이 자동 채워졌습니다.\n메인 카피는 패키지 카드 중 골라서 톤 매칭 시작하세요.\n\n추천 톤: '+s.tone);
+  document.getElementById('copyWorkbench')?.scrollIntoView({block:'start'});
+}
+syncCustomFromSelection();renderCoverPatterns();renderCopyWorkbench();renderBodyWorkbench();renderFullResult();renderSeedsPanel();
 document.getElementById('progressFill').style.width='14%';
 appendLog('[시작] AI 키워드 → 콘텐츠 자동화 파이프라인 v4 초기화','dim');
 appendLog('✓ 5 STEP 방법론 + v3 데이터 통합 완료','');
