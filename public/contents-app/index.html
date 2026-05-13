@@ -145,6 +145,24 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:22px 0}
 .video-meta{display:flex;gap:9px;font-size:11px;color:var(--muted);flex-wrap:wrap}
 .video-keyword{display:inline-block;margin-top:6px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:2px 8px;border-radius:10px;font-size:10px}
 
+/* STEP 4 서브탭 (카드뉴스 작업장) */
+.sub-tabs{display:flex;gap:0;margin:18px 0 18px;border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:thin;position:sticky;top:0;background:rgba(10,10,15,.95);backdrop-filter:blur(8px);z-index:50;padding-top:4px}
+.sub-tab{padding:12px 18px;background:transparent;border:none;border-bottom:3px solid transparent;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s;display:flex;align-items:center;gap:6px;font-family:inherit}
+.sub-tab:hover{color:var(--text)}
+.sub-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.sub-tab .sub-count{background:var(--surface2);color:var(--muted);font-size:10px;padding:1px 7px;border-radius:9px;margin-left:2px}
+.sub-tab.active .sub-count{background:var(--accent);color:#fff}
+.sub-panel{display:none;animation:fadeIn .2s ease}
+.sub-panel.active{display:block}
+
+/* 본문 카드 점프 펄스 (검증 이슈 클릭 시 강조) */
+@keyframes pulseHi{
+  0%{box-shadow:0 0 0 0 rgba(255,138,61,.7);transform:translateY(0)}
+  30%{box-shadow:0 0 0 8px rgba(255,138,61,.2);transform:translateY(-2px)}
+  100%{box-shadow:0 0 0 0 rgba(255,138,61,0);transform:translateY(0)}
+}
+.body-pulse{animation:pulseHi 1.6s ease 2}
+
 /* Phase 진행도 (인사이트 5단계) */
 .phase-track{display:grid;grid-template-columns:repeat(5,1fr);gap:0;margin:14px 0 26px;border:1px solid var(--border);border-radius:12px;overflow:hidden}
 .phase-cell{padding:14px 12px;background:var(--surface);position:relative;border-right:1px solid var(--border);text-align:center;cursor:pointer;transition:all .2s}
@@ -273,10 +291,13 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:22px 0}
   <div class="stage-tab done active" onclick="goStage(0)"><div class="stage-num">1</div>트렌드 수집</div>
   <div class="stage-tab done" onclick="goStage(1)"><div class="stage-num">2</div>인사이트 도출</div>
   <div class="stage-tab done" onclick="goStage(2)"><div class="stage-num">3</div>주제·주장 분리</div>
-  <div class="stage-tab done" onclick="goStage(3)"><div class="stage-num">4</div>카드뉴스 (4:5+9:16)</div>
-  <div class="stage-tab done" onclick="goStage(4)"><div class="stage-num">5</div>3관문 모니터링</div>
-  <div class="stage-tab done" onclick="goStage(5)"><div class="stage-num">⚙</div>자동화 매트릭스</div>
-  <div class="stage-tab done" onclick="goStage(6)"><div class="stage-num">📊</div>시트 뷰</div>
+  <div class="stage-tab done" onclick="goStage(3)" style="border-color:var(--accent);background:rgba(108,99,255,.08)"><div class="stage-num" style="background:var(--accent);color:#fff">4</div>카드뉴스 ★</div>
+  <div style="display:flex;align-items:center;gap:4px;margin-left:14px;padding-left:14px;border-left:1px dashed var(--border);opacity:.55">
+    <span style="font-size:10px;color:var(--muted);margin-right:4px">보조</span>
+    <div class="stage-tab done" onclick="goStage(4)" title="3관문 모니터링 (운영 단계)" style="font-size:11px;padding:6px 11px"><div class="stage-num" style="width:16px;height:16px;font-size:10px">5</div>모니터링</div>
+    <div class="stage-tab done" onclick="goStage(5)" title="자동화 매트릭스" style="font-size:11px;padding:6px 11px"><div class="stage-num" style="width:16px;height:16px;font-size:10px">⚙</div>자동화</div>
+    <div class="stage-tab done" onclick="goStage(6)" title="시트 뷰" style="font-size:11px;padding:6px 11px"><div class="stage-num" style="width:16px;height:16px;font-size:10px">📊</div>시트</div>
+  </div>
 </div>
 
 <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
@@ -403,119 +424,120 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:22px 0}
 
 <!-- ═══════ STEP 4 — 카드뉴스 (4:5 + 9:16 병행) ═══════ -->
 <div class="section" id="stage3">
-  <div class="flow">
-    <span class="flow-step">주제·주장</span><span class="flow-arrow">→</span>
-    <span class="flow-step done">1페이지 커버 3패턴</span><span class="flow-arrow">→</span>
-    <span class="flow-step done">본문 텍스트 페이지</span><span class="flow-arrow">→</span>
-    <span class="flow-step">4:5 / 9:16 동시 출력</span>
+  <!-- 서브탭 네비 -->
+  <div class="sub-tabs">
+    <button class="sub-tab active" data-sub="seeds" onclick="goSubTab('seeds')">🌱 시드 <span class="sub-count" id="subCountSeeds">20</span></button>
+    <button class="sub-tab" data-sub="cover" onclick="goSubTab('cover')">🎨 커버 카피</button>
+    <button class="sub-tab" data-sub="body" onclick="goSubTab('body')">📄 본문 <span class="sub-count" id="subCountBody">6</span></button>
+    <button class="sub-tab" data-sub="validate" onclick="goSubTab('validate')">🔍 검증 <span class="sub-count" id="subCountIssues" style="display:none">0</span></button>
+    <button class="sub-tab" data-sub="output" onclick="goSubTab('output')">📦 출력</button>
   </div>
 
-  <div class="subtitle">
-    캔버스: <code>1080×1920 (9:16)</code> 한 번 작업 → 가운데 <code>Y 285~1635 (4:5 세이프존)</code>으로 피드용 자동 크롭 <br>
-    1페이지 = 이미지 + 어두운 필터 + 큰 텍스트 + 강렬한 색 · 2페이지~ = 깔끔한 배경 + 텍스트 중심
-  </div>
-
-  <div class="section-title"><div class="dot"></div> 캔버스 규격<span class="count">한 번 디자인, 두 비율 출력</span></div>
-  <div class="cn-canvas-row">
-    <div class="cn-canvas">
-      <div class="cn-mark top">상단 285px<br>(스토리 전용)</div>
-      <div class="cn-safe"></div>
-      <div class="cn-mark bot">하단 285px<br>(스토리 전용)</div>
-    </div>
-    <div class="cn-spec">
-      <table>
-        <tr><td>전체 캔버스</td><td>1080 × 1920 (9:16)</td></tr>
-        <tr><td>4:5 세이프존</td><td>Y 285 ~ 1635 (1080×1350)</td></tr>
-        <tr><td>상단 여백</td><td>0~285 · 잘려도 OK 영역</td></tr>
-        <tr><td>하단 여백</td><td>1635~1920 · 스토리 CTA</td></tr>
-        <tr><td>피드 출력</td><td>가운데 1080×1350 크롭</td></tr>
-        <tr><td>스토리/릴스</td><td>1080×1920 그대로</td></tr>
-        <tr><td>핵심 텍스트</td><td>반드시 4:5 세이프존 안에</td></tr>
-      </table>
+  <!-- 🌱 시드 패널 -->
+  <div class="sub-panel active" id="subSeeds">
+    <div class="section-title"><div class="dot"></div> 🌱 다음 콘텐츠 시드 20개<span class="count">카드 클릭 → 후크 자동 채움 → [🎨 커버 카피] 탭으로 이동</span></div>
+    <div id="seedsPanel" style="background:linear-gradient(180deg,#0A1F2E,#0E2A24);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:20px;color:#F5F5F5;position:relative;overflow:hidden">
+      <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.04) 0px,rgba(255,255,255,.04) 1px,transparent 1px,transparent 8px);pointer-events:none"></div>
+      <div id="seedsGrid" style="position:relative;display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px"></div>
     </div>
   </div>
 
-  <div class="section-title"><div class="dot"></div> 1페이지(커버) 임팩트 4유형<span class="count">📝 펼치면 영문 프롬프트 / 📋 복사 가능</span></div>
-  <div class="tt-matrix" id="coverPatterns"></div>
-
-  <div class="section-title"><div class="dot"></div> 🌱 다음 콘텐츠 시드 20개<span class="count">자고 일어났을 때 골라 쓰는 풀 · 클릭 → 상세 보기</span></div>
-  <div id="seedsPanel" style="background:linear-gradient(180deg,#0A1F2E,#0E2A24);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:20px;color:#F5F5F5;position:relative;overflow:hidden">
-    <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.04) 0px,rgba(255,255,255,.04) 1px,transparent 1px,transparent 8px);pointer-events:none"></div>
-    <div id="seedsGrid" style="position:relative;display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px"></div>
-  </div>
-
-  <div class="section-title"><div class="dot"></div> 🎨 1페이지 커버 카피 작업장<span class="count">패키지 선택 → 자동 프롬프트</span></div>
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:20px">
-    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
-      <div style="font-size:12px;color:var(--muted)">모드:</div>
-      <label style="font-size:12px;cursor:pointer"><input type="radio" name="copyMode" value="package" checked onchange="renderCopyWorkbench()"> 📦 패키지 (3문장 한 번에)</label>
-      <label style="font-size:12px;cursor:pointer"><input type="radio" name="copyMode" value="manual" onchange="renderCopyWorkbench()"> ✍️ 직접 조합 (메인 + 후크 따로)</label>
+  <!-- 🎨 커버 카피 -->
+  <div class="sub-panel" id="subCover">
+    <div class="flow">
+      <span class="flow-step">시드</span><span class="flow-arrow">→</span>
+      <span class="flow-step done">패키지 카피</span><span class="flow-arrow">→</span>
+      <span class="flow-step done">직접 수정</span><span class="flow-arrow">→</span>
+      <span class="flow-step">Gemini 프롬프트</span>
     </div>
-    <div id="copyWorkbench"></div>
-    <hr style="border:none;border-top:1px solid var(--border);margin:14px 0">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <div style="font-size:12px;color:var(--accent2);font-weight:700">🪄 생성된 Gemini 프롬프트 (복사 → 붙여넣기)</div>
-      <div>
-        <button class="btn" style="font-size:11px;padding:5px 10px" onclick="copyToClipboard('coverPromptOut','커버 프롬프트')">📋 복사</button>
-        <button class="btn" style="font-size:11px;padding:5px 10px" onclick="downloadCoverPrompt()">📥 .txt</button>
+    <div class="subtitle">
+      캔버스: <code>1080×1920 (9:16)</code> · 4:5 세이프존 <code>Y 285~1635</code> · 1페이지 = 이미지+큰 텍스트+강렬한 색
+    </div>
+
+    <div class="section-title"><div class="dot"></div> 캔버스 규격</div>
+    <div class="cn-canvas-row">
+      <div class="cn-canvas">
+        <div class="cn-mark top">상단 285px<br>(스토리 전용)</div>
+        <div class="cn-safe"></div>
+        <div class="cn-mark bot">하단 285px<br>(스토리 전용)</div>
+      </div>
+      <div class="cn-spec">
+        <table>
+          <tr><td>전체 캔버스</td><td>1080 × 1920 (9:16)</td></tr>
+          <tr><td>4:5 세이프존</td><td>Y 285 ~ 1635 (1080×1350)</td></tr>
+          <tr><td>피드 출력</td><td>가운데 1080×1350 크롭</td></tr>
+          <tr><td>스토리/릴스</td><td>1080×1920 그대로</td></tr>
+          <tr><td>핵심 텍스트</td><td>반드시 4:5 세이프존 안에</td></tr>
+        </table>
       </div>
     </div>
-    <textarea id="coverPromptOut" readonly style="width:100%;background:#06060c;color:var(--accent2);border:1px solid var(--border);border-radius:6px;padding:12px;font-family:'SF Mono',monospace;font-size:11px;resize:vertical;min-height:280px;line-height:1.55;white-space:pre-wrap"></textarea>
-  </div>
 
-  <div class="section-title"><div class="dot"></div> 📄 본문 P2~P8 작업장<span class="count">각 페이지 직접 수정 가능 · 본문은 Figma만으로</span></div>
-  <div id="bodyWorkbench" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:10px;margin-bottom:16px"></div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;align-items:center">
-    <button class="btn" onclick="resetBodyToDefault()">↺ 본문 기본값 복원</button>
-    <button class="btn primary" onclick="copyAllPagePrompts()">📋 전체 8페이지 프롬프트 복사</button>
-    <button class="btn" onclick="downloadAllPagePrompts()">📥 전체 .txt 다운로드</button>
-    <span style="font-size:11px;color:var(--muted);margin-left:auto">각 카드의 [📋 프롬프트] → Gemini 8회 투입 → 8개 PNG 받기</span>
-  </div>
+    <div class="section-title"><div class="dot"></div> 1페이지 커버 임팩트 4유형<span class="count">📝 펼치면 영문 프롬프트</span></div>
+    <div class="tt-matrix" id="coverPatterns"></div>
 
-  <div class="section-title"><div class="dot"></div> 🔍 전체 흐름 검증<span class="count">한국 톱 계정 10대 패턴 기준 (Claude API)</span></div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
-    <button class="btn primary" style="font-size:13px;padding:9px 18px" onclick="runValidate()">🔍 검증 실행</button>
-    <button class="btn" onclick="document.getElementById('validateBox').innerHTML=''">↺ 결과 지우기</button>
-    <span style="font-size:11px;color:var(--muted);margin-left:auto">약속-보상 / 후크해결 / 타깃 / 톤 / 한국 문화 적합성 등 10항목 자동 진단</span>
-  </div>
-  <div id="validateBox" style="margin-bottom:24px"></div>
-
-  <div class="section-title"><div class="dot"></div> 📦 전체 작업 결과 (선택한 주장 기준 · P1~P8 통합)<span class="count" id="fullResultStatus">주장 카드를 먼저 선택하세요</span></div>
-  <div id="fullResultBox" style="background:#06060c;border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:20px;font-size:12px;line-height:1.7;color:var(--muted);min-height:80px">
-    💡 STEP 3 (주제·주장 분리)에서 주장 카드를 클릭해 ⭐ 선택하면, 여기에 P1 커버 4안 + 본문 P2~P8 + 모든 영문 프롬프트가 자동 통합돼서 보입니다.
-  </div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
-    <button class="btn" onclick="copyFullResult('all')">📋 전체 결과 복사</button>
-    <button class="btn" onclick="copyFullResult('prompts')">📋 영문 프롬프트만</button>
-    <button class="btn" onclick="copyFullResult('headlines')">📋 헤드라인만</button>
-    <button class="btn primary" onclick="downloadFullResult()">📥 .md 파일로 저장</button>
-  </div>
-
-  <div class="section-title"><div class="dot"></div> 본문 페이지(2~N) — 깔끔한 배경 + 텍스트 중심</div>
-  <div class="tt-matrix">
-    <div class="tt-cell">
-      <div class="pat">📄 P2~P3 도입</div>
-      <div class="ex">한 화면 = 한 메시지<br>큰 헤드라인 + 짧은 부연</div>
-      <div style="font-size:11px;color:var(--muted)">배경: #fafafa · 텍스트: #111 · 강조: 1색만</div>
-    </div>
-    <div class="tt-cell">
-      <div class="pat">📊 P4~P6 데이터</div>
-      <div class="ex">숫자 1개를 페이지 절반 크기로<br>+ 한 줄 해석</div>
-      <div style="font-size:11px;color:var(--muted)">차트는 단색 · 격자 최소 · 라벨 큼직</div>
-    </div>
-    <div class="tt-cell">
-      <div class="pat">🎯 P7~P8 결론·CTA</div>
-      <div class="ex">"저장 → 다음에 다시" / "팔로우"<br>핸들 + 이전 콘텐츠 미리보기</div>
-      <div style="font-size:11px;color:var(--muted)">하단 285px(스토리)에만 스와이프 유도 배치</div>
+    <div class="section-title"><div class="dot"></div> 🎨 1페이지 커버 카피 작업장<span class="count">패키지 선택 → 자동 프롬프트</span></div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:20px">
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+        <div style="font-size:12px;color:var(--muted)">모드:</div>
+        <label style="font-size:12px;cursor:pointer"><input type="radio" name="copyMode" value="package" checked onchange="renderCopyWorkbench()"> 📦 패키지 (3문장 한 번에)</label>
+        <label style="font-size:12px;cursor:pointer"><input type="radio" name="copyMode" value="manual" onchange="renderCopyWorkbench()"> ✍️ 직접 조합 (메인 + 후크 따로)</label>
+      </div>
+      <div id="copyWorkbench"></div>
+      <hr style="border:none;border-top:1px solid var(--border);margin:14px 0">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-size:12px;color:var(--accent2);font-weight:700">🪄 생성된 Gemini 프롬프트 (복사 → 붙여넣기)</div>
+        <div>
+          <button class="btn" style="font-size:11px;padding:5px 10px" onclick="copyToClipboard('coverPromptOut','커버 프롬프트')">📋 복사</button>
+          <button class="btn" style="font-size:11px;padding:5px 10px" onclick="downloadCoverPrompt()">📥 .txt</button>
+        </div>
+      </div>
+      <textarea id="coverPromptOut" readonly style="width:100%;background:#06060c;color:var(--accent2);border:1px solid var(--border);border-radius:6px;padding:12px;font-family:'SF Mono',monospace;font-size:11px;resize:vertical;min-height:280px;line-height:1.55;white-space:pre-wrap"></textarea>
     </div>
   </div>
 
-  <div class="warn-box">
-    <h5>⚠ 카드뉴스 체크리스트</h5>
-    <p>① 1페이지 헤드라인이 4:5 세이프존(Y 285~1635) 안에 있는가? <br>
-    ② 핵심 텍스트가 상·하 285px 영역에 걸치지 않는가? <br>
-    ③ 본문 페이지는 한 화면당 메시지 1개로 정리됐는가? <br>
-    ④ 9:16과 4:5 두 비율 모두에서 잘림 없이 읽히는가?</p>
+  <!-- 📄 본문 -->
+  <div class="sub-panel" id="subBody">
+    <div class="section-title"><div class="dot"></div> 📄 본문 P2~P7 작업장<span class="count">각 페이지 직접 수정 + Gemini 프롬프트</span></div>
+    <div id="bodyWorkbench" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:10px;margin-bottom:16px"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;align-items:center">
+      <button class="btn" onclick="resetBodyToDefault()">↺ 본문 기본값 복원</button>
+      <button class="btn primary" onclick="copyAllPagePrompts()">📋 전체 8페이지 프롬프트 복사</button>
+      <button class="btn" onclick="downloadAllPagePrompts()">📥 전체 .txt 다운로드</button>
+      <span style="font-size:11px;color:var(--muted);margin-left:auto">각 카드의 [📋 프롬프트] → Gemini 8회 투입 → 8개 PNG 받기</span>
+    </div>
+  </div>
+
+  <!-- 🔍 검증 -->
+  <div class="sub-panel" id="subValidate">
+    <div class="section-title"><div class="dot"></div> 🔍 전체 흐름 검증<span class="count">한국 톱 계정 10대 패턴 기준 (Claude API)</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+      <button class="btn primary" style="font-size:13px;padding:9px 18px" onclick="runValidate()">🔍 검증 실행</button>
+      <button class="btn" onclick="document.getElementById('validateBox').innerHTML='';updateIssueBadge(0)">↺ 결과 지우기</button>
+      <span style="font-size:11px;color:var(--muted);margin-left:auto">약속-보상 / 후크해결 / 타깃 / 톤 / 한국 문화 적합성 등 10항목 자동 진단 · 이슈 클릭 → 본문 카드로 점프</span>
+    </div>
+    <div id="validateBox"></div>
+  </div>
+
+  <!-- 📦 출력 -->
+  <div class="sub-panel" id="subOutput">
+    <div class="section-title"><div class="dot"></div> 📦 전체 작업 결과 (P1~P8 통합)<span class="count" id="fullResultStatus">주장 카드를 먼저 선택하세요</span></div>
+    <div id="fullResultBox" style="background:#06060c;border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:20px;font-size:12px;line-height:1.7;color:var(--muted);min-height:80px">
+      💡 STEP 3 (주제·주장 분리)에서 주장 카드를 클릭해 ⭐ 선택하면, 여기에 P1 커버 4안 + 본문 P2~P8 + 모든 영문 프롬프트가 자동 통합돼서 보입니다.
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
+      <button class="btn" onclick="copyFullResult('all')">📋 전체 결과 복사</button>
+      <button class="btn" onclick="copyFullResult('prompts')">📋 영문 프롬프트만</button>
+      <button class="btn" onclick="copyFullResult('headlines')">📋 헤드라인만</button>
+      <button class="btn primary" onclick="downloadFullResult()">📥 .md 파일로 저장</button>
+    </div>
+
+    <div class="warn-box">
+      <h5>⚠ 카드뉴스 체크리스트</h5>
+      <p>① 1페이지 헤드라인이 4:5 세이프존(Y 285~1635) 안에 있는가? <br>
+      ② 핵심 텍스트가 상·하 285px 영역에 걸치지 않는가? <br>
+      ③ 본문 페이지는 한 화면당 메시지 1개로 정리됐는가? <br>
+      ④ 9:16과 4:5 두 비율 모두에서 잘림 없이 읽히는가?</p>
+    </div>
   </div>
 </div>
 
@@ -1512,6 +1534,7 @@ async function runRegenerate(){
 }
 function renderValidate(d){
   _lastValidation=d;
+  updateIssueBadge((d.issues||[]).length);
   const box=document.getElementById('validateBox');
   const score=d.overallScore||0;
   const scoreColor=score>=80?'#00D4AA':score>=60?'#FFD93D':score>=40?'#FF8A3D':'#FF3B3B';
@@ -1559,10 +1582,12 @@ function renderValidate(d){
         <div style="display:flex;flex-direction:column;gap:8px;max-height:340px;overflow-y:auto">
           ${sortedIssues.map(it=>{
             const c=sevColor[it.severity]||'#999';
-            return `<div style="background:var(--surface2);border-left:3px solid ${c};border-radius:0 6px 6px 0;padding:9px 12px">
+            const jumpable=/P\s*\d+/.test(String(it.page||''));
+            const safePage=String(it.page||'').replace(/'/g,"\\'");
+            return `<div ${jumpable?`onclick="jumpToBodyCard('${safePage}')" title="클릭 → 해당 본문 카드로 점프"`:''} style="background:var(--surface2);border-left:3px solid ${c};border-radius:0 6px 6px 0;padding:9px 12px;${jumpable?'cursor:pointer;transition:all .15s':''}" ${jumpable?'onmouseover="this.style.background=\'var(--surface3)\'" onmouseout="this.style.background=\'var(--surface2)\'"':''}>
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
                 <span style="font-size:10px;color:${c};font-weight:700">${sevLabel[it.severity]||it.severity}</span>
-                <span style="font-size:10px;color:var(--muted)">${catLabels[it.category]||it.category} · ${it.page||'전체'}</span>
+                <span style="font-size:10px;color:var(--muted)">${catLabels[it.category]||it.category} · ${it.page||'전체'}${jumpable?' <span style="color:var(--accent)">↗</span>':''}</span>
               </div>
               <div style="font-size:12px;color:var(--text);line-height:1.5">${it.message||''}</div>
               ${it.fix?`<div style="font-size:11px;color:var(--accent2);margin-top:5px;padding-top:5px;border-top:1px dashed var(--border)">✏️ ${it.fix}</div>`:''}
@@ -1894,6 +1919,43 @@ function renderSheets(){
 }
 
 // ════════════ 인터랙션 ════════════════════════════════════════════
+// ═══ STEP 4 서브탭 네비 ═══
+function goSubTab(name){
+  document.querySelectorAll('.sub-tab').forEach(t=>t.classList.toggle('active',t.dataset.sub===name));
+  document.querySelectorAll('.sub-panel').forEach(p=>p.classList.toggle('active',p.id==='sub'+name.charAt(0).toUpperCase()+name.slice(1)));
+  // 페이지 최상단으로 스크롤 (스티키 탭 아래로)
+  document.querySelector('.sub-tabs')?.scrollIntoView({block:'start',behavior:'smooth'});
+}
+// 검증 이슈 클릭 → 본문 탭으로 점프 + 카드 강조 펄스
+function jumpToBodyCard(pageLabel){
+  if(!pageLabel)return;
+  goSubTab('body');
+  setTimeout(()=>{
+    const cards=document.querySelectorAll('#bodyWorkbench > div');
+    let target=null;
+    // "P3↔P5" 같은 표현이면 첫 번째 (P3) 잡기
+    const m=String(pageLabel).match(/P\s*(\d+)/);
+    if(m){
+      const pn='P'+m[1];
+      cards.forEach(c=>{
+        const label=c.querySelector('div div:first-child')?.textContent||'';
+        if(label.startsWith(pn)&&!target)target=c;
+      });
+    }
+    if(target){
+      target.scrollIntoView({block:'center',behavior:'smooth'});
+      target.classList.remove('body-pulse');
+      void target.offsetWidth;
+      target.classList.add('body-pulse');
+    }
+  },300);
+}
+function updateIssueBadge(n){
+  const b=document.getElementById('subCountIssues');if(!b)return;
+  if(n>0){b.textContent=n;b.style.display='inline-block';b.style.background=n>3?'var(--accent3)':'var(--accent4)';}
+  else{b.style.display='none'}
+}
+
 function goStage(idx){
   document.querySelectorAll('.section').forEach((s,i)=>s.classList.toggle('active',i===idx));
   document.querySelectorAll('.stage-tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
@@ -2003,12 +2065,11 @@ function renderSeedsPanel(){
 function useSeed(n){
   const s=CONTENT_SEEDS.find(x=>x.n===n);if(!s)return;
   appendLog('🌱 시드 #'+n+' 선택: '+s.kw,'warn');
-  // 후크 영역에 자동 채우기 → 사용자가 직접 패키지 선택해서 작업 시작
   copyState.edited=true;
   copyState.customHook=s.hook;
   if(typeof renderCopyWorkbench==='function')renderCopyWorkbench();
-  alert('시드 #'+n+' "'+s.kw+'" 선택됨.\n\n후크 입력란이 자동 채워졌습니다.\n메인 카피는 패키지 카드 중 골라서 톤 매칭 시작하세요.\n\n추천 톤: '+s.tone);
-  document.getElementById('copyWorkbench')?.scrollIntoView({block:'start'});
+  if(typeof goSubTab==='function')goSubTab('cover');
+  setTimeout(()=>{document.getElementById('copyWorkbench')?.scrollIntoView({block:'start',behavior:'smooth'})},250);
 }
 syncCustomFromSelection();renderCoverPatterns();renderCopyWorkbench();renderBodyWorkbench();renderFullResult();renderSeedsPanel();
 document.getElementById('progressFill').style.width='14%';
