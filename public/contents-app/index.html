@@ -500,10 +500,11 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:22px 0}
     <div class="section-title"><div class="dot"></div> 📄 본문 P2~P7 작업장<span class="count">각 페이지 직접 수정 + Gemini 프롬프트</span></div>
     <div id="bodyWorkbench" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:10px;margin-bottom:16px"></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;align-items:center">
+      <button id="genBodyBtn" class="btn primary" style="background:var(--accent2);border-color:var(--accent2)" onclick="generateBodyFromSeed()">🤖 AI로 본문 자동 생성</button>
       <button class="btn" onclick="resetBodyToDefault()">↺ 본문 기본값 복원</button>
-      <button class="btn primary" onclick="copyAllPagePrompts()">📋 전체 8페이지 프롬프트 복사</button>
+      <button class="btn" onclick="copyAllPagePrompts()">📋 전체 8페이지 프롬프트 복사</button>
       <button class="btn" onclick="downloadAllPagePrompts()">📥 전체 .txt 다운로드</button>
-      <span style="font-size:11px;color:var(--muted);margin-left:auto">각 카드의 [📋 프롬프트] → Gemini 8회 투입 → 8개 PNG 받기</span>
+      <span style="font-size:11px;color:var(--muted);margin-left:auto">시드 기반 본문이 없으면 🤖 클릭 → Claude AI가 시드 톤에 맞춰 6장 자동 작성</span>
     </div>
   </div>
 
@@ -2169,6 +2170,30 @@ function renderSeedsPanel(){
 }
 // ═══ 시드별 본문 템플릿 (시드 → 본문 6장 깊은 연동) ═══
 // 키: 시드 번호 (1~20) · 값: BODY 6장 (P2~P7)
+// ═══ 시드별 커버 템플릿 (20개 전체 — 시드 클릭 시 메인 카피 자동 채움) ═══
+const SEED_COVER_TEMPLATES={
+  1:{l1:'GPT 끊고',           l2:'Claude 써본 일주일',     accent:'Claude',     accentColor:'#FF8A3D'},
+  2:{l1:'AI 자동화로',        l2:'야근 끊은 일주일',       accent:'야근',       accentColor:'#FF3B3B'},
+  3:{l1:'PDF·엑셀',           l2:'5초 분석 프롬프트 10개', accent:'5초',        accentColor:'#FF3B3B'},
+  4:{l1:'2시간 회의록',       l2:'30초 만에 요약',         accent:'30초',       accentColor:'#FF8A3D'},
+  5:{l1:'코드 디버깅',        l2:'한 번에 끝내는 명령',    accent:'한 번에',    accentColor:'#FF8A3D'},
+  6:{l1:'기획서 초안',        l2:'5분 만에 잡기',          accent:'5분',        accentColor:'#FF3B3B'},
+  7:{l1:'AI 자소서',          l2:'면접관도 못 잡는 패턴',  accent:'못 잡는',    accentColor:'#FF3B3B'},
+  8:{l1:'AI로 만든',          l2:'월 50만원 부수익',       accent:'월 50만원', accentColor:'#FFD93D'},
+  9:{l1:'GPT 결제 끊고',      l2:'무료 조합으로 살기',     accent:'무료',       accentColor:'#FFD93D'},
+  10:{l1:'AI 영어 회의',      l2:'실시간 통역하기',        accent:'실시간',     accentColor:'#FF8A3D'},
+  11:{l1:'30대 직장인',       l2:'3개월 AI 학습 로드맵',   accent:'3개월',      accentColor:'#FF8A3D'},
+  12:{l1:'노션·슬랙에',       l2:'AI 붙이는 법',           accent:'붙이는',     accentColor:'#FF8A3D'},
+  13:{l1:'엑셀 함수 없이',    l2:'AI에 분석 시키기',       accent:'없이',       accentColor:'#FF3B3B'},
+  14:{l1:'AI 이미지',         l2:'무료 5개 비교',          accent:'무료',       accentColor:'#FFD93D'},
+  15:{l1:'사장님이 모르는',   l2:'AI 활용 7가지',          accent:'7가지',      accentColor:'#FF3B3B'},
+  16:{l1:'AI 글쓰기',         l2:'티 안 나게 잡기',        accent:'티 안 나게', accentColor:'#FF8A3D'},
+  17:{l1:'녹음만 하면',       l2:'회의록 자동 정리',       accent:'자동',       accentColor:'#FF8A3D'},
+  18:{l1:'신입 첫 한 달',     l2:'AI로 살아남기',          accent:'살아남기',   accentColor:'#FF3B3B'},
+  19:{l1:'VLOOKUP 몰라도',    l2:'엑셀 분석 끝',           accent:'몰라도',     accentColor:'#FF8A3D'},
+  20:{l1:'ChatGPT 5 vs',      l2:'무료 대안 비교',         accent:'무료 대안',  accentColor:'#FFD93D'},
+};
+
 const SEED_BODY_TEMPLATES={
   1:null, // Claude vs ChatGPT — DEFAULT_BODY 사용
   2:[ // AI 자동화로 야근 끊기
@@ -2200,19 +2225,81 @@ const SEED_BODY_TEMPLATES={
 function useSeed(n){
   const s=CONTENT_SEEDS.find(x=>x.n===n);if(!s)return;
   appendLog('🌱 시드 #'+n+' 선택: '+s.kw,'warn');
+  // 커버 자동 채움 (모든 20개 시드 지원)
+  const cov=SEED_COVER_TEMPLATES[n];
   copyState.edited=true;
   copyState.customHook=s.hook;
-  // 시드별 본문 템플릿 적용 (있으면)
+  if(cov){
+    copyState.customL1=cov.l1;
+    copyState.customL2=cov.l2;
+    copyState.customAccent=cov.accent;
+    copyState.customAccentColor=cov.accentColor;
+    appendLog('  → 커버 카피 자동 적용 (메인·강조·색상)','');
+  }
+  // 본문 자동 재구성 (4개 시드만 하드코딩)
   const template=SEED_BODY_TEMPLATES[n];
   if(template&&Array.isArray(template)&&template.length===BODY.length){
     template.forEach((b,i)=>{BODY[i]={...BODY[i],...b}});
     appendLog('  → 본문 6장 자동 재구성 완료','');
+  }else{
+    appendLog('  ⚠ 본문 템플릿 없음 — [🤖 AI로 본문 자동 생성] 버튼 또는 직접 작성 필요','warn');
   }
   if(typeof renderCopyWorkbench==='function')renderCopyWorkbench();
   if(typeof renderBodyWorkbench==='function')renderBodyWorkbench();
   if(typeof renderFullResult==='function')renderFullResult();
   if(typeof goSubTab==='function')goSubTab('cover');
   setTimeout(()=>{document.getElementById('copyWorkbench')?.scrollIntoView({block:'start',behavior:'smooth'})},250);
+}
+
+// ═══ 시드 기반 AI 본문 자동 생성 ═══
+async function generateBodyFromSeed(){
+  const M=effMain();const H=effHook();
+  // 어느 시드인지 식별 (커버 l1+l2 매칭)
+  const matchedSeed=CONTENT_SEEDS.find(s=>{
+    const c=SEED_COVER_TEMPLATES[s.n];
+    return c&&c.l1===M.l1&&c.l2===M.l2;
+  });
+  if(!matchedSeed){alert('현재 커버와 매칭되는 시드를 찾을 수 없습니다.\n시드 패널에서 다시 선택해주세요.');return}
+  const btn=document.getElementById('genBodyBtn');
+  if(btn){btn.disabled=true;btn.innerHTML='<span style="display:inline-block;width:12px;height:12px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite;vertical-align:middle"></span> AI 본문 생성 중...';}
+  try{
+    const r=await fetch('/api/contents/regenerate',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        cover:{l1:M.l1,l2:M.l2,accent:M.accent,hook:H},
+        body:BODY.map(b=>({p:b.p,h:b.h,sub:b.sub,body:b.body,accent:b.accent})),
+        validation:{
+          overallScore:0,
+          issues:[{severity:'critical',category:'promise',page:'본문 전체',
+            message:`본문이 시드 #${matchedSeed.n} "${matchedSeed.kw}"와 무관한 내용`,
+            fix:`본문 6장을 시드 주장 "${matchedSeed.claim}"에 맞춰 처음부터 재작성. 후크 "${H}"가 본문에서 풀리도록 구성.`}],
+          koreanFit:{score:5,notes:'시드 기반 새 본문 생성 필요'},
+        },
+      }),
+    });
+    const d=await r.json();
+    if(!d.ok)throw new Error(d.error||'생성 실패');
+    if(Array.isArray(d.body)&&d.body.length===BODY.length){
+      d.body.forEach((b,i)=>{BODY[i]={...BODY[i],...b}});
+    }
+    if(d.cover){
+      copyState.customL1=d.cover.l1||copyState.customL1;
+      copyState.customL2=d.cover.l2||copyState.customL2;
+      copyState.customAccent=d.cover.accent||copyState.customAccent;
+      copyState.customHook=d.cover.hook||copyState.customHook;
+    }
+    if(typeof renderCopyWorkbench==='function')renderCopyWorkbench();
+    if(typeof renderBodyWorkbench==='function')renderBodyWorkbench();
+    if(typeof renderFullResult==='function')renderFullResult();
+    appendLog('🤖 AI 본문 자동 생성 완료 ('+(d.changes||[]).length+'건 변경)','warn');
+    if(typeof goSubTab==='function')goSubTab('body');
+  }catch(e){
+    alert('AI 본문 생성 실패: '+e.message);
+    appendLog('❌ AI 본문 생성 실패: '+e.message,'err');
+  }finally{
+    if(btn){btn.disabled=false;btn.innerHTML='🤖 AI로 본문 자동 생성';}
+  }
 }
 syncCustomFromSelection();renderCoverPatterns();renderCopyWorkbench();renderBodyWorkbench();renderFullResult();renderSeedsPanel();renderHistory();
 document.getElementById('progressFill').style.width='14%';
