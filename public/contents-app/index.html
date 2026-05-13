@@ -2230,6 +2230,14 @@ const SEED_BODY_TEMPLATES={
   ],
 };
 
+// 시드 카피를 MAIN_OPTIONS/HOOK_OPTIONS/PACKAGES 0번으로 주입해서 그리드 일관성 확보
+function _injectSeedAsOption0(l1,l2,accent,accentColor,hook,seedName){
+  MAIN_OPTIONS[0]={l1,l2,accent,accentColor};
+  HOOK_OPTIONS[0]=hook;
+  PACKAGES[0]={name:'🌱 '+(seedName||'시드 기반'),mainIdx:0,hookIdx:0,tone:'시드 의도 그대로'};
+  copyState.mainIdx=0;copyState.hookIdx=0;copyState.pkg=0;
+}
+
 function useSeed(n){
   const s=CONTENT_SEEDS.find(x=>x.n===n);if(!s)return;
   appendLog('🌱 시드 #'+n+' 선택: '+s.kw,'warn');
@@ -2242,7 +2250,8 @@ function useSeed(n){
     copyState.customL2=cov.l2;
     copyState.customAccent=cov.accent;
     copyState.customAccentColor=cov.accentColor;
-    appendLog('  → 커버 카피 자동 적용 (메인·강조·색상)','');
+    _injectSeedAsOption0(cov.l1,cov.l2,cov.accent,cov.accentColor,s.hook,s.kw);
+    appendLog('  → 커버 카피 자동 적용 + 패키지 그리드 시드 카피로 교체','');
   }
   // 본문 자동 재구성 (4개 시드만 하드코딩)
   const template=SEED_BODY_TEMPLATES[n];
@@ -2299,20 +2308,18 @@ async function useSeedFull(n){
     console.log('[useSeedFull] API 응답:',d);
     if(!d.ok)throw new Error(d.error||'생성 실패');
     if(!d.cover||!d.cover.l1)throw new Error('Claude 응답에 cover.l1 비어있음. raw=' + JSON.stringify(d).slice(0,200));
-    // 4) 응답 적용 (custom 모드로 강제 전환 — 패키지 그리드 대신 새 카피 input 표시)
-    copyState.mode='custom';
+    // 4) 응답 적용 + 패키지 그리드 0번을 시드 결과로 덮어쓰기 (그리드도 시드 카피 보이게)
     copyState.edited=true;
     copyState.customL1=d.cover.l1||'';
     copyState.customL2=d.cover.l2||'';
     copyState.customAccent=d.cover.accent||'';
+    copyState.customAccentColor=d.cover.accentColor||'#FF3B3B';
     if(d.cover.hook)copyState.customHook=d.cover.hook;
+    _injectSeedAsOption0(copyState.customL1,copyState.customL2,copyState.customAccent,copyState.customAccentColor,copyState.customHook,'시드 #'+n+' '+s.kw);
     if(Array.isArray(d.body)&&d.body.length===BODY.length){
       d.body.forEach((b,i)=>{BODY[i]={...BODY[i],...b}});
     }
-    // 5) custom 라디오 강제 체크
-    const r2=document.querySelector('input[name="copyMode"][value="custom"]');
-    if(r2)r2.checked=true;
-    // 6) UI 일괄 갱신
+    // 5) UI 일괄 갱신
     if(typeof renderCopyWorkbench==='function')renderCopyWorkbench();
     if(typeof renderBodyWorkbench==='function')renderBodyWorkbench();
     if(typeof renderFullResult==='function')renderFullResult();
