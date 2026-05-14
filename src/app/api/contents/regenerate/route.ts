@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { isAdmin } from "@/lib/admin";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { generateText } from "ai";
+import { KOREAN_CARDNEWS_PLAYBOOK } from "@/lib/korean-cardnews-playbook";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 90;
@@ -47,8 +48,12 @@ export async function POST(request: NextRequest) {
   const currentText = JSON.stringify({ cover, body: bodyPages }, null, 2);
   const validationText = JSON.stringify(validation, null, 2);
 
-  const SYSTEM_PROMPT = `당신은 한국 인스타그램 카드뉴스 콘텐츠 수정 전문가입니다.
-현재 카드뉴스와 검증 결과를 받아 이슈를 해결한 새 버전을 생성합니다.
+  const SYSTEM_PROMPT = `당신은 한국 인스타그램 카드뉴스 톱 계정(뉴닉·어피티·캐릿·부읽남) 수준의 콘텐츠 수정 전문가입니다.
+현재 카드뉴스와 검증 결과를 받아 한국 문화 코드에 완벽히 맞는 새 버전을 생성합니다.
+
+${KOREAN_CARDNEWS_PLAYBOOK}
+
+위 플레이북을 모든 수정/생성에 반영하세요.
 
 [수정 규칙]
 1. critical / high 이슈는 반드시 해결

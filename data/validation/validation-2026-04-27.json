@@ -1,0 +1,92 @@
+{
+  "summary": {
+    "passed": 7,
+    "failed": 1,
+    "skipped": 0
+  },
+  "results": [
+    {
+      "name": "텍스트 RAG — 실제 API 검증",
+      "status": "PASS",
+      "detail": "4/4개 질문 정답",
+      "ragPass": 4,
+      "total": 4,
+      "ts": "2026-04-27T10:00:33.136Z"
+    },
+    {
+      "name": "한국어 토큰 실측",
+      "status": "PASS",
+      "detail": "한국어 1.94배 더 소모 (RAG 청크 크기 조정 근거 확보)",
+      "ratio": "1.94",
+      "tokenData": [
+        {
+          "label": "영어 10단어",
+          "chars": 52,
+          "inputTokens": 31
+        },
+        {
+          "label": "한국어 10단어 (동일 의미)",
+          "chars": 33,
+          "inputTokens": 60
+        },
+        {
+          "label": "카페 FAQ 1개",
+          "chars": 90,
+          "inputTokens": 110
+        }
+      ],
+      "ts": "2026-04-27T10:00:36.163Z"
+    },
+    {
+      "name": "Vision 이미지 분류 — 농산물 등급",
+      "status": "PASS",
+      "detail": "등급 판정 성공 (grade, color, confidence 포함)",
+      "answer": "```json\n{\n  \"grade\": \"상(上)\",\n  \"color\": {\n    \"score\": 8.5,\n    \"description\": \"전체적으로 선명한 적색을 띠며, 일부 황록색 부위가 혼재\",\n    \"uniformity\": \"중상 - 80% 이상 적색 착색, 일부 줄무늬 패턴 존재\",\n    \"rating\": \"양호\"\n  },\n  \"defects\": {\n    \"score\": 8.0,\n    \"surface_damage\": \"육안상 타박상/상처 없음\",\n    \"water_drops\": \"수분 잔존 - 신선도 양호 지표\",\n    \"skin_condition\": \"표피 매끄러움, 병해충 흔적 미발견\",\n    \"rating\": \"양호\"\n  },\n  \"size\": {\n    \"score\": 7.5,\n    \"estimated_weight\": \"250~300g 추정\",\n    \"shape\": \"원형에 가까운 구형, 대칭성 양호\",\n    \"uniformity\": \"전체 사",
+      "ts": "2026-04-27T10:00:42.459Z"
+    },
+    {
+      "name": "Ollama llama3.2:latest 한국어 응대",
+      "status": "PASS",
+      "detail": "한국어 + 정보 포함",
+      "latency": 2725,
+      "answer": "안녕하세요! 고마워요. 오늘은 정상으로 영업중입니다. 영업시간은 평일 09:00 ~ 22:00이고, 주말은 10:00 ~ 21:00입니다. 또한, 주차 가능합니다. 지하 2시간 무료입니다. 현재 이용 가능한 주차장 정보를 확인해 볼 수 있습니다.",
+      "ts": "2026-04-27T10:00:45.184Z"
+    },
+    {
+      "name": "Ollama gemma3:12b 한국어 응대",
+      "status": "PASS",
+      "detail": "한국어 + 정보 포함",
+      "latency": 13293,
+      "answer": "안녕하세요! 네, 오늘 영업하고 있습니다. 😊\n\n오늘이 평일이신가요, 주말이신가요? \n\n*   **평일**이시면 09:00부터 22:00까지 영업하고 있고,\n*   **주말**이시면 10:00부터 21:00까지 영업합니다.\n\n주차는 건물 지하에 주차하시면 2시간 무료로 이용 가능하세요! 😉",
+      "ts": "2026-04-27T10:00:58.477Z"
+    },
+    {
+      "name": "YouTube 자막 → RAG 변환",
+      "status": "PASS",
+      "detail": "✅ 한국어 자막 17108자 추출 완료 — VTT→텍스트 파이프라인 검증됨 (TED 수동자막, PO 토큰 불필요)",
+      "ts": "2026-04-27T10:01:01.035Z"
+    },
+    {
+      "name": "LoRA 파인튜닝 환경",
+      "status": "FAIL",
+      "detail": "미설치 항목: PyTorch + GPU, Transformers, PEFT (LoRA), Unsloth, TRL (DPO)",
+      "envStatus": {
+        "PyTorch + GPU": "미설치",
+        "Transformers": "미설치",
+        "PEFT (LoRA)": "미설치",
+        "Unsloth": "미설치",
+        "TRL (DPO)": "미설치"
+      },
+      "ts": "2026-04-27T10:01:01.195Z"
+    },
+    {
+      "name": "토큰 크레딧 비용 실측",
+      "status": "PASS",
+      "detail": "실제 대화 1회 ₩0.35 — 예상값(₩1.6)과 비교: 차이 있음",
+      "inputT": 97,
+      "outputT": 153,
+      "costKrw": 0.3545,
+      "ts": "2026-04-27T10:01:03.028Z"
+    }
+  ]
+}

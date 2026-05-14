@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { isAdmin } from "@/lib/admin";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { generateText } from "ai";
+import { KOREAN_CARDNEWS_PLAYBOOK } from "@/lib/korean-cardnews-playbook";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -55,8 +56,12 @@ export async function POST(request: NextRequest) {
   ].join("\n");
 
   const SYSTEM_PROMPT = `당신은 한국 인스타그램 카드뉴스 콘텐츠 검증 전문가입니다.
-한국 톱 계정(뉴닉 32만, 어피티 27만, 캐릿 35만, 부읽남 24만)의 패턴을 기준으로
+한국 톱 4대 계정(뉴닉·어피티·캐릿·부읽남)의 화법·후킹·문화 코드를 기준으로
 입력된 카드뉴스(P1 커버 + 본문 페이지들)를 10대 항목으로 평가합니다.
+
+${KOREAN_CARDNEWS_PLAYBOOK}
+
+위 플레이북을 기준으로, 다음 10대 항목별로 0~10점 평가하세요.
 
 [검증 카테고리]
 1. promise — 약속-보상 매칭 (커버에서 약속한 것을 본문이 이행)

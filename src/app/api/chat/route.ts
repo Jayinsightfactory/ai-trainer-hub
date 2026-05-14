@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { searchChunks } from "@/lib/rag";
+import { getBalance, deductCredit, calcCostKrw } from "@/lib/token-broker";
 
 interface ChatContext {
   industry?: string;
@@ -146,11 +147,28 @@ export async function POST(request: NextRequest) {
       return mockStream(messages, context);
     }
 
+    const userId = session.user?.id;
+    const model = process.env.AI_MODEL ?? "claude-haiku-4-5-20251001";
+
+    // ── 크레딧 잔액 선 확인 (최소 ₩1 이상 필요) ──────────────────
+    if (userId) {
+      try {
+        const bal = await getBalance(userId);
+        if (bal < 1) {
+          return new Response(
+            JSON.stringify({ error: "크레딧이 부족합니다. /credits 페이지에서 충전 후 이용해주세요.", code: "INSUFFICIENT_CREDIT" }),
+            { status: 402, headers: { "Content-Type": "application/json" } }
+          );
+        }
+      } catch {
+        // 잔액 조회 실패 시 통과 (신규 유저 등)
+      }
+    }
+
     const anthropic = createAnthropic({
       apiKey: process.env.ANTHROPIC_API_KEY,
     });
 
-    const model = process.env.AI_MODEL ?? "claude-sonnet-4-6";
     const systemPrompt = ragSystemPrompt ?? buildSystemPrompt(context || {});
 
     const filteredMessages = messages
@@ -163,6 +181,19 @@ export async function POST(request: NextRequest) {
       messages: filteredMessages,
       maxOutputTokens: 1024,
       temperature: 0.7,
+      onFinish: async ({ usage }) => {
+        if (!userId || !usage) return;
+        try {
+          const inputT = usage.inputTokens ?? 0;
+          const outputT = usage.outputTokens ?? 0;
+          const costKrw = calcCostKrw(model, inputT, outputT);
+          if (costKrw > 0) {
+            await deductCredit(userId, costKrw, "chat", model, inputT, outputT);
+          }
+        } catch (e) {
+          console.warn("[chat] 크레딧 차감 실패 (사용은 허용):", e);
+        }
+      },
     });
 
     return result.toTextStreamResponse();

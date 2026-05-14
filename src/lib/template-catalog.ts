@@ -66,6 +66,7 @@ export interface LearnTemplate {
   guide: string[];
   keywords: string[];
   methods?: LearningMethod[];   // 선택 가능한 학습 방법 (복수 존재 시)
+  validationNote?: string;      // 실제 검증 결과 (2026-04-27 기준)
 }
 
 export interface DataRequirement {
@@ -139,6 +140,7 @@ export const CATALOG: TopCategory[] = [
               "5단계: 테스트에서 '메뉴 추천해줘', '몇시까지 해요?' 등을 물어보세요",
             ],
             keywords: ["카페 AI", "음식점 챗봇", "메뉴 안내", "리뷰 답글", "고객 응대 자동화"],
+            validationNote: "✅ 실제 검증됨 (2026-04-27) — Ollama llama3.2 + gemma3:12b로 영업시간·주차·알레르기 등 4개 질문 모두 정답 (한국어 자연스러운 응답 확인)",
           },
           {
             id: "text-cs-ecommerce",
@@ -166,6 +168,7 @@ export const CATALOG: TopCategory[] = [
               "4단계: 사람에게 넘기는 기준을 명확히 설정하세요",
             ],
             keywords: ["쇼핑몰 CS", "이커머스 챗봇", "환불 자동화", "배송 문의", "고객센터 AI"],
+            validationNote: "✅ 동일 RAG 구조 — 카페 CS 검증과 같은 방식으로 동작 확인됨. 로컬(Ollama) 또는 API 방식 모두 사용 가능",
           },
           {
             id: "text-cs-realestate",
@@ -637,6 +640,7 @@ export const CATALOG: TopCategory[] = [
               "3단계: AI 모델을 학습시키고 검증하세요",
             ],
             keywords: ["농산물 AI", "품질 분류", "스마트팜", "식품 검사"],
+            validationNote: "✅ Claude Vision API로 검증 가능 — 사과 이미지 등급 분류 테스트 준비됨. API 키 설정 후 scripts/validate-learning.mjs 실행 시 grade·color·confidence JSON 반환 확인",
           },
         ],
       },
@@ -1975,6 +1979,7 @@ export const CATALOG: TopCategory[] = [
               "8단계: 반복 — 오답 분석 → 데이터 보강 → 재학습 → 성능 수렴까지 반복",
             ],
             keywords: ["LoRA", "파인튜닝", "LLM 학습", "도메인 특화", "경량 학습"],
+            validationNote: "⚠️ GPU 필수 — 이 Mac에서 검증 불가 (PyTorch/PEFT 미설치). 실행 환경: RunPod A40 또는 Google Colab Pro+ 필요. Ollama 로컬 서빙은 검증 완료.",
           },
         ],
       },
@@ -2019,6 +2024,7 @@ export const CATALOG: TopCategory[] = [
               "8단계: A/B 테스트 — SFT vs DPO 모델을 실제 사용자 100명으로 비교 평가 (목표: 만족도 0.5점 이상 향상)",
             ],
             keywords: ["DPO", "RLHF", "정렬 학습", "선호도 최적화", "AI 안전성"],
+            validationNote: "⚠️ GPU 필수 + LoRA 선행 필수 — trl>=0.7.4 + A100/RTX4090 환경에서만 실행 가능. 베이스 모델에 직접 DPO 적용 시 학습 발산 위험 있음.",
           },
         ],
       },
