@@ -2238,6 +2238,34 @@ function _injectSeedAsOption0(l1,l2,accent,accentColor,hook,seedName){
   copyState.mainIdx=0;copyState.hookIdx=0;copyState.pkg=0;
 }
 
+// 시드 기반 main 10안 + hook 10안 + 패키지 10안 전체 재생성 (백그라운드)
+async function regenerateOptionsForSeed(s){
+  try{
+    appendLog('🎨 시드 #'+s.n+' 기반 카피 옵션 10×3 생성 중...','');
+    const r=await fetch('/api/contents/seed-options',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({n:s.n,kw:s.kw,claim:s.claim,hook:s.hook,tone:s.tone}),
+    });
+    const d=await r.json();
+    if(!d.ok)throw new Error(d.error||'옵션 생성 실패');
+    if(Array.isArray(d.mainOptions)&&d.mainOptions.length>=5){
+      MAIN_OPTIONS.length=0;d.mainOptions.forEach(o=>MAIN_OPTIONS.push(o));
+    }
+    if(Array.isArray(d.hookOptions)&&d.hookOptions.length>=5){
+      HOOK_OPTIONS.length=0;d.hookOptions.forEach(h=>HOOK_OPTIONS.push(h));
+    }
+    if(Array.isArray(d.packages)&&d.packages.length>=5){
+      PACKAGES.length=0;d.packages.forEach(p=>PACKAGES.push(p));
+    }
+    copyState.pkg=0;copyState.mainIdx=PACKAGES[0]?.mainIdx||0;copyState.hookIdx=PACKAGES[0]?.hookIdx||0;
+    copyState.edited=false; // 그리드 선택만으로 동작하도록 초기화
+    if(typeof renderCopyWorkbench==='function')renderCopyWorkbench();
+    appendLog('  → 카피 옵션 '+MAIN_OPTIONS.length+'×'+HOOK_OPTIONS.length+'×'+PACKAGES.length+' 시드 기반 교체 완료','warn');
+  }catch(e){
+    appendLog('⚠ 카피 옵션 생성 실패 (0번만 시드 카피): '+e.message,'err');
+  }
+}
+
 function useSeed(n){
   const s=CONTENT_SEEDS.find(x=>x.n===n);if(!s)return;
   appendLog('🌱 시드 #'+n+' 선택: '+s.kw,'warn');
@@ -2266,6 +2294,8 @@ function useSeed(n){
   if(typeof renderFullResult==='function')renderFullResult();
   if(typeof goSubTab==='function')goSubTab('cover');
   setTimeout(()=>{document.getElementById('copyWorkbench')?.scrollIntoView({block:'start',behavior:'smooth'})},250);
+  // 백그라운드로 시드 기반 main 10안 + hook 10안 + 패키지 10안 생성 (그리드 선택지 다양화)
+  regenerateOptionsForSeed(s);
 }
 
 // ═══ 시드 기반 풀세트 AI 생성 (커버 + 본문 모두 Claude로) ═══
@@ -2333,6 +2363,8 @@ async function useSeedFull(n){
     }
     appendLog('✨ 시드 #'+n+' AI 풀세트 완성: '+d.cover.l1+' / '+d.cover.l2,'warn');
     setTimeout(()=>{document.getElementById('copyWorkbench')?.scrollIntoView({block:'start',behavior:'smooth'})},250);
+    // 백그라운드로 그리드 10개 옵션 시드 기반 교체
+    regenerateOptionsForSeed(s);
   }catch(e){
     if(wb)wb.innerHTML=`<div style="background:rgba(255,107,107,.1);border:1px solid var(--accent3);border-radius:10px;padding:14px;color:var(--accent3);font-size:13px">❌ AI 풀세트 생성 실패: ${e.message||e}</div>`;
     appendLog('❌ AI 풀세트 실패: '+e.message,'err');
