@@ -1206,11 +1206,19 @@ async function selectPackage(i){
       body:JSON.stringify({
         cover:{l1:M.l1,l2:M.l2,accent:M.accent,hook:H},
         body:BODY.map(b=>({p:b.p,h:'',sub:'',body:'',accent:''})),
-        validation:{overallScore:0,categoryScores:{},issues:[{
-          severity:'critical',category:'promise',page:'P2~P7',
-          message:`패키지 "${pkg.name}" (${pkg.tone}) 톤에 맞춰 본문 6장 처음부터 작성 필요`,
-          fix:`커버 메인 "${M.l1} / ${M.l2}"의 약속 + 후크 "${H}"의 미스터리를 본문에서 풀어야 함. 한국 톱 4대 계정(뉴닉·어피티·캐릿·부읽남) 흐름 공식(P2 공감 → P3 진실 → P4 해법 → P5 근거 → P6 장애물 → P7 첫걸음) 적용.`,
-        }],koreanFit:{score:0,notes:'패키지 톤 기반 본문 풀 재작성 필요'}}),
+        validation:{
+          overallScore:0,
+          categoryScores:{},
+          issues:[{
+            severity:'critical',
+            category:'promise',
+            page:'P2~P7',
+            message:'패키지 '+pkg.name+' 톤에 맞춰 본문 6장 처음부터 작성 필요',
+            fix:'커버 '+M.l1+' '+M.l2+' 약속과 후크 '+H+' 미스터리를 본문에서 풀기. 흐름: P2 공감 P3 진실 P4 해법 P5 근거 P6 장애물 P7 첫걸음.'
+          }],
+          koreanFit:{score:0,notes:'패키지 톤 기반 본문 풀 재작성 필요'}
+        }
+      }),
     });
     const d=await r.json();
     if(!d.ok)throw new Error(d.error||'본문 생성 실패');
