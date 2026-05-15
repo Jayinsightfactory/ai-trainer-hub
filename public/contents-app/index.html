@@ -426,11 +426,11 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:22px 0}
 <div class="section" id="stage3">
   <!-- 서브탭 네비 -->
   <div class="sub-tabs">
-    <button class="sub-tab active" data-sub="seeds" onclick="goSubTab('seeds')">🌱 시드 <span class="sub-count" id="subCountSeeds">20</span></button>
-    <button class="sub-tab" data-sub="cover" onclick="goSubTab('cover')">🎨 커버 카피</button>
-    <button class="sub-tab" data-sub="body" onclick="goSubTab('body')">📄 본문 <span class="sub-count" id="subCountBody">6</span></button>
-    <button class="sub-tab" data-sub="validate" onclick="goSubTab('validate')">🔍 검증 <span class="sub-count" id="subCountIssues" style="display:none">0</span></button>
-    <button class="sub-tab" data-sub="output" onclick="goSubTab('output')">📦 출력</button>
+    <button class="sub-tab active" data-sub="seeds" onclick="goSubTab('seeds')">① 🌱 시드 <span class="sub-count" id="subCountSeeds">20</span></button>
+    <button class="sub-tab" data-sub="cover" onclick="goSubTab('cover')">② 🎨 커버 카피</button>
+    <button class="sub-tab" data-sub="body" onclick="goSubTab('body')">③ 📄 본문 <span class="sub-count" id="subCountBody">6</span></button>
+    <button class="sub-tab" data-sub="validate" onclick="goSubTab('validate')">④ 🔍 검증 <span class="sub-count" id="subCountIssues" style="display:none">0</span></button>
+    <button class="sub-tab" data-sub="output" onclick="goSubTab('output')">⑤ 📦 출력</button>
   </div>
 
   <!-- 🌱 시드 패널 -->
@@ -1238,8 +1238,22 @@ async function selectPackage(i){
     // renderBodyWorkbench()가 각 페이지 prompt 영역까지 일괄 갱신
     if(typeof renderFullResult==='function')renderFullResult();
     const bnr=document.getElementById('pkgGenBanner');
-    if(bnr)bnr.innerHTML=`✅ <b>"${pkg.name}" 패키지 완성</b> — 본문 ${d.body?.length||0}장 · Gemini 프롬프트 갱신 완료 · 변경 ${(d.changes||[]).length}건`;
-    appendLog('  → 본문 + 이미지 프롬프트 생성 완료','warn');
+    if(bnr){
+      bnr.style.background='rgba(0,212,170,.15)';
+      bnr.style.borderColor='var(--accent2)';
+      bnr.style.color='var(--accent2)';
+      bnr.innerHTML=`
+        <div style="font-size:13px;font-weight:700;margin-bottom:6px">✅ "${pkg.name}" 패키지 완성 — 본문 ${d.body?.length||0}장 + Gemini 프롬프트 ${(d.body?.length||0)+1}장 자동 생성 완료</div>
+        <div style="font-size:12px;color:var(--text);margin-bottom:10px">다음 단계를 선택하세요:</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn primary" style="font-size:12px;padding:7px 14px" onclick="goSubTab('body')">📝 본문 6장 검토</button>
+          <button class="btn" style="font-size:12px;padding:7px 14px;background:rgba(108,99,255,.2);border-color:var(--accent);color:var(--accent)" onclick="goSubTab('validate')">🔍 검증 결과 보기</button>
+          <button class="btn" style="font-size:12px;padding:7px 14px;background:rgba(255,217,61,.15);border-color:#FFD93D;color:#FFD93D" onclick="goSubTab('output')">📦 Gemini 프롬프트 복사 →</button>
+        </div>`;
+    }
+    appendLog('  → 본문 + 이미지 프롬프트 생성 완료. 위 [📝 본문 검토] / [🔍 검증] / [📦 Gemini 프롬프트] 버튼으로 다음 단계 진행','warn');
+    // 배너로 스크롤 (사용자가 다음 단계 버튼을 즉시 보게)
+    setTimeout(()=>{document.getElementById('pkgGenBanner')?.scrollIntoView({block:'start',behavior:'smooth'})},150);
     // 자동 검증 + 4대 계정 비교 검증 (백그라운드)
     setTimeout(()=>{
       if(typeof runValidate==='function')runValidate();
