@@ -5,6 +5,7 @@ import { isAdmin } from "@/lib/admin";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { generateText } from "ai";
 import { KOREAN_CARDNEWS_PLAYBOOK } from "@/lib/korean-cardnews-playbook";
+import { parseLLMJson } from "@/lib/parse-llm-json";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -106,21 +107,14 @@ ${KOREAN_CARDNEWS_PLAYBOOK}
       temperature: 0.3,
     });
 
-    const cleaned = text.replace(/```json\s*|\s*```/g, "").trim();
-    let result: unknown;
-    try {
-      result = JSON.parse(cleaned);
-    } catch {
-      const match = cleaned.match(/\{[\s\S]*\}/);
-      if (match) result = JSON.parse(match[0]);
-      else
-        return NextResponse.json(
-          { ok: false, error: "JSON 파싱 실패", raw: text.slice(0, 500) },
-          { status: 500 },
-        );
+    const parsed = parseLLMJson<Record<string, unknown>>(text);
+    if (!parsed.ok) {
+      return NextResponse.json(
+        { ok: false, error: `JSON 파싱 실패: ${parsed.error}`, raw: parsed.raw },
+        { status: 500 },
+      );
     }
-
-    return NextResponse.json({ ok: true, ...(result as Record<string, unknown>) });
+    return NextResponse.json({ ok: true, ...parsed.data });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return NextResponse.json({ ok: false, error: msg }, { status: 500 });
