@@ -17,18 +17,28 @@ export function parseLLMJson<T = unknown>(raw: string): { ok: true; data: T } | 
   if (!block) return { ok: false, error: "no JSON object found", raw: text.slice(0, 500) };
   text = block;
 
-  // 3) try parse → 실패 시 escape 줄바꿈 후 재시도
+  // 3) try parse → 실패 시 (a) trailing comma 제거 → (b) 줄바꿈 escape → (c) 둘 다 적용 순으로 재시도
   let data: unknown;
   try {
     data = JSON.parse(text);
   } catch {
-    const sanitized = escapeStringNewlines(text);
-    try {
-      data = JSON.parse(sanitized);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      return { ok: false, error: msg, raw: text.slice(0, 500) };
+    const candidates = [
+      stripTrailingCommas(text),
+      escapeStringNewlines(text),
+      escapeStringNewlines(stripTrailingCommas(text)),
+    ];
+    let parsed = false;
+    let lastErr = "";
+    for (const c of candidates) {
+      try {
+        data = JSON.parse(c);
+        parsed = true;
+        break;
+      } catch (e) {
+        lastErr = e instanceof Error ? e.message : String(e);
+      }
     }
+    if (!parsed) return { ok: false, error: lastErr, raw: text.slice(0, 500) };
   }
 
   // 4) 결과 객체 모든 string 필드에서 마크다운 제거
@@ -97,6 +107,39 @@ function extractFirstJsonBlock(s: string): string | null {
     }
   }
   return null;
+}
+
+/** JSON에서 `,]` `,}` 같은 trailing comma 제거 (문자열 안 콤마는 보호) */
+function stripTrailingCommas(s: string): string {
+  let out = "";
+  let inString = false;
+  let escape = false;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (escape) {
+      out += c;
+      escape = false;
+      continue;
+    }
+    if (c === "\\") {
+      out += c;
+      escape = true;
+      continue;
+    }
+    if (c === '"') {
+      inString = !inString;
+      out += c;
+      continue;
+    }
+    if (!inString && c === ",") {
+      // lookahead — 다음 non-whitespace가 ] 또는 } 면 콤마 skip
+      let j = i + 1;
+      while (j < s.length && /\s/.test(s[j])) j++;
+      if (s[j] === "]" || s[j] === "}") continue;
+    }
+    out += c;
+  }
+  return out;
 }
 
 /** JSON 문자열 안의 raw 줄바꿈/탭을 escape sequence로 변환 (Claude 흔한 실수 대응) */
