@@ -1283,59 +1283,31 @@ function applyCustomEdit(field,val){
 function buildCoverPrompt(){
   const M=effMain();
   const H=effHook();
-  return `A vertical 9:16 Instagram cover image.
+  // Gemini가 한글 텍스트를 정확히 인식하도록 prompt 단순화.
+  // 영어 instructions은 최소화, 한글 텍스트를 "이 텍스트를 그려라" 형태로 명확히 분리.
+  return `9:16 세로형 한국 인스타그램 카드뉴스 커버 이미지.
+배경: 30대 한국 직장인 남자가 어두운 방에서 노트북을 보다가 깜짝 놀란 표정. 평범한 얼굴, 따뜻한 책상 조명, 다큐멘터리 사진 스타일. 인물은 화면 위쪽, 아래쪽은 텍스트를 위한 어두운 공간.
 
-[PHOTO]
-Candid documentary photo of an ordinary Korean man in his early 30s,
-average warm friendly face NOT model-handsome, slight stubble, kind tired eyes,
-plain dark sweater, sitting at a wooden home desk in a dim apartment late at
-night, staring at his laptop screen, caught mid-realization with eyebrows
-slightly raised and mouth slightly open in quiet disbelief, warm desk lamp
-mixing with cool blue laptop screen light on his face, shallow depth of
-field, 35mm photojournalism aesthetic, unposed authentic moment.
-The man and his shoulders fill the upper portion of the frame; the lower
-portion shows the dark wooden desk surface — this lower area is left
-visually quiet for text overlay.
+이미지 위에 다음 한글 텍스트를 정확히 렌더링하세요 (영어로 번역 ❌, 한글 그대로):
 
-[TEXT OVERLAY — render this Korean text directly into the image, sharp and
-clean, do not stylize as graffiti or handwriting]
+【대형 헤드라인】 화면 중하단, 굵은 흰색 산세리프 (Pretendard Black 스타일), 2줄:
+${M.l1}
+${M.l2}
 
-Very large bold white Korean headline in TWO LINES, thick sans-serif
-typography (similar to Pretendard Black), tight line spacing, positioned
-in the lower middle area:
-Line 1:  ${M.l1}
-Line 2:  ${M.l2}
+위 헤드라인 안의 "${M.accent}" 단어만 ${M.accentColor} 색 둥근 사각형 배경 위에 흰색 글자로 강조 표시.
 
-The word "${M.accent}" in the headline must be highlighted with a solid
-filled rectangle behind it, color ${M.accentColor}, with white text on top
-of the colored box, the box has small rounded corners and tight padding
-around the word.
+【후크 한 줄】 헤드라인 바로 아래, 작은 골드 #FFD93D 이탤릭:
+${H}
 
-Directly below the headline, one short line of italic gold-yellow text
-(#FFD93D), medium weight, noticeably smaller than the headline, suggesting
-a teaser:
-"${H}"
+【핸들】 왼쪽 하단 모서리, 매우 작은 회색 #7A8493:
+${copyState.handle}
 
-In the very bottom-right corner, a tiny subtle gray text (#888888) with
-light opacity:
-"${copyState.handle}"
-
-A subtle dark gradient overlay sits behind only the text area (lower portion
-of the frame), going from transparent at the top to dark at the bottom,
-ensuring all text reads clearly without hiding the photo above.
-
-[NEGATIVE]
-no watermark, no logo, no magazine border, no frame, no caption box,
-no fake gibberish text, no garbled hangul, no English Lorem Ipsum,
-no glamour, no perfect skin, no model pose, no staged smile,
-no oversaturation, no plastic skin, no visible UI elements,
-no page number, no "P 1 / 8" text, no "swipe" instruction,
-no "넘겨서 보기", no Instagram dot indicators in the image,
-no visible coordinate values, no pixel measurements, no font size labels
-(no "92pt", "38px", "10px" etc. shown anywhere in the image),
-no Y-axis numbers, no X-axis numbers, no rulers, no design tool guidelines,
-no measurement annotations, no callout arrows pointing at sizes,
-no spacing labels`;
+[지시]
+- 위 한글 텍스트만 이미지에 표시. 이 지시문 영어 문장은 절대 그리지 마세요.
+- "Line 1" "Line 2" "BLOCK" 같은 라벨 표시 ❌
+- 페이지 번호, "P 1 / 8", "swipe", "넘겨서 보기" ❌
+- 워터마크, 로고, 테두리, 프레임 ❌
+- 측정값, 픽셀 수치, 폰트 사이즈 라벨, 룰러, 화살표 ❌`;
 }
 function updateCoverPrompt(){
   const ta=document.getElementById('coverPromptOut');
@@ -1406,85 +1378,39 @@ function buildBodyPrompt(idx){
   const bodyLines=(b.body||'').split('\n').filter(x=>x.trim());
   const accentColor=effMain().accentColor||'#FF8A3D';
   const accent=(b.accent||'').trim();
-  return `Vertical 9:16 Instagram body page.
+  // Gemini가 한글을 영어로 변환하지 않고 정확히 렌더링하도록 단순화된 한글 prompt
+  return `9:16 세로형 한국 인스타그램 카드뉴스 본문 페이지.
 
-[STYLE]
-Premium editorial poster aesthetic on a DEEP NAVY ↔ DARK GREEN background.
-The base color is a smooth gradient from deep navy (#0A1F2E) on the upper area
-to dark forest green (#0E2A24) on the lower area — never busy, never loud.
-On top of this base, lay a very subtle, faint geometric pattern overlay
-(thin diagonal lines OR tiny dot grid OR soft topographic contours) at
-~6-10% opacity, so it reads as ambient texture, not foreground decoration.
-Soft film grain. Add a faint dark vignette on the outer edges.
-NO photos, NO people, NO human figures, NO illustrations — just bold Korean
-typography on this rich dark background.
+배경: 짙은 네이비 #0A1F2E → 다크 그린 #0E2A24 그라데이션. 옅은 사선/도트 텍스처 6-10% 불투명도. 부드러운 필름 그레인, 가장자리 어두운 비네트. 사진·인물·일러스트레이션 ❌, 오직 한글 타이포그래피만.
 
-[TEXT — render this Korean text directly into the image, sharp and clean,
-do not stylize as graffiti or handwriting. Maintain clear visual hierarchy:
-headline largest, subheadline medium, body text smallest. All text is
-left-aligned with consistent generous left margin. All text is light-colored
-to stand out against the dark navy/green background.]
+이미지 위에 다음 한글 텍스트를 정확히 렌더링하세요 (영어로 번역 ❌, 한글 그대로 표시):
 
-═══ BLOCK 1 — HEADLINE (upper-middle area, centered vertically as one block with the body) ═══
-Very large extra-bold Korean headline in ${headlineLines.length} line${headlineLines.length>1?'s':''},
-thick sans-serif typography (similar to Pretendard Black), color near-white
-#F5F5F5, tight line spacing:
-${headlineLines.map((l,i)=>`Line ${i+1}:  ${l}`).join('\n')}
+【대형 헤드라인】 화면 중앙 상단, 굵은 흰색 #F5F5F5 산세리프 (Pretendard Black 스타일), ${headlineLines.length}줄, 좁은 행간:
+${headlineLines.join('\n')}
 
-${accent?`The word "${accent}" in the headline must be highlighted with a
-solid filled rectangle behind it, color ${accentColor}, with white text on
-top, small rounded corners, tight padding around the word.
-Only this one word gets the color box.`:''}
+${accent?`위 헤드라인 안의 "${accent}" 단어만 ${accentColor} 색 둥근 사각형 배경 위에 흰색 글자로 강조 표시.`:''}
 
-═══ BLOCK 2 — SUBHEADLINE (immediately below headline, tight gap) ═══
-One line of medium-weight Korean text, smaller than the headline, color
-soft warm gray #C7CED8, italic optional. Place this line VERY CLOSE to the
-headline (small consistent gap, NOT a big empty area):
-"${b.sub||''}"
+【부연 한 줄】 헤드라인 바로 아래 (좁은 간격), 따뜻한 회색 #C7CED8 미디엄 웨이트, 헤드라인보다 작음:
+${b.sub||''}
 
-═══ BLOCK 3 — INSIGHT BODY TEXT (directly below subheadline, tight gap) ═══
-${bodyLines.length} lines of regular-weight Korean body text, noticeably
-smaller than the subheadline, color soft light gray #D8DCE2, comfortable
-line spacing, left-aligned. Body block starts ONE COMFORTABLE READING
-INTERVAL below the subheadline — not separated by large empty space.
-The whole text block (headline + sub + body) reads as ONE COHESIVE UNIT,
-centered vertically in the frame:
-${bodyLines.map((l,i)=>`L${i+1}:  ${l}`).join('\n')}
+【본문 ${bodyLines.length}줄】 부연 바로 아래 (좁은 간격), 옅은 회색 #D8DCE2 일반 두께, 부연보다 작음, 왼쪽 정렬, 편한 행간:
+${bodyLines.join('\n')}
 
-This block delivers the actual insight and information. Each line should
-read clearly and not be cut off. Lines stay left-aligned, evenly spaced,
-with relaxed reading rhythm.
+【핸들】 왼쪽 하단 모서리, 매우 작은 회색 #7A8493:
+${copyState.handle}
 
-═══ BLOCK 4 — HANDLE (BOTTOM-LEFT corner, very small) ═══
-Tiny muted gray text (#7A8493) placed in the bottom-LEFT corner with a
-small margin from the left edge:
-"${copyState.handle}"
+[레이아웃 규칙]
+- 헤드라인 + 부연 + 본문이 한 덩어리로 묶여 화면 세로 중앙에 위치
+- 블록 사이 간격은 좁게, 빈 공간은 덩어리 위·아래에만
+- 좌우 여백 넉넉히
 
-═══ LAYOUT RULES ═══
-- All three text blocks (headline, subheadline, body) form ONE TIGHT
-  COHESIVE UNIT centered vertically in the frame — no large gaps between
-  them, no big empty middle area.
-- Generous outer margins on left and right.
-- Vertical rhythm: headline → small tight gap → subheadline → small tight
-  gap → body lines.
-- White space appears around the unit (above and below), NOT between the
-  text blocks themselves.
-
-[NEGATIVE]
-no photos, no people, no human figures, no busy background,
-no decorative illustrations, no stock graphics, no charts,
-no visible coordinate values, no pixel measurements, no font size labels
-(no "92pt", "38px" etc. shown anywhere in the image),
-no Y-axis numbers, no X-axis numbers, no rulers, no design tool guidelines,
-no measurement annotations, no callout arrows pointing at sizes,
-no spacing labels (no "10px", "16px" etc.),
-no emojis except those literally in the Korean text,
-no fake gibberish text, no garbled hangul, no English Lorem Ipsum,
-no watermark, no logo, no border, no frame, no UI elements,
-no page label text, no page numbers, no "P1" "P2" "P3" "P4" "P5" "P6" "P7"
-visible anywhere in the image, no "Day 1" "Day 2" "Day 3" "Day 5" "Day 6"
-"Day 7" labels in the image, no slash numbers like "1/8" or "2/8",
-no chapter or episode markers`;
+[지시]
+- 위 한글 텍스트만 이미지에 표시. 이 지시문 영어 문장이나 한글 메타 라벨("부연", "본문", "헤드라인" 등)은 절대 그리지 마세요.
+- "Line 1" "L1" "BLOCK" 같은 라벨 ❌
+- 페이지 번호, "P1"~"P7", "Day 1"~"Day 7", "1/8" 슬래시 번호 ❌
+- 워터마크, 로고, 테두리, 프레임 ❌
+- 측정값, 픽셀 수치, 폰트 사이즈, 룰러, 화살표 ❌
+- 가짜 영문 글자, 깨진 한글 ❌`;
 }
 
 function renderBodyWorkbench(){
