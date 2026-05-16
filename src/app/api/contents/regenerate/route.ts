@@ -56,6 +56,16 @@ function naturalizeWords(s: string): string {
     .replace(/마인드셋/g, "마음가짐");
 }
 
+/** 본문 안에 @mamurs.ai.lab 외 다른 @계정명 자동 제거 (핸들은 좌하단 모서리 한 번만) */
+function removeForeignHandles(s: string): string {
+  if (!s) return s;
+  // @ai_contents_lab, @anything 같은 다른 계정명 제거 (mamurs.ai.lab 외)
+  return s
+    .replace(/@(?!mamurs\.ai\.lab\b)[A-Za-z0-9._-]+/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 /** 한 줄 글자수 초과 시 어절 단위로 가장 균형 가까운 위치에 \n 삽입 (1회만) */
 function wrapIfTooLong(line: string, limit: number): string {
   if (!line || line.length <= limit) return line;
@@ -143,7 +153,13 @@ function sanitizeBodyPage(b: CardBodyPage, idx: number, changes: string[]): Card
   const out: CardBodyPage = { ...b };
   if (out.h) out.h = naturalizeWords(softenPreachyTone(out.h));
   if (out.sub) out.sub = naturalizeWords(softenPreachyTone(out.sub));
-  if (out.body) out.body = naturalizeWords(softenPreachyTone(out.body));
+  if (out.body) {
+    const before = out.body;
+    out.body = removeForeignHandles(naturalizeWords(softenPreachyTone(out.body)));
+    if (before !== out.body && before.match(/@(?!mamurs\.ai\.lab\b)[A-Za-z0-9._-]+/)) {
+      changes.push(`P${idx + 2} 본문에서 외부 @계정명 자동 제거 (핸들은 @mamurs.ai.lab만)`);
+    }
+  }
   if (out.h) out.h = wrapMultiline(stripTrailingComma(out.h), HEADLINE_LINE_LIMIT);
   if (out.sub) out.sub = stripTrailingComma(out.sub);
   if (out.sub) out.sub = wrapIfTooLong(out.sub, SUB_LIMIT);
