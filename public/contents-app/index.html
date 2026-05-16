@@ -1344,7 +1344,7 @@ function buildCoverPrompt(){
   const l2=sanitizeCopyText(M.l2,COPY_HEADLINE_LIMIT);
   const hook=sanitizeCopyText(H,COPY_HOOK_LIMIT);
   const accent=validateAccent(l1,l2,M.accent);
-  const accentColor=M.accentColor||'#FF8A3D';
+  const accentColor='#6C63FF'; // 브랜드 보라 고정
   const handle=copyState.handle||'';
 
   const headlineLines=[l1,l2].filter(Boolean).flatMap(s=>s.split('\n')).filter(Boolean);
@@ -1364,7 +1364,7 @@ ${headlineQuoted}
 
 ${accentBlock}
 
-Sub-line — directly under the headline (tight spacing), medium gold #FFD93D italic, smaller than headline but still readable on phone screen (헤드라인의 약 50% 크기):
+Sub-line — directly under the headline (tight spacing), medium mint #00D4AA italic, smaller than headline but still readable on phone screen (헤드라인의 약 50% 크기):
 "${hook}"
 
 Handle — bottom-left corner, very small gray #7A8493 (한 번만):
@@ -1457,7 +1457,7 @@ function buildBodyPrompt(idx){
   const body=sanitizeCopyText(b.body||'',COPY_BODY_LIMIT);
   const headlineLines=h.split('\n').filter(x=>x.trim());
   const bodyLines=body.split('\n').filter(x=>x.trim());
-  const accentColor=effMain().accentColor||'#FF8A3D';
+  const accentColor='#6C63FF'; // 브랜드 보라 고정
   // accent 검증: 실제 헤드라인 내부에 존재하는 단어만
   const l1=headlineLines[0]||'';
   const l2=headlineLines.slice(1).join(' ')||'';
@@ -1504,7 +1504,7 @@ Strictly forbidden in the image:
 function renderBodyWorkbench(){
   const wb=document.getElementById('bodyWorkbench');if(!wb)return;
   wb.innerHTML=BODY.map((b,i)=>{
-    const accentColor=effMain().accentColor||'#FF8A3D';
+    const accentColor='#6C63FF'; // 브랜드 보라 고정
     const previewLines=(b.h||'').split('\n').map(l=>{
       if(b.accent&&l.includes(b.accent)){
         return l.replace(b.accent,`<span style="background:${accentColor};color:#fff;padding:1px 6px;border-radius:3px">${b.accent}</span>`);

@@ -75,6 +75,8 @@ function fixAccent(l1: string, l2: string, accent: string): string {
 
 interface MainOpt { l1?: string; l2?: string; accent?: string; accentColor?: string }
 
+const BRAND_ACCENT_COLOR = "#6C63FF"; // 메인 보라 — 모든 카드뉴스 고정
+
 function sanitizeSeedOptions(data: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = { ...data };
   if (Array.isArray(data.mainOptions)) {
@@ -83,6 +85,7 @@ function sanitizeSeedOptions(data: Record<string, unknown>): Record<string, unkn
       if (next.l1) next.l1 = wrapIfTooLong(stripTrailingComma(naturalizeWords(softenPreachyTone(next.l1))), HEADLINE_LINE_LIMIT);
       if (next.l2) next.l2 = wrapIfTooLong(stripTrailingComma(naturalizeWords(softenPreachyTone(next.l2))), HEADLINE_LINE_LIMIT);
       next.accent = fixAccent(next.l1 || "", next.l2 || "", next.accent || "");
+      next.accentColor = BRAND_ACCENT_COLOR; // 모든 옵션 보라 고정
       return next;
     });
   }

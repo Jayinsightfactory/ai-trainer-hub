@@ -124,12 +124,19 @@ interface CardBodyPage {
   accent?: string;
 }
 
+const BRAND_ACCENT_COLOR = "#6C63FF"; // 메인 보라 — 모든 카드뉴스 고정
+
 function sanitizeCover(cover: CardCover, changes: string[]): CardCover {
   const out: CardCover = { ...cover };
   // 위인전 톤 + 어색한 단어 치환
   if (out.l1) out.l1 = naturalizeWords(softenPreachyTone(out.l1));
   if (out.l2) out.l2 = naturalizeWords(softenPreachyTone(out.l2));
   if (out.hook) out.hook = naturalizeWords(softenPreachyTone(out.hook));
+  // 브랜드 컬러 강제 — accentColor를 보라 #6C63FF로 통일
+  if (out.accentColor !== BRAND_ACCENT_COLOR) {
+    if (out.accentColor) changes.push(`커버 accentColor "${out.accentColor}" → "${BRAND_ACCENT_COLOR}" (브랜드 보라 고정)`);
+    out.accentColor = BRAND_ACCENT_COLOR;
+  }
   // 끝 쉼표 제거
   const beforeHook = out.hook;
   if (out.l1) out.l1 = stripTrailingComma(out.l1);
