@@ -16,10 +16,10 @@ export const maxDuration = 90;
 // 4) 위인전 톤 어미 1차 치환  5) 변경 로그 changes[]에 누적
 // ───────────────────────────────────────────────────────────────
 
-const HEADLINE_LINE_LIMIT = 12;
-const SUB_LIMIT = 22;
-const BODY_LINE_LIMIT = 18;
-const HOOK_LIMIT = 22;
+const HEADLINE_LINE_LIMIT = 10;
+const SUB_LIMIT = 18;
+const BODY_LINE_LIMIT = 15;
+const HOOK_LIMIT = 18;
 
 const TRAIL_PUNCT = /[\s,，、]+$/;
 

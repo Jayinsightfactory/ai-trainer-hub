@@ -15,8 +15,8 @@ export const maxDuration = 90;
 // regenerate route의 sanitizeCardnewsPayload와 동일 정책 (중복 정의는 의도적 —
 // 두 API의 응답 schema가 달라 공통화 시 분기 비용이 더 큼).
 // ───────────────────────────────────────────────────────────────
-const HEADLINE_LINE_LIMIT = 12;
-const HOOK_LIMIT = 22;
+const HEADLINE_LINE_LIMIT = 10;
+const HOOK_LIMIT = 18;
 const TRAIL_PUNCT = /[\s,，、]+$/;
 
 function stripTrailingComma(s: string): string {

@@ -1355,29 +1355,35 @@ function buildCoverPrompt(){
 
   return `한국어 인스타그램 카드뉴스 커버 이미지 1장. 비율 9:16, 세로형 (1080x1920).
 
-배경 (사진): 평범한 30대 한국 직장인 남자가 어두운 방에서 노트북을 보다가 깜짝 놀란 표정. 따뜻한 책상 조명 + 차가운 모니터 빛이 얼굴에 섞임, 35mm 다큐멘터리 사진 스타일, 얕은 심도, 자연스러운 순간. 인물은 화면 상단 60% 영역(어깨~얼굴 클로즈업), 하단 40%는 어두운 책상 표면 — 이 어두운 공간 위에 텍스트가 들어감.
+배경 (사진): 평범한 30대 한국 직장인 남자가 어두운 방에서 노트북을 보다가 깜짝 놀란 표정. 따뜻한 책상 조명 + 차가운 모니터 빛이 얼굴에 섞임, 35mm 다큐멘터리 사진 스타일, 얕은 심도, 자연스러운 순간. 인물은 화면 상단 55% 영역(어깨~얼굴 클로즈업), 하단 45%는 어두운 책상 표면 — 이 어두운 공간 위에 텍스트가 들어감.
 
-이미지 하단에 다음 한글 텍스트를 정확히 렌더링 (Korean Hangul, 영어 번역 ❌, 글자 깨짐 ❌):
+이미지 하단 45% 영역을 텍스트가 꽉 채워야 함 (작은 텍스트 ❌, 빈 공간 ❌). 다음 한글 텍스트를 정확히 렌더링 (Korean Hangul, 영어 번역 ❌, 글자 깨짐 ❌, 받침 정확히):
 
-Headline — lower-middle area, bold white #F5F5F5 sans-serif (Pretendard Black style), 2 lines, tight line-height:
+Headline — lower area, VERY LARGE bold white #F5F5F5 sans-serif (Pretendard Black style), 2 lines, tight line-height, 화면 폭의 80% 정도 큰 크기:
 ${headlineQuoted}
 
 ${accentBlock}
 
-Sub-line — directly under the headline (tight spacing), small italic gold #FFD93D, medium weight, smaller than headline:
+Sub-line — directly under the headline (tight spacing), medium gold #FFD93D italic, smaller than headline but still readable on phone screen (헤드라인의 약 50% 크기):
 "${hook}"
 
-Handle — bottom-left corner, very small gray #7A8493:
+Handle — bottom-left corner, very small gray #7A8493 (한 번만):
 "${handle}"
 
-텍스트 영역 뒤에 매우 옅은 검정 그라데이션 오버레이 (텍스트만 보호, 사진 가리지 않음).
+텍스트 영역 뒤에 옅은 검정 그라데이션 오버레이 (텍스트 가독성 보호, 사진은 위쪽에 보이게).
+
+Layout 강제:
+- 헤드라인 + 부연 + 핸들이 이미지 하단 45% 영역을 꽉 채움 (텍스트 크게)
+- 헤드라인 한 줄 10자 이내 (한 줄 길면 글자 작아져서 안 보임)
+- 빈 공간은 상단 55%(사진 영역)에만 존재
 
 Strictly forbidden in the image:
 - Any English words on screen, brackets like 【】, Korean labels such as "헤드라인", "부연", "핸들"
 - Labels like "Line 1", "L1", "BLOCK", "Headline", "Sub"
 - Page numbers, "P1", "1/8", "swipe", "넘겨서 보기"
 - Watermarks, logos, borders, frames, rulers, arrows, pixel measurements
-- Broken Hangul (예: "굴체" not "글체"), fake romanization, duplicate handle
+- Broken Hangul (예: "글체"인데 "굴체"로 ❌, "글은"인데 "굴은" ❌), 받침 깨짐 ❌
+- Duplicate handle text
 - Trailing commas at end of any line`;
 }
 function updateCoverPrompt(){
