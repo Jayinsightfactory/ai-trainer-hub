@@ -2589,9 +2589,14 @@ function renderSeedsFromResponse(d){
     return `<div style="background:rgba(0,40,30,.18);border:1px solid ${border};border-radius:8px;padding:10px 12px;line-height:1.45;display:flex;flex-direction:column;gap:6px">
       <div style="font-size:13px;color:#F5F5F5;line-height:1.5">"${s.titleQuoted}"</div>
       ${s.hookQuoted?`<div style="font-size:11px;color:#C7CED8;line-height:1.4">↳ "${s.hookQuoted}"</div>`:''}
-      <div style="display:flex;align-items:center;gap:6px;margin-top:2px;font-size:10px;color:#7A8493">
+      <div style="display:flex;align-items:center;gap:6px;margin-top:2px;font-size:10px;color:#7A8493;flex-wrap:wrap">
         <span>${s.keyword} · ${s.evidenceCount}건</span>
         <span style="margin-left:auto">${_starBar(s.id,s.lastDecision?.rating)}</span>
+      </div>
+      <div style="display:flex;gap:4px">
+        <button onclick="runChecklist('${s.id}')" class="btn"
+          style="flex:1;font-size:10px;padding:4px 8px;background:rgba(108,99,255,.15);border:1px solid #6C63FF;color:#6C63FF;font-weight:600"
+          title="실데이터 인용/자연체 톤/추적성 등 11개 자동 검증">📋 체크리스트 검증</button>
       </div>
       <details style="font-size:10px;color:#7A8493">
         <summary style="cursor:pointer;outline:none">출처 ${ev.length}건</summary>
@@ -3197,6 +3202,66 @@ async function goToSeedStep(){
 
 // 작은 HTML escape util
 function escapeHtml(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+// ─── 📋 시드 체크리스트 검증 (사용자 원칙 11개 자동 확인) ───
+async function runChecklist(seedId){
+  // 기존 모달 제거
+  document.getElementById('checklistModal')?.remove();
+  const backdrop=document.createElement('div');
+  backdrop.id='checklistModal';
+  backdrop.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
+  backdrop.innerHTML=`<div style="background:#0E1521;border:1px solid rgba(0,212,170,.4);border-radius:12px;padding:18px;max-width:680px;width:100%;max-height:85vh;overflow-y:auto;color:#F5F5F5">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <span style="font-size:14px;font-weight:700;color:#00D4AA">📋 체크리스트 검증</span>
+      <span id="clScore" style="font-size:11px;color:#7A8493;margin-left:auto">검증 중…</span>
+      <button onclick="document.getElementById('checklistModal').remove()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#F5F5F5;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer">✕</button>
+    </div>
+    <div id="clBody" style="font-size:12px;color:#C7CED8">로딩 중…</div>
+  </div>`;
+  backdrop.addEventListener('click',e=>{if(e.target===backdrop)backdrop.remove();});
+  document.body.appendChild(backdrop);
+
+  try{
+    const r=await fetch(`/api/contents/seeds/${encodeURIComponent(seedId)}/checklist`);
+    const d=await r.json();
+    if(!d.ok){document.getElementById('clBody').innerHTML='<div style="color:#FF8A3D">'+d.error+'</div>';return;}
+    const STATUS={pass:{c:'#00D4AA',i:'✓'}, fail:{c:'#FF3B3B',i:'✗'}, warn:{c:'#FFD93D',i:'⚠'}, info:{c:'#7A8493',i:'·'}};
+    const CAT={traceability:'🌳 Traceability', real_data:'🔥 실데이터 인용', copy_quality:'✏ 카피 품질', meta:'📊 메타'};
+    document.getElementById('clScore').innerHTML=`종합 <b style="color:${d.score>=80?'#00D4AA':d.score>=60?'#FFD93D':'#FF3B3B'}">${d.score}점</b> · ✓${d.summary.pass} ⚠${d.summary.warn} ✗${d.summary.fail}`;
+    // category별 그룹화
+    const grouped={};
+    d.items.forEach(it=>{(grouped[it.category]=grouped[it.category]||[]).push(it);});
+    const sections=Object.entries(grouped).map(([cat,items])=>{
+      const rows=items.map(it=>{
+        const s=STATUS[it.status]||STATUS.info;
+        return `<div style="display:flex;gap:8px;padding:6px 8px;background:rgba(255,255,255,.02);border-left:3px solid ${s.c};margin-bottom:4px;border-radius:0 4px 4px 0">
+          <span style="color:${s.c};font-weight:700;flex-shrink:0">${s.i}</span>
+          <div style="flex:1">
+            <div style="color:#F5F5F5;font-size:12px">${escapeHtml(it.name)}</div>
+            <div style="color:#7A8493;font-size:10px;margin-top:2px">${escapeHtml(it.detail)}</div>
+            ${it.fix?`<div style="color:#FFD93D;font-size:10px;margin-top:2px">💡 ${escapeHtml(it.fix)}</div>`:''}
+          </div>
+          <span style="font-size:9px;color:#7A8493;flex-shrink:0">${it.id}</span>
+        </div>`;
+      }).join('');
+      return `<div style="margin-bottom:14px">
+        <div style="font-size:11px;color:#00D4AA;font-weight:700;margin-bottom:6px">${CAT[cat]||cat}</div>
+        ${rows}
+      </div>`;
+    }).join('');
+    const snap=d.seedSnapshot;
+    document.getElementById('clBody').innerHTML=`
+      <div style="background:rgba(0,40,30,.25);border:1px solid rgba(0,212,170,.2);border-radius:6px;padding:8px 10px;margin-bottom:12px;font-size:11px">
+        <div style="color:#7A8493;font-size:9px;margin-bottom:2px">검증 대상 시드</div>
+        <div style="color:#F5F5F5">"${escapeHtml(snap.titleQuoted)}"</div>
+        ${snap.hookQuoted?`<div style="color:#C7CED8;margin-top:3px">↳ "${escapeHtml(snap.hookQuoted)}"</div>`:''}
+      </div>
+      ${sections}
+      <div style="font-size:10px;color:#7A8493;border-top:1px solid rgba(255,255,255,.06);padding-top:8px;margin-top:8px">
+        ✓ pass · ⚠ warn (개선 권장) · ✗ fail (반드시 수정) · · info (해당 없음)
+      </div>`;
+  }catch(e){document.getElementById('clBody').innerHTML='<div style="color:#FF3B3B">'+e.message+'</div>';}
+}
+
 async function decideSeed(seedId,rating){
   try{
     const r=await fetch(`/api/contents/seeds/${encodeURIComponent(seedId)}/decision`,{
