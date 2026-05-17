@@ -314,21 +314,37 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:22px 0}
     <span class="flow-step">인사이트 도출</span>
   </div>
 
-  <!-- 🛰 실데이터 수집 (YT 댓글 + Reddit + 클리앙) -->
+  <!-- 🛰 실데이터: 수집 → 탐색 → 선택 -->
   <div style="background:linear-gradient(180deg,rgba(0,40,30,.4),rgba(0,60,45,.25));border:1px solid rgba(0,212,170,.35);border-radius:10px;padding:14px;margin-bottom:14px">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-      <span style="color:#00D4AA;font-weight:700;font-size:13px">🛰 실데이터 수집 (YT 댓글 + Reddit + 클리앙)</span>
+      <span style="color:#00D4AA;font-weight:700;font-size:13px">🛰 1단계: 수집 → 선택</span>
       <span id="ingestStatus" style="font-size:10px;color:#7A8493;margin-left:auto">대기</span>
     </div>
     <div style="display:flex;gap:6px;margin-bottom:8px">
-      <input id="ingestKw" placeholder="키워드 콤마 구분 (예: AI 자동화, 챗GPT 결제, 엑셀 함수)"
+      <input id="ingestKw" placeholder="키워드 콤마 구분 (예: AI 자동화, 챗GPT 결제)"
         style="flex:1;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:8px 10px;color:#F5F5F5;font-size:12px">
       <button onclick="runIngest()" class="btn"
         style="background:#00D4AA;border-color:#00D4AA;color:#0A1F2E;font-weight:700;font-size:12px;padding:8px 14px">▶ 수집</button>
     </div>
-    <div id="ingestReport" style="font-size:11px;color:#C7CED8;line-height:1.6;max-height:120px;overflow-y:auto"></div>
-    <div style="font-size:10px;color:#7A8493;margin-top:6px">
-      수집된 발언은 STEP 2에서 인사이트로 추출 → STEP 3에서 주제·주장으로 묶임 → STEP 4 시드로 자동 등장.
+    <div id="ingestReport" style="font-size:11px;color:#C7CED8;line-height:1.6;max-height:80px;overflow-y:auto;margin-bottom:8px"></div>
+
+    <!-- 키워드 풀 (체크해서 그 키워드 발언만 보기) -->
+    <div id="keywordPoolWrap" style="margin-bottom:8px;display:none">
+      <div style="font-size:10px;color:#7A8493;margin-bottom:4px">키워드 (체크하면 그 키워드 발언만 표시):</div>
+      <div id="keywordPool" style="display:flex;flex-wrap:wrap;gap:4px"></div>
+    </div>
+
+    <!-- Evidence 카드 그리드 (체크해서 선택) -->
+    <div id="evidencePoolWrap" style="display:none">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span style="font-size:11px;color:#F5F5F5">📋 떠오르는 정보 <span id="evidenceCount" style="color:#7A8493">0건</span></span>
+        <span id="evSelectedCount" style="font-size:10px;color:#00D4AA;margin-left:4px">선택 0건</span>
+        <button onclick="evSelectAll()" class="btn" style="font-size:10px;padding:3px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#F5F5F5">전체</button>
+        <button onclick="evClearSel()" class="btn" style="font-size:10px;padding:3px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#F5F5F5">해제</button>
+        <button onclick="goToInsightStep()" class="btn"
+          style="margin-left:auto;background:#00D4AA;border-color:#00D4AA;color:#0A1F2E;font-weight:700;font-size:11px;padding:5px 12px">선택 완료 → STEP 2</button>
+      </div>
+      <div id="evidencePool" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:6px;max-height:400px;overflow-y:auto;padding:4px"></div>
     </div>
   </div>
 
@@ -390,21 +406,42 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:22px 0}
     <span class="flow-step">주제·주장</span>
   </div>
 
-  <!-- 🛰 실데이터 인사이트 (Claude가 수집된 Evidence에서 반복 발견 추출) -->
+  <!-- 🛰 2단계: AI 인사이트 + 본인 인사이트 -->
   <div style="background:linear-gradient(180deg,rgba(0,40,30,.4),rgba(0,60,45,.25));border:1px solid rgba(0,212,170,.35);border-radius:10px;padding:14px;margin-bottom:14px">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-      <span style="color:#00D4AA;font-weight:700;font-size:13px">🛰 실데이터 인사이트</span>
+      <span style="color:#00D4AA;font-weight:700;font-size:13px">🛰 2단계: 인사이트 도출 (AI + 본인)</span>
       <span id="insightStatus" style="font-size:10px;color:#7A8493;margin-left:auto">대기</span>
-      <input id="insightKw" placeholder="키워드 (수집한 것 중)"
-        style="background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:5px 8px;color:#F5F5F5;font-size:11px;width:200px">
       <button onclick="runInsightExtract()" class="btn"
-        style="background:#00D4AA;border-color:#00D4AA;color:#0A1F2E;font-weight:700;font-size:11px;padding:5px 12px">🔍 추출</button>
+        style="background:#00D4AA;border-color:#00D4AA;color:#0A1F2E;font-weight:700;font-size:11px;padding:5px 12px"
+        title="STEP 1에서 선택한 Evidence 기반 AI 인사이트 추출">🤖 AI 추출</button>
       <button onclick="renderInsights()" class="btn"
         style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#F5F5F5;font-size:11px;padding:5px 10px">↻</button>
     </div>
-    <div id="insightList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:8px;max-height:280px;overflow-y:auto"></div>
-    <div style="font-size:10px;color:#7A8493;margin-top:6px">
-      Claude가 evidence 원문에서 *반복되는 발견*만 한 줄로 뽑음 (최소 2명 이상 동의 필요). 새 사실 생성 ❌.
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px">
+      <!-- 좌: AI 인사이트 -->
+      <div>
+        <div style="font-size:10px;color:#7A8493;margin-bottom:4px">🤖 AI 인사이트 <span id="aiInsightCount">0건</span> (수정/삭제 가능)</div>
+        <div id="aiInsightList" style="display:flex;flex-direction:column;gap:6px;min-height:80px;max-height:300px;overflow-y:auto"></div>
+      </div>
+      <!-- 우: 사용자 인사이트 -->
+      <div>
+        <div style="font-size:10px;color:#7A8493;margin-bottom:4px">✍️ 본인 인사이트 <span id="userInsightCount">0건</span></div>
+        <div id="userInsightList" style="display:flex;flex-direction:column;gap:6px;min-height:80px;max-height:240px;overflow-y:auto"></div>
+        <div style="display:flex;gap:4px;margin-top:6px">
+          <input id="newUserInsight" placeholder="본인 인사이트 한 줄 입력 (50자 권장)"
+            style="flex:1;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:6px 8px;color:#F5F5F5;font-size:11px"
+            onkeydown="if(event.key==='Enter')addUserInsight()">
+          <button onclick="addUserInsight()" class="btn"
+            style="font-size:11px;padding:5px 10px;background:rgba(0,212,170,.18);border:1px solid #00D4AA;color:#00D4AA">＋ 추가</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:8px;border-top:1px solid rgba(255,255,255,.06);padding-top:8px">
+      <span style="font-size:10px;color:#7A8493">합계 <span id="totalInsightCount">0건</span> → 다음 단계로 전달됩니다</span>
+      <button onclick="goToThesisStep()" class="btn"
+        style="margin-left:auto;background:#00D4AA;border-color:#00D4AA;color:#0A1F2E;font-weight:700;font-size:11px;padding:5px 14px">수정 완료 → STEP 3</button>
     </div>
   </div>
 
@@ -439,21 +476,24 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:22px 0}
     <span class="flow-step done">정합성 검증</span>
   </div>
 
-  <!-- 🛰 실데이터 주제·주장 (Insight 클러스터링 → 주장 N개, 5개 고정 ❌) -->
+  <!-- 🛰 3단계: 주제·주장 기획 (textarea 자유 편집) -->
   <div style="background:linear-gradient(180deg,rgba(0,40,30,.4),rgba(0,60,45,.25));border:1px solid rgba(0,212,170,.35);border-radius:10px;padding:14px;margin-bottom:14px">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-      <span style="color:#00D4AA;font-weight:700;font-size:13px">🛰 실데이터 주제·주장</span>
+      <span style="color:#00D4AA;font-weight:700;font-size:13px">🛰 3단계: 주제·주장 기획 (자유 편집)</span>
       <span id="thesesStatus" style="font-size:10px;color:#7A8493;margin-left:auto">대기</span>
-      <input id="thesesKw" placeholder="키워드 (없으면 전체)"
-        style="background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:5px 8px;color:#F5F5F5;font-size:11px;width:180px">
       <button onclick="runThesesCluster()" class="btn"
-        style="background:#00D4AA;border-color:#00D4AA;color:#0A1F2E;font-weight:700;font-size:11px;padding:5px 12px">🧩 클러스터링</button>
+        style="background:#00D4AA;border-color:#00D4AA;color:#0A1F2E;font-weight:700;font-size:11px;padding:5px 12px"
+        title="STEP 2 인사이트 기반 AI 후보 제안">🤖 AI 제안</button>
+      <button onclick="addEmptyThesis()" class="btn"
+        style="background:rgba(0,212,170,.18);border:1px solid #00D4AA;color:#00D4AA;font-size:11px;padding:5px 12px">＋ 직접 추가</button>
       <button onclick="renderTheses()" class="btn"
         style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#F5F5F5;font-size:11px;padding:5px 10px">↻</button>
     </div>
-    <div id="thesesList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:8px;max-height:320px;overflow-y:auto"></div>
-    <div style="font-size:10px;color:#7A8493;margin-top:6px">
-      개수는 데이터양에 비례 (5개 고정 ❌). <b style="color:#00D4AA">⭐ 채택</b> 클릭 → STEP 4에 자동으로 시드 1장 생성됨.
+    <div id="thesesList" style="display:flex;flex-direction:column;gap:8px;max-height:420px;overflow-y:auto"></div>
+    <div style="display:flex;align-items:center;gap:8px;border-top:1px solid rgba(255,255,255,.06);padding-top:8px;margin-top:8px">
+      <span style="font-size:10px;color:#7A8493">텍스트 직접 편집 가능. ✓ 저장 누른 주장만 STEP 4로 전달됩니다.</span>
+      <button onclick="goToSeedStep()" class="btn"
+        style="margin-left:auto;background:#00D4AA;border-color:#00D4AA;color:#0A1F2E;font-weight:700;font-size:11px;padding:5px 14px">기획 완료 → STEP 4</button>
     </div>
   </div>
 
@@ -2543,6 +2583,21 @@ function renderSeedsFromResponse(d){
 }
 
 // ─── STEP 1: 키워드 수집 (ingest) ───
+// ═══════════════════════════════════════════════════════════════════
+// 사용자 주도 워크플로우 — 각 단계 [AI 후보 + 사용자 편집] → 명시적 다음 단계
+// state는 sessionStorage로 단계 간 전파.
+// ═══════════════════════════════════════════════════════════════════
+
+const SS={
+  selEv: 'realdata.selectedEvidenceIds',
+  selKw: 'realdata.selectedKeywords',
+  selIn: 'realdata.selectedInsightIds',
+};
+function ssGet(k){try{return JSON.parse(sessionStorage.getItem(k)||'[]');}catch{return [];}}
+function ssSet(k,v){sessionStorage.setItem(k,JSON.stringify(v));}
+function ssToggle(k,id){const a=ssGet(k);const i=a.indexOf(id);if(i>=0)a.splice(i,1);else a.push(id);ssSet(k,a);return a;}
+
+// ─── STEP 1: 수집 → 탐색 → 선택 ───
 async function runIngest(){
   const raw=document.getElementById('ingestKw')?.value||'';
   const keywords=raw.split(',').map(s=>s.trim()).filter(Boolean).slice(0,5);
@@ -2559,53 +2614,185 @@ async function runIngest(){
     st.textContent=`✅ Evidence ${d.summary.evidenceUpserted}건 저장`;
     rep.innerHTML=(d.report||[]).map(r=>{
       const ok=!r.error;
-      return `<div style="color:${ok?'#C7CED8':'#FF8A3D'}">
-        ${ok?'✓':'⚠'} <b>${r.platform}</b> · ${r.keyword} → ${r.upserted}건${r.error?' ('+r.error.slice(0,80)+')':''}
-      </div>`;
+      return `<div style="color:${ok?'#C7CED8':'#FF8A3D'}">${ok?'✓':'⚠'} <b>${r.platform}</b>·${r.keyword} ${r.upserted}건</div>`;
     }).join('');
+    ssSet(SS.selKw, keywords); // 수집한 키워드 자동 선택 상태로
+    await loadKeywordPool();
+    await loadEvidencePool();
   }catch(e){st.textContent='⚠ '+e.message;}
 }
 
-// ─── STEP 2: 인사이트 추출 ───
+let _allEvidence=[]; // {id,platform,textRaw,keyword,upvotes,likes,postedAt}
+
+async function loadKeywordPool(){
+  const wrap=document.getElementById('keywordPoolWrap');
+  const pool=document.getElementById('keywordPool');
+  if(!wrap||!pool)return;
+  const kws=ssGet(SS.selKw);
+  if(kws.length===0){wrap.style.display='none';return;}
+  wrap.style.display='block';
+  pool.innerHTML=kws.map(kw=>{
+    const checked=kws.includes(kw);
+    return `<label style="font-size:11px;color:#F5F5F5;background:${checked?'rgba(0,212,170,.18)':'rgba(255,255,255,.05)'};border:1px solid ${checked?'#00D4AA':'rgba(255,255,255,.15)'};border-radius:14px;padding:4px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:4px">
+      <input type="checkbox" ${checked?'checked':''} onchange="toggleKw('${kw.replace(/'/g,"\\'")}')" style="margin:0">${kw}
+    </label>`;
+  }).join('');
+}
+function toggleKw(kw){
+  const cur=ssGet(SS.selKw);
+  const i=cur.indexOf(kw); if(i>=0)cur.splice(i,1); else cur.push(kw);
+  ssSet(SS.selKw,cur);
+  loadKeywordPool();
+  loadEvidencePool();
+}
+
+async function loadEvidencePool(){
+  const wrap=document.getElementById('evidencePoolWrap');
+  const grid=document.getElementById('evidencePool');
+  const cnt=document.getElementById('evidenceCount');
+  if(!wrap||!grid)return;
+  const selKw=ssGet(SS.selKw);
+  if(selKw.length===0){wrap.style.display='none';return;}
+  wrap.style.display='block';
+  // 키워드 풀에 든 evidence 모두 가져오기 (간단판: 각 키워드별 fetch)
+  const groups=await Promise.all(selKw.map(kw=>fetch('/api/contents/evidence?keyword='+encodeURIComponent(kw)+'&limit=40').then(r=>r.json()).catch(()=>({ok:false,evidence:[]}))));
+  _allEvidence=[];
+  groups.forEach(g=>{if(g.ok)_allEvidence.push(...(g.evidence||[]));});
+  cnt.textContent=`${_allEvidence.length}건`;
+  renderEvidencePool();
+}
+function renderEvidencePool(){
+  const grid=document.getElementById('evidencePool');
+  if(!grid)return;
+  const sel=new Set(ssGet(SS.selEv));
+  const PLAT={youtube:{c:'#FF3B3B',l:'YT'},reddit:{c:'#FF8A3D',l:'Reddit'},clien:{c:'#FFD93D',l:'클리앙'}};
+  if(_allEvidence.length===0){grid.innerHTML='<div style="grid-column:1/-1;padding:14px;text-align:center;color:#7A8493;font-size:11px;border:1px dashed rgba(255,255,255,.15);border-radius:6px">수집된 evidence 0건</div>';return;}
+  grid.innerHTML=_allEvidence.map(e=>{
+    const checked=sel.has(e.id);
+    const p=PLAT[e.platform]||{c:'#888',l:e.platform};
+    const text=(e.textRaw||'').slice(0,140);
+    const sig=(e.upvotes||0)+(e.likes||0);
+    return `<label style="background:${checked?'rgba(0,212,170,.12)':'rgba(255,255,255,.04)'};border:1px solid ${checked?'#00D4AA':'rgba(255,255,255,.12)'};border-radius:6px;padding:8px 10px;display:flex;gap:8px;cursor:pointer;align-items:flex-start">
+      <input type="checkbox" ${checked?'checked':''} onchange="toggleEv('${e.id}')" style="margin-top:2px;flex-shrink:0">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;gap:6px;font-size:9px;color:#7A8493;margin-bottom:3px">
+          <span style="color:${p.c}">${p.l}</span><span>${e.keyword}</span>${sig>0?`<span>${sig}↑</span>`:''}
+        </div>
+        <div style="font-size:11px;color:#F5F5F5;line-height:1.4;word-break:break-word">${text}${(e.textRaw||'').length>140?'…':''}</div>
+      </div>
+    </label>`;
+  }).join('');
+  document.getElementById('evSelectedCount').textContent=`선택 ${sel.size}건`;
+}
+function toggleEv(id){ssToggle(SS.selEv,id);renderEvidencePool();}
+function evSelectAll(){ssSet(SS.selEv,_allEvidence.map(e=>e.id));renderEvidencePool();}
+function evClearSel(){ssSet(SS.selEv,[]);renderEvidencePool();}
+function goToInsightStep(){
+  const sel=ssGet(SS.selEv);
+  if(sel.length===0){if(!confirm('선택된 발언 0건입니다. 그래도 STEP 2로 갈까요? (AI 추출 못 함)'))return;}
+  if(typeof goStage==='function')goStage(1);
+  setTimeout(renderInsights,200);
+  appendLog?.(`▶ STEP 2 이동 (선택 evidence ${sel.length}건)`,'warn');
+}
+
+// ─── STEP 2: AI + 본인 인사이트 ───
 async function runInsightExtract(){
-  const kw=document.getElementById('insightKw')?.value?.trim();
-  if(!kw){alert('키워드를 입력하세요 (STEP 1에서 수집한 것)');return;}
+  const evIds=ssGet(SS.selEv);
+  if(evIds.length<2){alert('STEP 1에서 발언 2개 이상 선택해주세요');return;}
   const st=document.getElementById('insightStatus');
   st.textContent='추출 중… (Claude)';
   try{
     const r=await fetch('/api/contents/insights/extract',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({keyword:kw})});
+      body:JSON.stringify({evidenceIds:evIds})});
     const d=await r.json();
     if(!d.ok)throw new Error(d.error||'실패');
-    st.textContent=`✅ ${d.insightsCreated}개 인사이트 (evidence ${d.evidenceConsidered}건 검토)`;
+    st.textContent=`✅ AI ${d.insightsCreated}개 추출 (evidence ${d.evidenceConsidered}건)`;
     renderInsights();
   }catch(e){st.textContent='⚠ '+e.message;}
 }
 async function renderInsights(){
-  const list=document.getElementById('insightList');if(!list)return;
+  const aiList=document.getElementById('aiInsightList');
+  const usList=document.getElementById('userInsightList');
+  if(!aiList||!usList)return;
   try{
-    const r=await fetch('/api/contents/insights/extract');
+    const r=await fetch('/api/contents/insights');
     const d=await r.json();
-    if(!d.ok){list.innerHTML='<div style="color:#FF8A3D;font-size:11px">'+d.error+'</div>';return;}
-    if(d.count===0){list.innerHTML='<div style="grid-column:1/-1;padding:14px;text-align:center;color:#7A8493;font-size:11px;border:1px dashed rgba(255,255,255,.15);border-radius:6px">인사이트 0건 — 위에서 추출 실행</div>';return;}
-    list.innerHTML=d.insights.map(i=>`<div style="background:rgba(0,40,30,.25);border:1px solid rgba(0,212,170,.25);border-radius:6px;padding:8px 10px">
-      <div style="font-size:11px;color:#F5F5F5;line-height:1.4">${i.text}</div>
-      <div style="font-size:9px;color:#7A8493;margin-top:4px">${i.keyword} · 근거 ${i.evidenceIds.length}건 · signal ${i.signalSum.toFixed(1)} ${i.thesisId?'· 📌 thesis 묶임':''}</div>
-    </div>`).join('');
-  }catch(e){list.innerHTML='<div style="color:#FF3B3B;font-size:11px">'+e.message+'</div>';}
+    if(!d.ok){aiList.innerHTML='<div style="color:#FF8A3D;font-size:11px">'+d.error+'</div>';return;}
+    const ai=d.insights.filter(i=>i.source==='ai');
+    const us=d.insights.filter(i=>i.source==='user');
+    document.getElementById('aiInsightCount').textContent=`${ai.length}건`;
+    document.getElementById('userInsightCount').textContent=`${us.length}건`;
+    document.getElementById('totalInsightCount').textContent=`${ai.length+us.length}건`;
+    const card=(i,isUser)=>`<div data-id="${i.id}" style="background:rgba(0,40,30,.22);border:1px solid ${isUser?'rgba(255,217,61,.4)':'rgba(0,212,170,.25)'};border-radius:6px;padding:7px 9px">
+      <div data-view style="font-size:11px;color:#F5F5F5;line-height:1.4">${escapeHtml(i.text)}</div>
+      <div style="display:flex;gap:4px;margin-top:5px">
+        <span style="font-size:9px;color:#7A8493;flex:1">${isUser?'✍️ 본인':'🤖 AI'}${i.editedAt?' · 수정됨':''}${i.evidenceIds?.length?` · 근거 ${i.evidenceIds.length}`:''}</span>
+        <button onclick="editInsightStart('${i.id}', this)" class="btn" style="font-size:9px;padding:2px 6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#F5F5F5">✏ 수정</button>
+        <button onclick="deleteInsight('${i.id}')" class="btn" style="font-size:9px;padding:2px 6px;background:rgba(255,59,59,.1);border:1px solid rgba(255,59,59,.3);color:#FF8A8A">🗑</button>
+      </div>
+    </div>`;
+    aiList.innerHTML=ai.length?ai.map(i=>card(i,false)).join(''):'<div style="color:#7A8493;font-size:10px;padding:10px;text-align:center;border:1px dashed rgba(255,255,255,.1);border-radius:6px">🤖 AI 추출 버튼 누르세요</div>';
+    usList.innerHTML=us.length?us.map(i=>card(i,true)).join(''):'<div style="color:#7A8493;font-size:10px;padding:10px;text-align:center;border:1px dashed rgba(255,255,255,.1);border-radius:6px">아래 입력 칸에서 추가</div>';
+  }catch(e){aiList.innerHTML='<div style="color:#FF3B3B;font-size:11px">'+e.message+'</div>';}
+}
+function editInsightStart(id,btn){
+  const wrap=btn.closest('[data-id]');
+  const view=wrap.querySelector('[data-view]');
+  const cur=view.textContent;
+  view.innerHTML=`<textarea id="ed-${id}" style="width:100%;min-height:50px;background:rgba(0,0,0,.4);border:1px solid #00D4AA;border-radius:4px;color:#F5F5F5;font-size:11px;padding:5px;font-family:inherit">${escapeHtml(cur)}</textarea>
+    <div style="display:flex;gap:4px;margin-top:4px">
+      <button onclick="editInsightSave('${id}')" class="btn" style="flex:1;font-size:10px;padding:3px;background:#00D4AA;border-color:#00D4AA;color:#0A1F2E;font-weight:600">✓ 저장</button>
+      <button onclick="renderInsights()" class="btn" style="font-size:10px;padding:3px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#F5F5F5">취소</button>
+    </div>`;
+}
+async function editInsightSave(id){
+  const t=document.getElementById('ed-'+id)?.value?.trim();
+  if(!t)return;
+  try{
+    const r=await fetch('/api/contents/insights/'+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text:t})});
+    const d=await r.json();
+    if(!d.ok)throw new Error(d.error);
+    renderInsights();
+  }catch(e){alert('수정 실패: '+e.message);}
+}
+async function deleteInsight(id){
+  if(!confirm('이 인사이트 삭제?'))return;
+  try{await fetch('/api/contents/insights/'+encodeURIComponent(id),{method:'DELETE'});renderInsights();}
+  catch(e){alert('삭제 실패');}
+}
+async function addUserInsight(){
+  const inp=document.getElementById('newUserInsight');
+  const text=inp?.value?.trim();
+  if(!text){inp?.focus();return;}
+  const evIds=ssGet(SS.selEv);
+  const selKw=ssGet(SS.selKw);
+  const keyword=selKw[0]||'manual';
+  try{
+    const r=await fetch('/api/contents/insights',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({keyword,text,evidenceIds:evIds})});
+    const d=await r.json();
+    if(!d.ok)throw new Error(d.error);
+    inp.value='';
+    renderInsights();
+  }catch(e){alert('추가 실패: '+e.message);}
+}
+function goToThesisStep(){
+  if(typeof goStage==='function')goStage(2);
+  setTimeout(renderTheses,200);
+  appendLog?.('▶ STEP 3 이동','warn');
 }
 
-// ─── STEP 3: 주제·주장 클러스터링 + 채택 ───
+// ─── STEP 3: 주제·주장 자유 편집 ───
 async function runThesesCluster(){
-  const kw=document.getElementById('thesesKw')?.value?.trim();
   const st=document.getElementById('thesesStatus');
-  st.textContent='클러스터링 중… (Claude)';
+  st.textContent='AI 제안 중… (Claude)';
   try{
     const r=await fetch('/api/contents/theses',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(kw?{keyword:kw}:{})});
+      body:JSON.stringify({})});
     const d=await r.json();
     if(!d.ok)throw new Error(d.error||'실패');
-    st.textContent=`✅ ${d.thesesCreated}개 주장 (insight ${d.insightsConsidered}건 검토)`;
+    st.textContent=`✅ ${d.thesesCreated}개 후보 (insight ${d.insightsConsidered}건)`;
     renderTheses();
   }catch(e){st.textContent='⚠ '+e.message;}
 }
@@ -2615,28 +2802,45 @@ async function renderTheses(){
     const r=await fetch('/api/contents/theses');
     const d=await r.json();
     if(!d.ok){list.innerHTML='<div style="color:#FF8A3D;font-size:11px">'+d.error+'</div>';return;}
-    if(d.count===0){list.innerHTML='<div style="grid-column:1/-1;padding:14px;text-align:center;color:#7A8493;font-size:11px;border:1px dashed rgba(255,255,255,.15);border-radius:6px">주장 0건 — 위에서 클러스터링 실행</div>';return;}
+    if(d.count===0){list.innerHTML='<div style="padding:14px;text-align:center;color:#7A8493;font-size:11px;border:1px dashed rgba(255,255,255,.15);border-radius:6px">주장 0건 — 🤖 AI 제안 또는 ＋ 직접 추가</div>';return;}
     list.innerHTML=d.theses.map(t=>{
       const isPicked=t.status==='picked';
-      const isRejected=t.status==='rejected';
-      const border=isPicked?'rgba(0,212,170,.6)':isRejected?'rgba(255,59,59,.4)':'rgba(0,212,170,.2)';
-      return `<div style="background:rgba(0,40,30,.25);border:1px solid ${border};border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px">
-        <div style="display:flex;justify-content:space-between;font-size:10px;color:#7A8493">
-          <span>#${t.rank} · ${t.topic}</span>
-          <span title="현실성">현실성 ${t.realityScore} · 시드 ${t.seedCount}</span>
+      const border=isPicked?'rgba(0,212,170,.5)':'rgba(255,255,255,.12)';
+      const sourceTag=t.source==='user'?'<span style="color:#FFD93D;font-size:9px">✍️ 본인</span>':'<span style="color:#00D4AA;font-size:9px">🤖 AI</span>';
+      const editedTag=t.editedByUser?'<span style="color:#FFD93D;font-size:9px">· 수정됨</span>':'';
+      return `<div data-tid="${t.id}" style="background:rgba(0,40,30,.18);border:1px solid ${border};border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;gap:6px;align-items:center">
+          ${sourceTag} ${editedTag}
+          <span style="font-size:9px;color:#7A8493">#${t.rank} · 인사이트 ${t.insightCount}건</span>
+          <span style="margin-left:auto;font-size:9px;color:${isPicked?'#00D4AA':'#7A8493'}">${t.status}</span>
         </div>
-        <div style="font-size:13px;color:#F5F5F5;font-weight:600;line-height:1.4">"${t.claim}"</div>
-        <div style="font-size:10px;color:#C7CED8;line-height:1.5">근거 인사이트 ${t.insightCount}건:
-          <ul style="margin:3px 0 0 14px;padding:0">${(t.insights||[]).slice(0,3).map(i=>`<li style="font-size:10px;color:#C7CED8">${i.text}</li>`).join('')}</ul>
-        </div>
-        <div style="display:flex;gap:4px;margin-top:4px;border-top:1px solid rgba(255,255,255,.06);padding-top:6px">
-          <button onclick="pickThesis('${t.id}','picked')" class="btn" style="flex:1;font-size:10px;padding:4px 8px;background:${isPicked?'#00D4AA':'rgba(0,212,170,.15)'};border:1px solid #00D4AA;color:${isPicked?'#0A1F2E':'#00D4AA'};font-weight:600">⭐ 채택</button>
-          <button onclick="pickThesis('${t.id}','rejected')" class="btn" style="font-size:10px;padding:4px 8px;background:rgba(255,59,59,.1);border:1px solid rgba(255,59,59,.3);color:#FF8A8A">제외</button>
-          <button onclick="pickThesis('${t.id}','candidate')" class="btn" style="font-size:10px;padding:4px 8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);color:#C7CED8">초기화</button>
+        <label style="font-size:9px;color:#7A8493">주제 (topic)</label>
+        <input type="text" data-topic value="${escapeHtml(t.topic)}" style="background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.12);border-radius:5px;padding:6px 8px;color:#F5F5F5;font-size:12px;font-family:inherit">
+        <label style="font-size:9px;color:#7A8493">주장 (claim)</label>
+        <textarea data-claim style="background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.12);border-radius:5px;padding:6px 8px;color:#F5F5F5;font-size:13px;font-weight:600;font-family:inherit;min-height:50px">${escapeHtml(t.claim)}</textarea>
+        <div style="display:flex;gap:4px;margin-top:4px">
+          <button onclick="saveThesis('${t.id}')" class="btn" style="flex:1;font-size:10px;padding:5px;background:#00D4AA;border-color:#00D4AA;color:#0A1F2E;font-weight:600">✓ 저장</button>
+          <button onclick="pickThesis('${t.id}','${isPicked?'candidate':'picked'}')" class="btn" style="font-size:10px;padding:5px 10px;background:${isPicked?'#00D4AA':'rgba(0,212,170,.15)'};border:1px solid #00D4AA;color:${isPicked?'#0A1F2E':'#00D4AA'};font-weight:600">${isPicked?'★ 채택됨':'☆ 채택'}</button>
+          <button onclick="deleteThesis('${t.id}')" class="btn" style="font-size:10px;padding:5px 8px;background:rgba(255,59,59,.1);border:1px solid rgba(255,59,59,.3);color:#FF8A8A">🗑</button>
         </div>
       </div>`;
     }).join('');
   }catch(e){list.innerHTML='<div style="color:#FF3B3B;font-size:11px">'+e.message+'</div>';}
+}
+async function saveThesis(id){
+  const wrap=document.querySelector(`[data-tid="${id}"]`);
+  if(!wrap)return;
+  const topic=wrap.querySelector('[data-topic]')?.value?.trim();
+  const claim=wrap.querySelector('[data-claim]')?.value?.trim();
+  if(!topic||!claim){alert('주제·주장 모두 필요');return;}
+  try{
+    const r=await fetch('/api/contents/theses/'+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({topic,claim})});
+    const d=await r.json();
+    if(!d.ok)throw new Error(d.error);
+    appendLog?.(`✓ 주장 저장 #${id.slice(0,6)}`,'warn');
+    renderTheses();
+  }catch(e){alert('저장 실패: '+e.message);}
 }
 async function pickThesis(id,status){
   try{
@@ -2644,11 +2848,39 @@ async function pickThesis(id,status){
       body:JSON.stringify({id,status})});
     const d=await r.json();
     if(!d.ok)throw new Error(d.error||'실패');
-    appendLog(`📌 주장 → ${status}${d.seed?` · 시드 자동 생성 (evidence ${d.seed.evidenceCount}건, 점수 ${d.seed.score.toFixed(1)})`:''}`,'warn');
+    appendLog?.(`📌 주장 → ${status}${d.seed?` · 시드 자동 생성`:''}`,'warn');
     renderTheses();
     renderRealSeeds();
-  }catch(e){appendLog('⚠ 주장 상태 변경 실패: '+e.message,'err');}
+  }catch(e){appendLog?.('⚠ 주장 상태 변경 실패: '+e.message,'err');}
 }
+async function deleteThesis(id){
+  if(!confirm('이 주장 삭제? (묶인 시드는 풀림)'))return;
+  try{
+    await fetch('/api/contents/theses/'+encodeURIComponent(id),{method:'DELETE'});
+    renderTheses();renderRealSeeds();
+  }catch(e){alert('삭제 실패');}
+}
+async function addEmptyThesis(){
+  const topic=prompt('주제 한 줄 (명사구 1~2어절)');
+  if(!topic)return;
+  const claim=prompt('주장 한 줄 (22자 이내 권장)');
+  if(!claim)return;
+  try{
+    const r=await fetch('/api/contents/theses',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({draft:{topic,claim}})});
+    const d=await r.json();
+    if(!d.ok)throw new Error(d.error);
+    renderTheses();
+  }catch(e){alert('추가 실패: '+e.message);}
+}
+function goToSeedStep(){
+  if(typeof goStage==='function')goStage(3);
+  setTimeout(renderRealSeeds,200);
+  appendLog?.('▶ STEP 4 이동 — picked 주장의 시드 확인','warn');
+}
+
+// 작은 HTML escape util
+function escapeHtml(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 async function decideSeed(seedId,rating){
   try{
     const r=await fetch(`/api/contents/seeds/${encodeURIComponent(seedId)}/decision`,{

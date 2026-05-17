@@ -372,13 +372,18 @@ model Seed {
   @@index([thesisId])
 }
 
-// ─── 인사이트 (Evidence n개 → Claude 추출 → 한 줄 발견) ────────
+// ─── 인사이트 (AI 자동 추출 또는 사용자 직접 입력) ─────────────
 model Insight {
   id          String   @id @default(cuid())
-  keyword     String   // 어떤 키워드 풀에서 나왔는지
-  text        String   // Claude가 뽑은 인사이트 한 줄
-  evidenceIds String[] // 근거 Evidence id 목록 (Postgres native array)
-  signalSum   Float    @default(0) // 근거 evidence들 signal 합
+  keyword     String   // 어떤 키워드 풀에서 나왔는지 (사용자 입력은 자유)
+  text        String   // 인사이트 한 줄
+  evidenceIds String[] // 근거 Evidence id 목록 (사용자 입력은 빈 배열 가능)
+  signalSum   Float    @default(0)
+
+  source      String   @default("ai")  // 'ai' | 'user'
+  createdBy   String?  // 사용자 이메일 (source='user'일 때)
+  editedAt    DateTime?
+
   createdAt   DateTime @default(now())
 
   // 클러스터링 후 어떤 주장에 묶였는지
@@ -387,17 +392,23 @@ model Insight {
 
   @@index([keyword, signalSum])
   @@index([thesisId])
+  @@index([source])
 }
 
-// ─── 주제·주장 (Insight n개를 클러스터링 → 1개 주장) ───────────
+// ─── 주제·주장 (AI 자동 또는 사용자 직접 작성 + 편집 가능) ──────
 model Thesis {
   id           String   @id @default(cuid())
-  topic        String   // 주제 한 줄 (예: "유료 GPT vs 무료 조합")
-  claim        String   // 주장 한 줄 (예: "무료 4개 조합이 충분하다")
-  rank         Int      @default(0)   // UI 표시 순서
+  topic        String   // 주제 한 줄
+  claim        String   // 주장 한 줄
+  rank         Int      @default(0)
   insightCount Int      @default(0)
-  realityScore Float    @default(0)   // 묶인 insight들 signalSum 합 × 다양성
+  realityScore Float    @default(0)
   status       String   @default("candidate") // candidate | picked | rejected
+
+  source       String   @default("ai")  // 'ai' | 'user'
+  editedByUser Boolean  @default(false)
+  createdBy    String?
+
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -405,6 +416,7 @@ model Thesis {
   seeds    Seed[]
 
   @@index([status, realityScore])
+  @@index([source])
 }
 
 model SeedEvidence {

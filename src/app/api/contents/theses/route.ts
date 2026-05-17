@@ -70,12 +70,50 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!isAdmin(session?.user?.email)) {
+  const email = session?.user?.email;
+  if (!isAdmin(email)) {
     return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   }
 
-  const body = (await req.json().catch(() => ({}))) as { keyword?: string };
-  const where = body.keyword?.trim() ? { keyword: body.keyword.trim(), thesisId: null } : { thesisId: null };
+  const body = (await req.json().catch(() => ({}))) as {
+    keyword?: string;
+    insightIds?: string[];           // 사용자가 STEP 2에서 선택한 인사이트만 클러스터링
+    draft?: { topic: string; claim: string; insightIds?: string[] }; // 사용자가 직접 작성
+  };
+
+  // ─── 사용자 직접 작성 (draft) ───
+  if (body.draft) {
+    const topic = body.draft.topic?.trim();
+    const claim = body.draft.claim?.trim();
+    if (!topic || !claim) {
+      return NextResponse.json({ ok: false, error: "draft.topic + draft.claim required" }, { status: 400 });
+    }
+    const maxRank = await prisma.thesis.aggregate({ _max: { rank: true } });
+    const created = await prisma.thesis.create({
+      data: {
+        topic: topic.slice(0, 80),
+        claim: claim.slice(0, 200),
+        rank: (maxRank._max.rank ?? 0) + 1,
+        insightCount: body.draft.insightIds?.length ?? 0,
+        source: "user",
+        createdBy: email!.toLowerCase(),
+      },
+    });
+    if (body.draft.insightIds?.length) {
+      await prisma.insight.updateMany({
+        where: { id: { in: body.draft.insightIds } },
+        data: { thesisId: created.id },
+      });
+    }
+    return NextResponse.json({ ok: true, thesis: created, mode: "draft" });
+  }
+
+  // ─── AI 클러스터링 ───
+  const where = body.insightIds?.length
+    ? { id: { in: body.insightIds } }
+    : body.keyword?.trim()
+      ? { keyword: body.keyword.trim(), thesisId: null }
+      : { thesisId: null };
   const insights = await prisma.insight.findMany({
     where,
     orderBy: { signalSum: "desc" },

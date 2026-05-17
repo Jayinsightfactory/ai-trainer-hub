@@ -41,20 +41,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   }
 
-  const body = (await req.json().catch(() => ({}))) as { keyword?: string; limit?: number };
+  const body = (await req.json().catch(() => ({}))) as {
+    keyword?: string;
+    evidenceIds?: string[]; // STEP 1에서 사용자가 체크한 Evidence만 사용
+    limit?: number;
+  };
   const keyword = body.keyword?.trim();
-  if (!keyword) {
-    return NextResponse.json({ ok: false, error: "keyword required" }, { status: 400 });
+  if (!keyword && !body.evidenceIds?.length) {
+    return NextResponse.json({ ok: false, error: "keyword or evidenceIds required" }, { status: 400 });
   }
   const limit = Math.min(body.limit ?? 60, 100);
 
-  // 1) Evidence 묶음 (signal·최근 우선)
+  // 1) Evidence 묶음 — evidenceIds 우선, 없으면 keyword 풀
+  const where = body.evidenceIds?.length
+    ? { id: { in: body.evidenceIds } }
+    : { keyword: keyword! };
   const evs = await prisma.evidence.findMany({
-    where: { keyword },
+    where,
     orderBy: [{ upvotes: "desc" }, { likes: "desc" }, { postedAt: "desc" }],
     take: limit,
-    select: { id: true, platform: true, textRaw: true, upvotes: true, likes: true, replies: true, parentTitle: true },
+    select: { id: true, platform: true, textRaw: true, upvotes: true, likes: true, replies: true, parentTitle: true, keyword: true },
   });
+  const resolvedKeyword = keyword || evs[0]?.keyword || "unknown";
 
   if (evs.length < 2) {
     return NextResponse.json(
@@ -76,7 +84,7 @@ export async function POST(req: NextRequest) {
     const { text } = await generateText({
       model: anthropic("claude-sonnet-4-5"),
       system: SYSTEM,
-      prompt: `[키워드] ${keyword}\n\n[Evidence ${evs.length}개]\n${compact.map((c) => `- ${c.id} (${c.p}): ${c.t}`).join("\n")}\n\n위 발언들에서 반복되는 인사이트만 JSON으로 추출. 최소 2개 이상 evidence가 동의한 것만.`,
+      prompt: `[키워드] ${resolvedKeyword}\n\n[Evidence ${evs.length}개]\n${compact.map((c) => `- ${c.id} (${c.p}): ${c.t}`).join("\n")}\n\n위 발언들에서 반복되는 인사이트만 JSON으로 추출. 최소 2개 이상 evidence가 동의한 것만.`,
       temperature: 0.3,
     });
     parsed = parseLLMJson(text);
@@ -97,17 +105,18 @@ export async function POST(req: NextRequest) {
     }))
     .filter((i) => i.text.length >= 5 && i.evidenceIds.length >= 2);
 
-  // 기존 동일-키워드 후보 insight 삭제 후 재생성 (재실행 가능하게)
-  await prisma.insight.deleteMany({ where: { keyword, thesisId: null } });
+  // 기존 동일-키워드 후보 AI insight 삭제 후 재생성 (재실행 가능하게, 사용자 입력 보존)
+  await prisma.insight.deleteMany({ where: { keyword: resolvedKeyword, thesisId: null, source: "ai" } });
 
   const created = await Promise.all(
     insights.map((i) =>
       prisma.insight.create({
         data: {
-          keyword,
+          keyword: resolvedKeyword,
           text: i.text,
           evidenceIds: i.evidenceIds,
           signalSum: i.evidenceIds.reduce((s, id) => s + (signalById.get(id) ?? 0), 0),
+          source: "ai",
         },
       }),
     ),
@@ -115,7 +124,7 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     ok: true,
-    keyword,
+    keyword: resolvedKeyword,
     evidenceConsidered: evs.length,
     insightsCreated: created.length,
     insights: created,
