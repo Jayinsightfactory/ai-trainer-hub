@@ -64,10 +64,34 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "keywords required" }, { status: 400 });
   }
   const per = Math.max(1, Math.min(body.perKeyword ?? 3, 5));
-  const context = (body.context ?? [])
+  let context = (body.context ?? [])
     .map((s) => s.trim())
     .filter((s) => s && !keywords.includes(s))
     .slice(0, 30);
+
+  // ⭐ 안전망: context 비어있으면 백엔드에서 자동으로 YT 자동완성 fetch
+  if (context.length === 0 && process.env.YOUTUBE_API_KEY) {
+    const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
+    const collected = new Set<string>();
+    for (const kw of keywords) {
+      try {
+        const url =
+          `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=8` +
+          `&order=viewCount&publishedAfter=${since}&relevanceLanguage=ko&regionCode=KR` +
+          `&q=${encodeURIComponent(kw)}&key=${process.env.YOUTUBE_API_KEY}`;
+        const r = await fetch(url);
+        if (!r.ok) continue;
+        const d = (await r.json()) as { items?: Array<{ snippet?: { title?: string } }> };
+        for (const it of d.items ?? []) {
+          const t = it.snippet?.title;
+          if (t && t.length <= 80) collected.add(t);
+        }
+      } catch {
+        // skip
+      }
+    }
+    context = [...collected].slice(0, 20);
+  }
 
   let parsed: { ok: true; data: { insights?: Array<{ keyword?: string; text?: string }> } } | { ok: false; error: string; raw?: string };
   try {

@@ -2652,13 +2652,18 @@ function renderSeedRow(seeds){
   row.innerHTML=seeds.map(s=>{
     const active=s===_activeSeed;
     const checked=sel.has(s);
-    // 시드 자체도 selKw에 들어갈 수 있는 체크박스 + 클릭 시 자동완성 펼침
+    // ⭐ 체크박스도 자동완성 펼침을 트리거 (사용자 의도 = "이 시드 보고 싶다")
     return `<div style="display:inline-flex;align-items:center;gap:0;background:${active?'rgba(0,212,170,.18)':'rgba(255,255,255,.06)'};border:1px solid ${active?'#00D4AA':'rgba(255,255,255,.15)'};border-radius:14px;padding:0 4px 0 8px">
-      <input type="checkbox" ${checked?'checked':''} onchange="toggleTrendKw('${s.replace(/'/g,"\\'")}')" style="margin:0;cursor:pointer" title="이 시드를 선택 키워드에 포함">
+      <input type="checkbox" ${checked?'checked':''} onchange="toggleSeedAndExpand('${s.replace(/'/g,"\\'")}')" style="margin:0;cursor:pointer" title="이 시드 선택 + 자동완성 자동 펼침">
       <button onclick="pickSeed('${s.replace(/'/g,"\\'")}')" class="btn"
         style="font-size:11px;padding:5px 8px 5px 6px;background:transparent;border:0;color:${active?'#0A1F2E':'#F5F5F5'};font-weight:${active?'700':'400'};outline:none;cursor:pointer">🌱 ${s}</button>
     </div>`;
   }).join('');
+}
+// 체크박스 → 키워드 선택 + 자동완성 동시 펼침 (context sessionStorage 채워짐)
+function toggleSeedAndExpand(kw){
+  ssToggle(SS.selKw, kw);
+  pickSeed(kw); // 자동완성 펼침 + expansionContext 저장
 }
 function renderDbFreqRow(kws){
   const wrap=document.getElementById('dbFreqWrap');
