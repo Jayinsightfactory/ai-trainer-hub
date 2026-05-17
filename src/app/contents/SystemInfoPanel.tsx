@@ -97,7 +97,7 @@ export default function SystemInfoPanel({ info }: { info: SystemInfo }) {
           </Section>
 
           <Section title="📌 빠른 참조 (재배포 트리거)">
-            <Row k="GitHub" v="dlaww-wq/ai-trainer-hub" mono />
+            <Row k="GitHub" v="Jayinsightfactory/ai-trainer-hub" mono />
             <Row k="브랜치" v="master" mono />
             <Row k="배포" v="Railway (Dockerfile)" />
             <Row k="Python 설치" v="alpine apk add python3 (Dockerfile 내)" />

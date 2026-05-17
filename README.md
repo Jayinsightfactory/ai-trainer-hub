@@ -86,7 +86,7 @@ DevOps
 
 ```bash
 # 1. 저장소 클론
-git clone https://github.com/dlaww-wq/ai-trainer-hub.git
+git clone https://github.com/Jayinsightfactory/ai-trainer-hub.git
 cd ai-trainer-hub
 
 # 2. 의존성 설치

@@ -10,7 +10,7 @@
 | 항목 | URL |
 |------|-----|
 | **라이브** | https://ai-trainer-app-production.up.railway.app |
-| **GitHub** | https://github.com/dlaww-wq/ai-trainer-hub (계정: dlaww / dlaww584@gmail.com) |
+| **GitHub** | https://github.com/Jayinsightfactory/ai-trainer-hub (계정 이메일: dlaww584@gmail.com) |
 | **Railway** | https://railway.com/project/8ffb9add-8ed6-457f-9a7a-7edac774b6d3 |
 | **배포방식** | GitHub master 브랜치 push → Railway 자동 배포 |
 
@@ -228,7 +228,7 @@ md 이상 (≥ 768px):
 
 ```bash
 # 1. 클론
-git clone https://github.com/dlaww-wq/ai-trainer-hub.git
+git clone https://github.com/Jayinsightfactory/ai-trainer-hub.git
 cd ai-trainer-hub
 
 # 2. 의존성

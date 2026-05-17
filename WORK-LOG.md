@@ -3,7 +3,7 @@
 ## 프로젝트 개요
 자영업자 대상 AI 고객응대 SaaS 플랫폼
 - **라이브 URL**: https://ai-trainer-app-production.up.railway.app
-- **GitHub**: https://github.com/dlaww-wq/ai-trainer-hub (private)
+- **GitHub**: https://github.com/Jayinsightfactory/ai-trainer-hub
 - **Railway**: https://railway.com/project/8ffb9add-8ed6-457f-9a7a-7edac774b6d3
 
 ## 기술 스택
@@ -138,7 +138,7 @@ src/store/
 
 ## 환경 설정 (다른 PC에서 이어서 작업)
 ```bash
-git clone https://github.com/dlaww-wq/ai-trainer-hub.git
+git clone https://github.com/Jayinsightfactory/ai-trainer-hub.git
 cd ai-trainer-hub
 npm install
 cp .env.example .env  # 환경변수 설정
