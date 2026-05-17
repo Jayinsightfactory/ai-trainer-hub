@@ -2661,8 +2661,17 @@ async function renderInsights(){
     const r=await fetch('/api/contents/insights');
     const d=await r.json();
     if(!d.ok){aiList.innerHTML='<div style="color:#FF8A3D;font-size:11px">'+d.error+'</div>';return;}
-    const ai=d.insights.filter(i=>i.source==='ai');
-    const us=d.insights.filter(i=>i.source==='user');
+    // ⭐ 현재 선택된 키워드의 인사이트만 표시 (옛 키워드 인사이트와 섞임 방지)
+    const selKw=new Set(ssGet(SS.selKw));
+    const scoped=selKw.size>0 ? d.insights.filter(i=>selKw.has(i.keyword)) : d.insights;
+    const ai=scoped.filter(i=>i.source==='ai');
+    const us=scoped.filter(i=>i.source==='user');
+    // 헤더에 현재 키워드 표시
+    const hdrKw=document.getElementById('insightStatus');
+    if(hdrKw && selKw.size>0){
+      hdrKw.textContent=`키워드: ${[...selKw].join(', ')}`;
+      hdrKw.style.color='#00D4AA';
+    }
     document.getElementById('aiInsightCount').textContent=`${ai.length}건`;
     document.getElementById('userInsightCount').textContent=`${us.length}건`;
     document.getElementById('totalInsightCount').textContent=`${ai.length+us.length}건`;
@@ -2733,8 +2742,11 @@ async function renderInsightSearchList(){
     const r=await fetch('/api/contents/insights');
     const d=await r.json();
     if(!d.ok){list.innerHTML='<div style="color:#FF8A3D;font-size:11px">'+d.error+'</div>';return;}
-    if(d.count===0){list.innerHTML='<div style="padding:14px;text-align:center;color:#7A8493;font-size:11px;border:1px dashed rgba(255,255,255,.15);border-radius:6px">STEP 2에서 인사이트를 먼저 만드세요</div>';return;}
-    list.innerHTML=d.insights.map(i=>{
+    // 현재 선택된 키워드 인사이트만
+    const selKw=new Set(ssGet(SS.selKw));
+    const scoped=selKw.size>0 ? d.insights.filter(i=>selKw.has(i.keyword)) : d.insights;
+    if(scoped.length===0){list.innerHTML=`<div style="padding:14px;text-align:center;color:#7A8493;font-size:11px;border:1px dashed rgba(255,255,255,.15);border-radius:6px">선택 키워드(${[...selKw].join(', ')||'없음'})의 인사이트가 없습니다. STEP 2에서 먼저 만드세요.</div>`;return;}
+    list.innerHTML=scoped.map(i=>{
       const src=i.source==='user'?'✍️ 본인':'🤖 AI';
       const adoptedCount=i.evidenceIds?.length||0;
       return `<div data-iid="${i.id}" style="background:rgba(0,40,30,.18);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 12px">
@@ -2749,7 +2761,7 @@ async function renderInsightSearchList(){
       </div>`;
     }).join('');
     // 기존 채택 evidence도 자동 표시
-    for (const i of d.insights){
+    for (const i of scoped){
       if (i.evidenceIds?.length) await _refreshInsightEvidence(i.id);
     }
   }catch(e){list.innerHTML='<div style="color:#FF3B3B;font-size:11px">'+e.message+'</div>';}
