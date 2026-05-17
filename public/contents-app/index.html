@@ -2894,10 +2894,16 @@ async function addEmptyThesis(){
     renderTheses();
   }catch(e){alert('추가 실패: '+e.message);}
 }
-function goToSeedStep(){
+async function goToSeedStep(){
+  // 인사이트 → 시드 자동 materialize (채택된 evidence 기반)
+  appendLog?.('▶ STEP 4 이동 — 인사이트별 시드 materialize 중…','warn');
+  try{
+    const r=await fetch('/api/contents/seeds/materialize',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    const d=await r.json();
+    if(d.ok)appendLog?.(`  → ${d.created}/${d.processed}개 시드 생성/갱신`,'warn');
+  }catch(e){appendLog?.('⚠ materialize 실패: '+e.message,'err');}
   if(typeof goStage==='function')goStage(3);
   setTimeout(renderRealSeeds,200);
-  appendLog?.('▶ STEP 4 이동 — picked 주장의 시드 확인','warn');
 }
 
 // 작은 HTML escape util

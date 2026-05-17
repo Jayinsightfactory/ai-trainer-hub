@@ -170,4 +170,68 @@ export async function materializeSeedsForThesis(thesisId: string): Promise<{ see
   return { seedId: seed.id, evidenceCount: evs.length, score };
 }
 
+/**
+ * Insight 단위 시드 빌더 — 새 흐름 (사용자 인사이트가 root).
+ *   Insight.evidenceIds (사용자가 STEP 3에서 채택한 evidence) → Seed 1장.
+ *   인사이트 텍스트는 그대로 hookQuoted, 가장 강한 evidence는 titleQuoted.
+ */
+export async function materializeSeedForInsight(insightId: string): Promise<{ seedId: string; evidenceCount: number; score: number } | null> {
+  const insight = await prisma.insight.findUnique({ where: { id: insightId } });
+  if (!insight) return null;
+
+  const evs = insight.evidenceIds.length
+    ? await prisma.evidence.findMany({
+        where: { id: { in: insight.evidenceIds } },
+        select: { id: true, platform: true, textRaw: true, postedAt: true, upvotes: true, likes: true, replies: true, keyword: true },
+      })
+    : [];
+
+  // 인사이트 단독 시드도 가능 — evidence 0건이면 인사이트 텍스트만으로
+  const ranked = [...evs].sort(
+    (a, b) =>
+      Math.log(1 + signalSum(b)) * recencyWeight(b.postedAt) -
+      Math.log(1 + signalSum(a)) * recencyWeight(a.postedAt),
+  );
+  const topEv = ranked[0];
+  const { score, diversity } = evs.length > 0 ? realityScore(evs) : { score: 0, diversity: 0 };
+
+  // 시드 1개 = 인사이트 1개 (upsert)
+  const existing = await prisma.seed.findFirst({
+    where: { keyword: insight.keyword, titleQuoted: { contains: insight.text.slice(0, 30) } },
+    select: { id: true },
+  });
+  const seed = existing
+    ? await prisma.seed.update({
+        where: { id: existing.id },
+        data: {
+          titleQuoted: topEv ? quote(topEv.textRaw) : insight.text,
+          hookQuoted: insight.text,
+          realityScore: score,
+          sourceDiversity: diversity,
+          evidenceCount: evs.length,
+        },
+      })
+    : await prisma.seed.create({
+        data: {
+          keyword: insight.keyword,
+          titleQuoted: topEv ? quote(topEv.textRaw) : insight.text,
+          hookQuoted: insight.text,
+          realityScore: score,
+          sourceDiversity: diversity,
+          evidenceCount: evs.length,
+        },
+      });
+
+  // SeedEvidence 매핑
+  await prisma.seedEvidence.deleteMany({ where: { seedId: seed.id } });
+  if (evs.length > 0) {
+    await prisma.seedEvidence.createMany({
+      data: evs.map((e) => ({ seedId: seed.id, evidenceId: e.id })),
+      skipDuplicates: true,
+    });
+  }
+
+  return { seedId: seed.id, evidenceCount: evs.length, score };
+}
+
 export type { Platform };

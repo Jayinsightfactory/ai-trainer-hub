@@ -79,6 +79,8 @@ const STOPWORDS = new Set([
   "분", "초", "시간", "일", "월", "년", "원",
   // 너무 일반적인 영문 단일 단어 (bigram 컨텍스트에선 OK, unigram에선 노이즈)
   "ai", "api", "app", "vs", "new", "best", "top", "how", "why", "what",
+  "prompt", "prompts", "model", "models", "tool", "tools", "agent", "agents",
+  "tip", "tips", "trick", "tricks", "hack", "hacks", "secret", "secrets",
 ]);
 
 function tokenize(title: string): string[] {
@@ -112,11 +114,16 @@ function tokenize(title: string): string[] {
 
 // ─── 후처리: case-insensitive dedup + substring 흡수 ───
 type KwItem = { keyword: string; sources: string[]; weight: number; evidenceCount: number };
+// 정규화: lowercase + 공백/하이픈 제거 → "Chat GPT" "chat-gpt" "ChatGPT" 모두 같은 키
+function normalizeKw(s: string): string {
+  return s.toLowerCase().replace(/[\s\-_]+/g, "");
+}
+
 function dedupAndCollapse(list: KwItem[]): KwItem[] {
-  // 1) case-insensitive 합치기 — 가장 weight 큰 case를 대표로
+  // 1) 정규화 키로 합치기 — 공백/대소문자 변종 흡수
   const byLower = new Map<string, KwItem[]>();
   for (const item of list) {
-    const k = item.keyword.toLowerCase();
+    const k = normalizeKw(item.keyword);
     const arr = byLower.get(k) ?? [];
     arr.push(item);
     byLower.set(k, arr);
