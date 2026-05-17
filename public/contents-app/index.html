@@ -324,12 +324,14 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:22px 0}
       ① 시드 1개 클릭 → ② 그 시드의 YT 자동완성 확장 → ③ 마음에 드는 확장 키워드 체크 → STEP 2.
     </div>
 
-    <!-- ① 시드 카테고리 (LLM 정적 — 사용자가 직접 정의한 출발점) -->
+    <!-- ① 시드 카테고리 — 6 분야 탭 + 그 분야 시드 칩 -->
     <div style="margin-bottom:8px">
       <div style="font-size:10px;color:#7A8493;margin-bottom:4px">
-        🌱 <b style="color:#7A8493">LLM 시드</b> · 관심 분야 1개 클릭
-        <span style="opacity:.6">· 미리 정의된 카테고리</span>
+        🌱 <b style="color:#7A8493">시드</b> · 분야 선택 → 시드 1개 클릭하면 자동완성 펼침
       </div>
+      <!-- 카테고리 탭 -->
+      <div id="seedGroupTabs" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px"></div>
+      <!-- 선택 카테고리의 시드 칩 -->
       <div id="seedRow" style="display:flex;flex-wrap:wrap;gap:5px;min-height:32px"></div>
     </div>
 
@@ -2624,6 +2626,9 @@ function ssToggle(k,id){const a=ssGet(k);const i=a.indexOf(id);if(i>=0)a.splice(
 // ─── STEP 1: 키워드 추출 — 시드 → 자동완성 확장 (2계층) ───
 let _activeSeed = null; // 현재 선택된 시드 카테고리
 
+let _seedGroups = [];   // 카테고리 그룹
+let _activeGroup = 0;   // 현재 선택된 카테고리 인덱스
+
 async function loadTrendingKeywords(){
   const st=document.getElementById('trendStatus');
   const seedRow=document.getElementById('seedRow');
@@ -2632,18 +2637,34 @@ async function loadTrendingKeywords(){
   try{
     const [r1,r2]=await Promise.all([
       fetch('/api/contents/trending-keywords?mode=seeds').then(r=>r.json()),
-      fetch('/api/contents/trending-keywords?limit=20').then(r=>r.json()), // overview = DB freq + YT overview
+      fetch('/api/contents/trending-keywords?limit=20').then(r=>r.json()),
     ]);
     if(!r1.ok)throw new Error(r1.error||'시드 실패');
-    renderSeedRow(r1.seeds);
-    // DB 빈도만 추출
+    _seedGroups = r1.groups || [{name:'전체', emoji:'🌱', seeds: r1.seeds}];
+    renderSeedGroupTabs();
+    renderSeedRow(_seedGroups[_activeGroup]?.seeds || []);
     if(r2.ok){
       const dbOnly=r2.keywords.filter(k=>k.sources.includes('db_frequency'));
       renderDbFreqRow(dbOnly);
     }
-    st.textContent=`시드 ${r1.seeds.length}개 + DB ${r2.ok?r2.keywords.filter(k=>k.sources.includes('db_frequency')).length:0}건`;
+    const totalSeeds = _seedGroups.reduce((s,g)=>s+g.seeds.length,0);
+    st.textContent=`시드 ${totalSeeds}개 (${_seedGroups.length}분야) + DB ${r2.ok?r2.keywords.filter(k=>k.sources.includes('db_frequency')).length:0}건`;
     updateTrendSelectedCount();
   }catch(e){st.textContent='⚠ '+e.message;seedRow.innerHTML='<span style="color:#FF8A3D;font-size:10px">'+e.message+'</span>';}
+}
+function renderSeedGroupTabs(){
+  const wrap=document.getElementById('seedGroupTabs');
+  if(!wrap)return;
+  wrap.innerHTML=_seedGroups.map((g,i)=>{
+    const active=i===_activeGroup;
+    return `<button onclick="pickSeedGroup(${i})" class="btn"
+      style="font-size:11px;padding:5px 12px;background:${active?'#6C63FF':'rgba(255,255,255,.04)'};border:1px solid ${active?'#6C63FF':'rgba(255,255,255,.12)'};color:${active?'#fff':'#C7CED8'};font-weight:${active?'700':'400'};border-radius:14px">${g.emoji} ${g.name}</button>`;
+  }).join('');
+}
+function pickSeedGroup(i){
+  _activeGroup=i;
+  renderSeedGroupTabs();
+  renderSeedRow(_seedGroups[i]?.seeds || []);
 }
 function renderSeedRow(seeds){
   const row=document.getElementById('seedRow');

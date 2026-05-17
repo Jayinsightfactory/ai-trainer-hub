@@ -17,16 +17,42 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
-const SEED_CATEGORIES = [
-  "AI 도구",
-  "챗GPT",
-  "Claude",
-  "AI 자동화",
-  "AI 부수익",
-  "프롬프트",
-  "n8n",
-  "GPT 결제",
+// 카테고리별 시드 — 카드뉴스 만들 만한 한국 콘텐츠 도메인 전반.
+// 6 카테고리 × 약 8 시드 = 50+ (사용자가 폭넓게 선택 가능)
+const SEED_GROUPS: { name: string; emoji: string; seeds: string[] }[] = [
+  {
+    name: "AI/IT",
+    emoji: "🤖",
+    seeds: ["챗GPT", "Claude", "AI 자동화", "프롬프트", "n8n 자동화", "노션 AI", "노코드", "AI 영상"],
+  },
+  {
+    name: "재테크",
+    emoji: "💰",
+    seeds: ["부동산", "주식", "ETF", "부수익", "사이드프로젝트", "파킹통장", "청약", "절세"],
+  },
+  {
+    name: "직장/커리어",
+    emoji: "💼",
+    seeds: ["직장인 노하우", "이직", "연봉협상", "보고서", "회의록", "업무 자동화", "신입 적응", "면접"],
+  },
+  {
+    name: "자기계발",
+    emoji: "📚",
+    seeds: ["독서법", "공부법", "시간관리", "생산성", "습관 만들기", "글쓰기", "영어 공부", "자격증"],
+  },
+  {
+    name: "라이프",
+    emoji: "🏠",
+    seeds: ["다이어트", "홈트", "요리", "자취", "인테리어", "미니멀", "여행", "카페"],
+  },
+  {
+    name: "관계/소통",
+    emoji: "💬",
+    seeds: ["연애", "결혼", "육아", "친구관계", "직장 인간관계", "갈등 해결", "거절하는 법", "심리"],
+  },
 ];
+// 평탄화 (호환성 — 기존 코드가 SEED_CATEGORIES를 단일 배열로 기대하는 경우)
+const SEED_CATEGORIES: string[] = SEED_GROUPS.flatMap((g) => g.seeds);
 
 // ─── YT Data API search.list 기반 트렌드 키워드 추출 ───
 type YtSearchItem = { id: { videoId: string }; snippet: { title: string; channelTitle: string } };
@@ -185,6 +211,7 @@ export async function GET(req: NextRequest) {
       ok: true,
       mode: "seeds",
       seeds: SEED_CATEGORIES,
+      groups: SEED_GROUPS, // [{name, emoji, seeds[]}, ...]
     });
   }
 
