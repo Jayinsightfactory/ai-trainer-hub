@@ -2596,9 +2596,12 @@ function renderSeedsFromResponse(d){
         <span style="margin-left:auto">${_starBar(s.id,s.lastDecision?.rating)}</span>
       </div>
       <div style="display:flex;gap:4px">
+        <button onclick="generateCardnews('${s.id}')" class="btn"
+          style="flex:1;font-size:10px;padding:5px 8px;background:#FFD93D;border:1px solid #FFD93D;color:#0A1F2E;font-weight:700"
+          title="이 시드로 카드뉴스 8장 자동 생성 + Gemini 이미지 프롬프트">🎨 카드뉴스 + 이미지</button>
         <button onclick="runChecklist('${s.id}')" class="btn"
-          style="flex:1;font-size:10px;padding:4px 8px;background:rgba(108,99,255,.15);border:1px solid #6C63FF;color:#6C63FF;font-weight:600"
-          title="실데이터 인용/자연체 톤/추적성 등 11개 자동 검증">📋 체크리스트 검증</button>
+          style="font-size:10px;padding:5px 8px;background:rgba(108,99,255,.15);border:1px solid #6C63FF;color:#6C63FF;font-weight:600"
+          title="실데이터 인용/자연체 톤/추적성 등 11개 자동 검증">📋 검증</button>
       </div>
       <details style="font-size:10px;color:#7A8493">
         <summary style="cursor:pointer;outline:none">출처 ${ev.length}건</summary>
@@ -3233,6 +3236,135 @@ async function goToSeedStep(){
 
 // 작은 HTML escape util
 function escapeHtml(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+// ─── 🎨 시드 → 카드뉴스 8장 + Gemini 이미지 자동 생성 ───
+async function generateCardnews(seedId){
+  document.getElementById('cardnewsModal')?.remove();
+  const backdrop=document.createElement('div');
+  backdrop.id='cardnewsModal';
+  backdrop.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99999;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto';
+  backdrop.innerHTML=`<div style="background:#0E1521;border:1px solid rgba(255,217,61,.4);border-radius:12px;padding:18px;max-width:1100px;width:100%;color:#F5F5F5;margin:auto">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <span style="font-size:14px;font-weight:700;color:#FFD93D">🎨 카드뉴스 8장 자동 생성</span>
+      <span id="cnStatus" style="font-size:11px;color:#7A8493;margin-left:auto">Claude 호출 중…</span>
+      <button onclick="document.getElementById('cardnewsModal').remove()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#F5F5F5;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer">✕</button>
+    </div>
+    <div id="cnBody" style="font-size:12px">⏳ 잠시만요…</div>
+  </div>`;
+  backdrop.addEventListener('click',e=>{if(e.target===backdrop)backdrop.remove();});
+  document.body.appendChild(backdrop);
+
+  try{
+    const t0=Date.now();
+    const r=await fetch(`/api/contents/seeds/${encodeURIComponent(seedId)}/cardnews`,{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    const d=await r.json();
+    if(!d.ok)throw new Error(d.error||'생성 실패');
+    document.getElementById('cnStatus').textContent=`✅ ${Math.round((Date.now()-t0)/1000)}초 · ${d.totalPages}장 + Gemini 프롬프트 ${1+d.prompts.body.length+1}개`;
+    _renderCardnewsModal(d, seedId);
+  }catch(e){document.getElementById('cnBody').innerHTML='<div style="color:#FF3B3B;padding:12px">'+e.message+'</div>';document.getElementById('cnStatus').textContent='⚠ '+e.message;}
+}
+
+function _renderCardnewsModal(d, seedId){
+  const body=document.getElementById('cnBody');
+  if(!body)return;
+  const c=d.payload.cover;
+  const pages=[
+    {label:'P1 커버', headline:`${c.l1} / ${c.l2}`, sub:c.hook, accent:c.accent, color:c.accentColor, prompt:d.prompts.cover, type:'cover'},
+    ...d.payload.body.map((b,i)=>({label:b.p, headline:b.h, sub:b.sub, accent:b.accent, body:b.body, prompt:d.prompts.body[i], type:'body', index:i})),
+    {label:d.payload.identity.p, headline:d.payload.identity.h, sub:d.payload.identity.sub, accent:d.payload.identity.accent, body:d.payload.identity.body, prompt:d.prompts.identity, type:'identity'},
+  ];
+  body.innerHTML=`
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <button onclick="generateAllImages('${seedId}')" class="btn"
+        style="background:#FFD93D;border:1px solid #FFD93D;color:#0A1F2E;font-weight:700;font-size:11px;padding:6px 14px"
+        title="모든 페이지 Gemini Imagen으로 이미지 생성">🖼 전체 이미지 생성 (Imagen)</button>
+      <button onclick="copyAllPrompts()" class="btn"
+        style="background:rgba(108,99,255,.15);border:1px solid #6C63FF;color:#6C63FF;font-weight:600;font-size:11px;padding:6px 14px">📋 전체 프롬프트 복사</button>
+      <a href="https://aistudio.google.com/prompts/new" target="_blank" class="btn"
+        style="text-decoration:none;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#F5F5F5;font-size:11px;padding:6px 14px">↗ Google AI Studio</a>
+    </div>
+    <div id="cnPageGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">
+      ${pages.map((p,idx)=>_renderPageCard(p,idx,seedId)).join('')}
+    </div>
+  `;
+  window._cardnewsAllPrompts=pages.map(p=>`### ${p.label}\n${p.prompt}`).join('\n\n---\n\n');
+}
+
+function _renderPageCard(p, pageIdx, seedId){
+  const color=p.color||'#7A8493';
+  return `<div data-page-idx="${pageIdx}" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px">
+    <div style="display:flex;gap:6px;font-size:9px;color:#7A8493">
+      <span style="color:${color}">▌</span>
+      <span style="font-weight:600;color:#F5F5F5">${escapeHtml(p.label)}</span>
+    </div>
+    <div style="font-size:12px;color:#F5F5F5;line-height:1.4">${escapeHtml(p.headline).replace(/\n/g,'<br>')}</div>
+    ${p.sub?`<div style="font-size:10px;color:#FFD93D;font-style:italic">${escapeHtml(p.sub)}</div>`:''}
+    ${p.body?`<div style="font-size:10px;color:#C7CED8;line-height:1.5;white-space:pre-wrap">${escapeHtml(p.body.slice(0,180))}${p.body.length>180?'…':''}</div>`:''}
+    <div data-image-slot style="margin-top:4px"></div>
+    <div style="display:flex;gap:4px;margin-top:auto;border-top:1px solid rgba(255,255,255,.06);padding-top:6px">
+      <button onclick="generateOneImage('${seedId}',${pageIdx})" class="btn"
+        style="flex:1;font-size:9px;padding:3px 6px;background:rgba(255,217,61,.15);border:1px solid #FFD93D;color:#FFD93D;font-weight:600">🖼 이미지</button>
+      <button onclick="copyOnePrompt(${pageIdx})" class="btn"
+        style="font-size:9px;padding:3px 6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#F5F5F5">📋 프롬프트</button>
+      <details style="margin-left:auto">
+        <summary style="font-size:9px;color:#7A8493;cursor:pointer;list-style:none">▾ 프롬프트</summary>
+        <textarea readonly style="position:absolute;background:#0E1521;border:1px solid #6C63FF;color:#F5F5F5;font-size:10px;padding:8px;width:380px;height:200px;z-index:99999;margin-top:4px">${escapeHtml(p.prompt)}</textarea>
+      </details>
+    </div>
+  </div>`;
+}
+
+async function generateOneImage(seedId, pageIdx){
+  const card=document.querySelector(`[data-page-idx="${pageIdx}"]`);
+  if(!card)return;
+  const slot=card.querySelector('[data-image-slot]');
+  slot.innerHTML='<div style="color:#FFD93D;font-size:10px">🖼 생성 중…</div>';
+  // pages 데이터 재구성
+  const pageData=_getCachedPageByIdx(pageIdx);
+  if(!pageData){slot.innerHTML='<div style="color:#FF3B3B;font-size:10px">page data missing</div>';return;}
+  try{
+    const r=await fetch(`/api/contents/seeds/${encodeURIComponent(seedId)}/cardnews/image`,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({prompt:pageData.prompt, page:pageData.label})});
+    const d=await r.json();
+    if(d.ok){
+      slot.innerHTML=`<img src="${d.dataUrl}" style="width:100%;border-radius:4px;display:block">`;
+    }else{
+      slot.innerHTML=`<div style="color:#FF8A3D;font-size:10px;padding:6px;background:rgba(255,138,61,.08);border-radius:4px">${escapeHtml(d.error)}${d.fallback?`<br><a href="${d.fallback.studioUrl}" target="_blank" style="color:#6C63FF">→ AI Studio에 직접 붙여넣기</a>`:''}</div>`;
+    }
+  }catch(e){slot.innerHTML='<div style="color:#FF3B3B;font-size:10px">'+e.message+'</div>';}
+}
+function _getCachedPageByIdx(idx){
+  // _renderCardnewsModal에서 window._cardnewsAllPrompts 저장. 여기선 pageData 추적 필요 → grid의 ###레이블 + textarea 추출
+  const cards=document.querySelectorAll('[data-page-idx]');
+  if(!cards[idx])return null;
+  const label=cards[idx].querySelector('[style*="font-weight:600"]')?.textContent;
+  const promptArea=cards[idx].querySelector('textarea');
+  return {label, prompt:promptArea?.value || ''};
+}
+
+async function generateAllImages(seedId){
+  const cards=document.querySelectorAll('[data-page-idx]');
+  for(let i=0;i<cards.length;i++){
+    await generateOneImage(seedId, i);
+    await new Promise(r=>setTimeout(r, 600)); // rate-limit 완화
+  }
+}
+
+function copyOnePrompt(pageIdx){
+  const cards=document.querySelectorAll('[data-page-idx]');
+  const ta=cards[pageIdx]?.querySelector('textarea');
+  if(!ta)return;
+  navigator.clipboard.writeText(ta.value).then(()=>{
+    const btn=cards[pageIdx].querySelector('button[onclick^="copyOnePrompt"]');
+    if(btn){const o=btn.textContent;btn.textContent='✓ 복사됨';setTimeout(()=>btn.textContent=o,1200);}
+  });
+}
+function copyAllPrompts(){
+  if(!window._cardnewsAllPrompts)return;
+  navigator.clipboard.writeText(window._cardnewsAllPrompts).then(()=>{
+    appendLog?.('📋 전체 카드뉴스 프롬프트 복사 완료','warn');
+  });
+}
+
 // ─── 📋 시드 체크리스트 검증 (사용자 원칙 11개 자동 확인) ───
 async function runChecklist(seedId){
   // 기존 모달 제거
