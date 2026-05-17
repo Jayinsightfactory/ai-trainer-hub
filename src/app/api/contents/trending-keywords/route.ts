@@ -32,33 +32,41 @@ const SEED_CATEGORIES = [
 type YtSearchItem = { id: { videoId: string }; snippet: { title: string; channelTitle: string } };
 type YtSearchResp = { items?: YtSearchItem[] };
 
-let _ytCache: { ts: number; titles: string[] } | null = null;
+// 시드별 캐시 — 시드 1개 클릭 시 자동완성 확장 동적 로드
+const _ytCacheBySeed: Map<string, { ts: number; titles: string[] }> = new Map();
 const YT_CACHE_TTL = 60 * 60 * 1000; // 1시간
 
-async function fetchYtTitles(seeds: string[]): Promise<string[]> {
-  if (_ytCache && Date.now() - _ytCache.ts < YT_CACHE_TTL) return _ytCache.titles;
+async function fetchYtTitlesForSeed(seed: string): Promise<string[]> {
+  const cached = _ytCacheBySeed.get(seed);
+  if (cached && Date.now() - cached.ts < YT_CACHE_TTL) return cached.titles;
   const key = process.env.YOUTUBE_API_KEY;
   if (!key) return [];
   const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
-  const titles: string[] = [];
-  // 직렬 호출 (rate-limit 보호). 8 seeds × ~100 units = 800/일 (10k quota 내).
-  for (const seed of seeds) {
-    try {
-      const url =
-        `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=8` +
-        `&order=viewCount&publishedAfter=${since}&relevanceLanguage=ko&regionCode=KR` +
-        `&q=${encodeURIComponent(seed)}&key=${key}`;
-      const r = await fetch(url);
-      if (!r.ok) continue;
-      const d = (await r.json()) as YtSearchResp;
-      for (const it of d.items ?? []) {
-        if (it.snippet?.title) titles.push(it.snippet.title);
-      }
-    } catch {
-      // skip
-    }
+  try {
+    const url =
+      `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=12` +
+      `&order=viewCount&publishedAfter=${since}&relevanceLanguage=ko&regionCode=KR` +
+      `&q=${encodeURIComponent(seed)}&key=${key}`;
+    const r = await fetch(url);
+    if (!r.ok) return [];
+    const d = (await r.json()) as YtSearchResp;
+    const titles = (d.items ?? [])
+      .map((it) => it.snippet?.title)
+      .filter((t): t is string => Boolean(t));
+    _ytCacheBySeed.set(seed, { ts: Date.now(), titles });
+    return titles;
+  } catch {
+    return [];
   }
-  _ytCache = { ts: Date.now(), titles };
+}
+
+// 모든 시드 통합 (옛 동작 — overview 모드)
+async function fetchAllYtTitles(seeds: string[]): Promise<string[]> {
+  const titles: string[] = [];
+  for (const seed of seeds) {
+    const t = await fetchYtTitlesForSeed(seed);
+    titles.push(...t);
+  }
   return titles;
 }
 
@@ -168,10 +176,57 @@ export async function GET(req: NextRequest) {
   }
   const limit = Math.max(1, Math.min(Number(req.nextUrl.searchParams.get("limit") ?? 24), 50));
   const refresh = req.nextUrl.searchParams.get("refresh") === "1";
-  if (refresh) _ytCache = null;
+  const seedParam = req.nextUrl.searchParams.get("seed");
+  if (refresh) _ytCacheBySeed.clear();
 
-  // 1) YT trending titles → tokens
-  const titles = await fetchYtTitles(SEED_CATEGORIES);
+  // ─── 시드 목록 모드: 사용자에게 보여줄 시드 카테고리 ───
+  if (req.nextUrl.searchParams.get("mode") === "seeds") {
+    return NextResponse.json({
+      ok: true,
+      mode: "seeds",
+      seeds: SEED_CATEGORIES,
+    });
+  }
+
+  // ─── 단일 시드 자동완성 모드: ?seed=AI 자동화 ───
+  if (seedParam) {
+    const titles = await fetchYtTitlesForSeed(seedParam);
+    const freq: Map<string, number> = new Map();
+    for (const title of titles) {
+      for (const tok of tokenize(title)) {
+        freq.set(tok, (freq.get(tok) ?? 0) + 1);
+      }
+    }
+    // 시드 자체는 보통 토큰화 결과 안에 포함됨 → 제외
+    freq.delete(seedParam);
+    const list: KwItem[] = [...freq.entries()]
+      .filter(([, n]) => n >= 1)
+      .map(([k, n]) => {
+        const isBigram = k.includes(" ");
+        const hasKo = /[가-힣]/.test(k);
+        const boost = (isBigram ? 1.6 : 1.0) * (hasKo ? 1.4 : 1.0);
+        return {
+          keyword: k,
+          sources: ["youtube_autocomplete"],
+          weight: Math.log(1 + n) * 1.5 * boost,
+          evidenceCount: 0,
+        };
+      });
+    const cleaned = dedupAndCollapse(list)
+      .sort((a, b) => b.weight - a.weight)
+      .slice(0, limit);
+    return NextResponse.json({
+      ok: true,
+      mode: "seed",
+      seed: seedParam,
+      count: cleaned.length,
+      keywords: cleaned,
+      info: { ytTitlesFetched: titles.length, ytUniqueTokens: freq.size },
+    });
+  }
+
+  // ─── 기본 (overview) 모드: 모든 시드 통합 ───
+  const titles = await fetchAllYtTitles(SEED_CATEGORIES);
   const ytFreq: Map<string, number> = new Map();
   for (const title of titles) {
     for (const tok of tokenize(title)) {
@@ -241,7 +296,7 @@ export async function GET(req: NextRequest) {
       ytTitlesFetched: titles.length,
       ytUniqueTokens: ytFreq.size,
       dbFrequencyKeywords: dbKws.size,
-      cacheAgeMin: _ytCache ? Math.round((Date.now() - _ytCache.ts) / 60_000) : null,
+      cacheSeedsCount: _ytCacheBySeed.size,
     },
   });
 }
