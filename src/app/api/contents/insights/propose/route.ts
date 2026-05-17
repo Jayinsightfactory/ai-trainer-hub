@@ -57,12 +57,17 @@ export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => ({}))) as {
     keywords?: string[];
     perKeyword?: number;
+    context?: string[]; // STEP 1에서 본 자동완성 확장 결과 — Claude가 트렌드 방향성 참고
   };
   const keywords = (body.keywords ?? []).map((s) => s.trim()).filter(Boolean).slice(0, 5);
   if (keywords.length === 0) {
     return NextResponse.json({ ok: false, error: "keywords required" }, { status: 400 });
   }
   const per = Math.max(1, Math.min(body.perKeyword ?? 3, 5));
+  const context = (body.context ?? [])
+    .map((s) => s.trim())
+    .filter((s) => s && !keywords.includes(s))
+    .slice(0, 30);
 
   let parsed: { ok: true; data: { insights?: Array<{ keyword?: string; text?: string }> } } | { ok: false; error: string; raw?: string };
   try {
@@ -70,7 +75,11 @@ export async function POST(req: NextRequest) {
     const { text } = await generateText({
       model: anthropic("claude-sonnet-4-5"),
       system: SYSTEM,
-      prompt: `[키워드 ${keywords.length}개]\n${keywords.map((k) => `- ${k}`).join("\n")}\n\n각 키워드별 ${per}개 인사이트 후보를 JSON으로.`,
+      prompt: `[키워드 ${keywords.length}개 — 인사이트 도출 대상]\n${keywords.map((k) => `- ${k}`).join("\n")}\n\n` +
+        (context.length > 0
+          ? `[관련 자동완성 트렌드 ${context.length}개 — 사람들 실제 관심 방향. 인사이트에 이 패턴 녹여서 더 구체적으로]\n${context.map((c) => `- ${c}`).join("\n")}\n\n`
+          : "") +
+        `각 키워드별 ${per}개 인사이트 후보를 JSON으로. 자동완성 트렌드가 있으면 그 구체적 방향성을 반영해서 막연하지 않게.`,
       temperature: 0.6,
     });
     parsed = parseLLMJson(text);

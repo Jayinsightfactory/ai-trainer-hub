@@ -2726,6 +2726,8 @@ async function pickSeed(seed){
 function renderExpansion(kws){
   const row=document.getElementById('expansionRow');
   if(!row)return;
+  // STEP 2 propose의 context로 전달하기 위해 sessionStorage에 expansion 저장
+  sessionStorage.setItem('realdata.expansionContext', JSON.stringify(kws.map(k=>k.keyword)));
   const sel=new Set(ssGet(SS.selKw));
   if(kws.length===0){row.innerHTML='<span style="color:#7A8493;font-size:10px">자동완성 결과 없음</span>';return;}
   row.innerHTML=kws.map(k=>{
@@ -2782,14 +2784,17 @@ function goToInsightStep(){
 async function runInsightExtract(){
   const kws=ssGet(SS.selKw);
   if(kws.length===0){alert('STEP 1에서 키워드를 먼저 선택하세요');return;}
+  // STEP 1에서 본 자동완성 확장을 context로 (Claude가 트렌드 방향성 반영)
+  let context=[];
+  try{context=JSON.parse(sessionStorage.getItem('realdata.expansionContext')||'[]');}catch{}
   const st=document.getElementById('insightStatus');
-  st.textContent='AI 제안 중… (Claude)';
+  st.textContent=`AI 제안 중… (키워드 ${kws.length} + 트렌드 context ${context.length})`;
   try{
     const r=await fetch('/api/contents/insights/propose',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({keywords:kws,perKeyword:3})});
+      body:JSON.stringify({keywords:kws,perKeyword:3,context})});
     const d=await r.json();
     if(!d.ok)throw new Error(d.error||'실패');
-    st.textContent=`✅ AI ${d.insightsCreated}개 후보 (사용자가 수정·삭제 + 본인 인사이트 추가)`;
+    st.textContent=`✅ AI ${d.insightsCreated}개 후보${context.length?` · 트렌드 ${context.length}개 반영`:''}`;
     await renderInsights();
   }catch(e){st.textContent='⚠ '+e.message;}
 }
