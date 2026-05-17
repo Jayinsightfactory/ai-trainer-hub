@@ -324,26 +324,44 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:22px 0}
       ① 시드 1개 클릭 → ② 그 시드의 YT 자동완성 확장 → ③ 마음에 드는 확장 키워드 체크 → STEP 2.
     </div>
 
-    <!-- ① 시드 카테고리 (단일 선택) -->
+    <!-- ① 시드 카테고리 (LLM 정적 — 사용자가 직접 정의한 출발점) -->
     <div style="margin-bottom:8px">
-      <div style="font-size:10px;color:#7A8493;margin-bottom:4px">🌱 시드 (관심 분야 1개 클릭)</div>
+      <div style="font-size:10px;color:#7A8493;margin-bottom:4px">
+        🌱 <b style="color:#7A8493">LLM 시드</b> · 관심 분야 1개 클릭
+        <span style="opacity:.6">· 미리 정의된 카테고리</span>
+      </div>
       <div id="seedRow" style="display:flex;flex-wrap:wrap;gap:5px;min-height:32px"></div>
     </div>
 
-    <!-- ② 자동완성 확장 (다중 체크) -->
+    <!-- ② YT 자동완성 확장 (실데이터 — 영상 제목 토큰, 다중 체크) -->
     <div id="expansionWrap" style="margin-bottom:8px;display:none">
-      <div style="font-size:10px;color:#7A8493;margin-bottom:4px">🔍 <span id="expansionTitle">[시드] 자동완성</span> <span id="expansionCount" style="opacity:.7">— 0개</span></div>
+      <div style="font-size:10px;color:#7A8493;margin-bottom:4px">
+        🔥 <b style="color:#FF8A3D">실데이터</b> · <span id="expansionTitle">[시드] YT 자동완성</span> <span id="expansionCount" style="opacity:.7">— 0개</span>
+        <span style="opacity:.6">· 실제 영상 제목에서 추출</span>
+      </div>
       <div id="expansionRow" style="display:flex;flex-wrap:wrap;gap:4px;min-height:32px"></div>
     </div>
 
-    <!-- 선택된 키워드 + 다음 단계 -->
-    <div style="display:flex;align-items:center;gap:8px;border-top:1px solid rgba(255,255,255,.06);padding-top:8px">
+    <!-- ③ DB 빈도 (실데이터 — 이미 수집된 evidence 키워드) -->
+    <div id="dbFreqWrap" style="margin-bottom:8px;display:none">
+      <div style="font-size:10px;color:#7A8493;margin-bottom:4px">
+        📊 <b style="color:#00D4AA">실데이터</b> · DB 빈도 <span id="dbFreqCount" style="opacity:.7">— 0개</span>
+        <span style="opacity:.6">· 이미 수집된 evidence 키워드</span>
+      </div>
+      <div id="dbFreqRow" style="display:flex;flex-wrap:wrap;gap:4px"></div>
+    </div>
+
+    <!-- 선택된 키워드 + 합치기 + 다음 단계 -->
+    <div style="display:flex;align-items:center;gap:8px;border-top:1px solid rgba(255,255,255,.06);padding-top:8px;flex-wrap:wrap">
       <span style="font-size:10px;color:#7A8493">선택 <span id="trendSelectedCount" style="color:#00D4AA;font-weight:700">0건</span></span>
-      <span id="selectedKwPreview" style="font-size:10px;color:#C7CED8;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+      <span id="selectedKwPreview" style="font-size:10px;color:#C7CED8;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:120px"></span>
       <button onclick="manualKwPrompt()" class="btn"
         style="font-size:10px;padding:4px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#F5F5F5">＋ 직접 입력</button>
+      <button onclick="mergeSelectedIntoIdea()" class="btn"
+        style="font-size:11px;padding:5px 12px;background:rgba(108,99,255,.18);border:1px solid #6C63FF;color:#6C63FF;font-weight:700"
+        title="선택한 키워드들을 하나의 통합 아이디어로 → STEP 2">🧪 합쳐서 아이디어 만들기</button>
       <button onclick="goToInsightStep()" class="btn"
-        style="background:#00D4AA;border-color:#00D4AA;color:#0A1F2E;font-weight:700;font-size:11px;padding:5px 14px">키워드 확정 → STEP 2</button>
+        style="background:#00D4AA;border-color:#00D4AA;color:#0A1F2E;font-weight:700;font-size:11px;padding:5px 14px">키워드만 → STEP 2</button>
     </div>
   </div>
 
@@ -2605,24 +2623,76 @@ async function loadTrendingKeywords(){
   const st=document.getElementById('trendStatus');
   const seedRow=document.getElementById('seedRow');
   if(!seedRow)return;
-  st.textContent='시드 로딩 중…';
+  st.textContent='시드 + DB 빈도 로딩 중…';
   try{
-    const r=await fetch('/api/contents/trending-keywords?mode=seeds');
-    const d=await r.json();
-    if(!d.ok)throw new Error(d.error||'실패');
-    st.textContent=`시드 ${d.seeds.length}개 — 1개 클릭`;
-    renderSeedRow(d.seeds);
+    const [r1,r2]=await Promise.all([
+      fetch('/api/contents/trending-keywords?mode=seeds').then(r=>r.json()),
+      fetch('/api/contents/trending-keywords?limit=20').then(r=>r.json()), // overview = DB freq + YT overview
+    ]);
+    if(!r1.ok)throw new Error(r1.error||'시드 실패');
+    renderSeedRow(r1.seeds);
+    // DB 빈도만 추출
+    if(r2.ok){
+      const dbOnly=r2.keywords.filter(k=>k.sources.includes('db_frequency'));
+      renderDbFreqRow(dbOnly);
+    }
+    st.textContent=`시드 ${r1.seeds.length}개 + DB ${r2.ok?r2.keywords.filter(k=>k.sources.includes('db_frequency')).length:0}건`;
     updateTrendSelectedCount();
   }catch(e){st.textContent='⚠ '+e.message;seedRow.innerHTML='<span style="color:#FF8A3D;font-size:10px">'+e.message+'</span>';}
 }
 function renderSeedRow(seeds){
   const row=document.getElementById('seedRow');
   if(!row)return;
+  const sel=new Set(ssGet(SS.selKw));
   row.innerHTML=seeds.map(s=>{
     const active=s===_activeSeed;
-    return `<button onclick="pickSeed('${s.replace(/'/g,"\\'")}')" class="btn"
-      style="font-size:11px;padding:5px 12px;background:${active?'#00D4AA':'rgba(255,255,255,.06)'};border:1px solid ${active?'#00D4AA':'rgba(255,255,255,.15)'};color:${active?'#0A1F2E':'#F5F5F5'};font-weight:${active?'700':'400'};border-radius:14px">🌱 ${s}</button>`;
+    const checked=sel.has(s);
+    // 시드 자체도 selKw에 들어갈 수 있는 체크박스 + 클릭 시 자동완성 펼침
+    return `<div style="display:inline-flex;align-items:center;gap:0;background:${active?'rgba(0,212,170,.18)':'rgba(255,255,255,.06)'};border:1px solid ${active?'#00D4AA':'rgba(255,255,255,.15)'};border-radius:14px;padding:0 4px 0 8px">
+      <input type="checkbox" ${checked?'checked':''} onchange="toggleTrendKw('${s.replace(/'/g,"\\'")}')" style="margin:0;cursor:pointer" title="이 시드를 선택 키워드에 포함">
+      <button onclick="pickSeed('${s.replace(/'/g,"\\'")}')" class="btn"
+        style="font-size:11px;padding:5px 8px 5px 6px;background:transparent;border:0;color:${active?'#0A1F2E':'#F5F5F5'};font-weight:${active?'700':'400'};outline:none;cursor:pointer">🌱 ${s}</button>
+    </div>`;
   }).join('');
+}
+function renderDbFreqRow(kws){
+  const wrap=document.getElementById('dbFreqWrap');
+  const row=document.getElementById('dbFreqRow');
+  const cnt=document.getElementById('dbFreqCount');
+  if(!wrap||!row)return;
+  if(kws.length===0){wrap.style.display='none';return;}
+  wrap.style.display='block';
+  cnt.textContent=`— ${kws.length}개`;
+  const sel=new Set(ssGet(SS.selKw));
+  row.innerHTML=kws.map(k=>{
+    const checked=sel.has(k.keyword);
+    return `<label style="font-size:10px;color:${checked?'#0A1F2E':'#F5F5F5'};background:${checked?'#00D4AA':'rgba(0,212,170,.08)'};border:1px solid ${checked?'#00D4AA':'rgba(0,212,170,.3)'};border-radius:12px;padding:3px 9px;cursor:pointer;display:inline-flex;align-items:center;gap:3px">
+      <input type="checkbox" ${checked?'checked':''} onchange="toggleTrendKw('${k.keyword.replace(/'/g,"\\'")}')" style="margin:0;cursor:pointer">
+      <span>${k.keyword}${k.evidenceCount?` <span style="opacity:.7">${k.evidenceCount}</span>`:''}</span>
+    </label>`;
+  }).join('');
+}
+
+// ─── "🧪 합쳐서 아이디어 만들기" — N키워드 → 1 통합 인사이트 ───
+async function mergeSelectedIntoIdea(){
+  const kws=ssGet(SS.selKw);
+  if(kws.length===0){alert('키워드를 1개 이상 선택하세요');return;}
+  const st=document.getElementById('trendStatus');
+  st.textContent='AI 합치는 중… (Claude)';
+  try{
+    const r=await fetch('/api/contents/insights/merge',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({keywords:kws})});
+    const d=await r.json();
+    if(!d.ok)throw new Error(d.error||'실패');
+    st.innerHTML=`✅ 통합 아이디어: <b style="color:#6C63FF">"${escapeHtml(d.mergedText)}"</b>`;
+    // 자동 채택 + STEP 2로
+    ssToggle(SS.selIn, d.insight.id); // selIn에 추가
+    appendLog?.(`🧪 합치기: "${d.mergedText}"`,'warn');
+    setTimeout(()=>{
+      if(typeof goStage==='function')goStage(1);
+      renderInsights();
+    },800);
+  }catch(e){st.textContent='⚠ '+e.message;}
 }
 async function pickSeed(seed){
   _activeSeed=seed;
@@ -2664,16 +2734,18 @@ function renderExpansion(kws){
 }
 function toggleTrendKw(kw){
   ssToggle(SS.selKw,kw);
-  // 활성 시드의 자동완성만 다시 그림 (시드 행은 안 건드림)
-  const row=document.getElementById('expansionRow');
-  if(row){
-    row.querySelectorAll('label').forEach(lab=>{
-      const checked=lab.querySelector('input').checked;
-      lab.style.background=checked?'#00D4AA':'rgba(255,255,255,.05)';
-      lab.style.borderColor=checked?'#00D4AA':'rgba(255,255,255,.12)';
+  // 세 영역 모두 시각적 동기화
+  const sel=new Set(ssGet(SS.selKw));
+  document.querySelectorAll('#seedRow input[type=checkbox], #expansionRow input[type=checkbox], #dbFreqRow input[type=checkbox]').forEach(inp=>{
+    const lab=inp.closest('label,div');
+    if(!lab)return;
+    // input value가 없으므로 onchange의 onclick attr에서 키워드 추출하기 어려움 → check 상태로 스타일만
+    const checked=inp.checked;
+    if(lab.tagName==='LABEL'){
+      lab.style.background=checked?'#00D4AA':lab.classList.contains('db')?'rgba(0,212,170,.08)':'rgba(255,255,255,.05)';
       lab.style.color=checked?'#0A1F2E':'#F5F5F5';
-    });
-  }
+    }
+  });
   updateTrendSelectedCount();
 }
 function updateTrendSelectedCount(){
