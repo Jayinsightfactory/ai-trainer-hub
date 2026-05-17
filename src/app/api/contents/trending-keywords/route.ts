@@ -71,10 +71,14 @@ const STOPWORDS = new Set([
   "만약", "그냥", "그리고", "그러나", "하지만",
   "방법", "이유", "결과", "차이", "비교", "정리", "추천", "최고", "최신",
   // YT 흔한 단어
-  "shorts", "short", "live", "official", "vlog", "video",
+  "shorts", "short", "live", "official", "vlog", "video", "videos",
+  "trending", "tutorial", "review", "reviews", "guide", "guides",
+  "episode", "ep", "channel", "subscribe", "stream",
   "오늘", "어제", "내일", "이번", "지난", "다음",
   // 숫자 단위
   "분", "초", "시간", "일", "월", "년", "원",
+  // 너무 일반적인 영문 단일 단어 (bigram 컨텍스트에선 OK, unigram에선 노이즈)
+  "ai", "api", "app", "vs", "new", "best", "top", "how", "why", "what",
 ]);
 
 function tokenize(title: string): string[] {
@@ -86,23 +90,68 @@ function tokenize(title: string): string[] {
   const words = cleaned.split(/\s+/).filter((w) => w.length >= 2 && w.length <= 14);
   const tokens: string[] = [];
 
-  // unigrams
+  // unigrams — 한국어 2자+ / 영문 5자+ (짧은 영문 단어는 bigram으로만)
   for (const w of words) {
     if (STOPWORDS.has(w.toLowerCase())) continue;
     if (!/[가-힣A-Za-z0-9]/.test(w)) continue;
-    if (/^\d+$/.test(w)) continue; // 순수 숫자 제외
-    tokens.push(w);
+    if (/^\d+$/.test(w)) continue;
+    const hasKo = /[가-힣]/.test(w);
+    if (hasKo ? w.length >= 2 : w.length >= 5) tokens.push(w);
   }
-  // bigrams (인접 두 단어, stopword 포함 안 함)
+  // bigrams — 양쪽 다 stopword일 때만 제외 (한쪽이 의미어면 OK)
   for (let i = 0; i < words.length - 1; i++) {
     const a = words[i];
     const b = words[i + 1];
-    if (STOPWORDS.has(a.toLowerCase()) || STOPWORDS.has(b.toLowerCase())) continue;
+    if (STOPWORDS.has(a.toLowerCase()) && STOPWORDS.has(b.toLowerCase())) continue;
     if (/^\d+$/.test(a) && /^\d+$/.test(b)) continue;
     const bi = `${a} ${b}`;
-    if (bi.length >= 4 && bi.length <= 20) tokens.push(bi);
+    if (bi.length >= 4 && bi.length <= 24) tokens.push(bi);
   }
   return tokens;
+}
+
+// ─── 후처리: case-insensitive dedup + substring 흡수 ───
+type KwItem = { keyword: string; sources: string[]; weight: number; evidenceCount: number };
+function dedupAndCollapse(list: KwItem[]): KwItem[] {
+  // 1) case-insensitive 합치기 — 가장 weight 큰 case를 대표로
+  const byLower = new Map<string, KwItem[]>();
+  for (const item of list) {
+    const k = item.keyword.toLowerCase();
+    const arr = byLower.get(k) ?? [];
+    arr.push(item);
+    byLower.set(k, arr);
+  }
+  const cased: KwItem[] = [];
+  byLower.forEach((group) => {
+    group.sort((a, b) => b.weight - a.weight);
+    cased.push({
+      keyword: group[0].keyword,
+      sources: [...new Set(group.flatMap((g) => g.sources))],
+      weight: group.reduce((s, g) => s + g.weight, 0),
+      evidenceCount: Math.max(...group.map((g) => g.evidenceCount)),
+    });
+  });
+
+  // 2) substring 흡수 — 더 긴 토큰이 짧은 토큰을 단어 단위로 포함하면 짧은 거 흡수
+  cased.sort((a, b) => b.keyword.length - a.keyword.length);
+  const final: KwItem[] = [];
+  for (const cand of cased) {
+    const lower = cand.keyword.toLowerCase();
+    const subsumer = final.find((longer) => {
+      const longerL = longer.keyword.toLowerCase();
+      if (longerL === lower) return false;
+      return longerL.split(/\s+/).some((tok) => tok === lower);
+    });
+    if (subsumer) {
+      subsumer.weight += cand.weight * 0.3;
+      cand.sources.forEach((s) => {
+        if (!subsumer.sources.includes(s)) subsumer.sources.push(s);
+      });
+    } else {
+      final.push(cand);
+    }
+  }
+  return final;
 }
 
 export async function GET(req: NextRequest) {
@@ -158,16 +207,22 @@ export async function GET(req: NextRequest) {
   }
   // 우선순위: DB 빈도 (사용자 실제 관심) > YT 트렌드 > seed
   dbKws.forEach((v, k) => add(k, "db_frequency", v.weight, v.evidenceCount));
-  // YT 토큰은 빈도 ≥ 2만 (노이즈 제거)
+  // YT 토큰은 빈도 ≥ 2만. bigram (공백 포함 + 한국어 포함)에 가중치 부스트.
   [...ytFreq.entries()]
     .filter(([, n]) => n >= 2)
-    .forEach(([k, n]) => add(k, "youtube_trend", Math.log(1 + n) * 1.5));
+    .forEach(([k, n]) => {
+      const isBigram = k.includes(" ");
+      const hasKo = /[가-힣]/.test(k);
+      const boost = (isBigram ? 1.6 : 1.0) * (hasKo ? 1.4 : 1.0);
+      add(k, "youtube_trend", Math.log(1 + n) * 1.5 * boost);
+    });
   // cold start fallback
   if (merged.size < Math.ceil(limit / 2)) {
     SEED_CATEGORIES.forEach((k) => add(k, "seed", 0.3));
   }
 
-  const list = [...merged.values()]
+  // dedup + substring collapse + 최종 정렬
+  const list = dedupAndCollapse([...merged.values()])
     .sort((a, b) => b.weight - a.weight)
     .slice(0, limit);
 
