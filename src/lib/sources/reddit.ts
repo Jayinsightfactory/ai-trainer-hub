@@ -52,20 +52,51 @@ export const redditAdapter: SourceAdapter = {
   async fetchByKeyword(keyword: string, opts: FetchOpts = {}): Promise<RawEvidence[]> {
     const limit = Math.min(opts.limit ?? 10, 25);
     const sinceTs = (opts.since ?? new Date(Date.now() - 90 * 86_400_000)).getTime() / 1000;
+    const isKorean = /[가-힣]/.test(keyword);
 
-    // 1) 글로벌 search (sort=relevance, t=year)
-    const searchUrl =
-      `https://www.reddit.com/search.json?q=${encodeURIComponent(keyword)}` +
-      `&sort=relevance&t=year&limit=${limit}&type=link`;
-    const search = await jget<SearchResp>(searchUrl);
-
-    const posts = (search.data.children ?? []).filter((p) => p.data.created_utc >= sinceTs);
+    // 1) 검색: 한국어 키워드면 한국 subreddit 먼저, 결과 부족하면 글로벌 fallback
+    const KR_SUBS = ["korea", "Korean", "hanguk", "kpop", "kdrama"];
+    let posts: SearchPost["data"][] = [];
+    if (isKorean) {
+      // 한국 sub 안에서 검색
+      for (const sub of KR_SUBS) {
+        if (posts.length >= limit) break;
+        try {
+          const subUrl =
+            `https://www.reddit.com/r/${sub}/search.json?q=${encodeURIComponent(keyword)}` +
+            `&restrict_sr=1&sort=relevance&t=year&limit=${limit}`;
+          const r = await jget<SearchResp>(subUrl);
+          for (const c of r.data.children ?? []) {
+            if (c.data.created_utc >= sinceTs) posts.push(c.data);
+          }
+        } catch {
+          // 개별 sub 실패는 무시
+        }
+      }
+    }
+    // 글로벌 fallback (한국어 키워드도 결과 부족 시 시도)
+    if (posts.length < 3) {
+      try {
+        const searchUrl =
+          `https://www.reddit.com/search.json?q=${encodeURIComponent(keyword)}` +
+          `&sort=relevance&t=year&limit=${limit}&type=link`;
+        const search = await jget<SearchResp>(searchUrl);
+        for (const c of search.data.children ?? []) {
+          if (c.data.created_utc >= sinceTs && !posts.find((p) => p.id === c.data.id)) {
+            posts.push(c.data);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+    posts = posts.slice(0, limit);
 
     const commentsPerPost = 10;
     const commentBatches = await Promise.all(
       posts.map(async (p) => {
         try {
-          const url = `https://www.reddit.com${p.data.permalink}.json?limit=${commentsPerPost}&sort=top`;
+          const url = `https://www.reddit.com${p.permalink}.json?limit=${commentsPerPost}&sort=top`;
           return await jget<CommentsResp>(url);
         } catch {
           return null;
@@ -75,7 +106,7 @@ export const redditAdapter: SourceAdapter = {
 
     const out: RawEvidence[] = [];
     for (let i = 0; i < posts.length; i++) {
-      const p = posts[i].data;
+      const p = posts[i];
       const postUrl = `https://www.reddit.com${p.permalink}`;
       const parentTitle = p.title;
       const parentChannel = `r/${p.subreddit}`;

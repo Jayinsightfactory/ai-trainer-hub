@@ -2550,34 +2550,30 @@ function renderSeedsFromResponse(d){
     return;
   }
   cnt.textContent=`— ${d.count}건`;
+  // 출처 배지 톤다운: 카드 하단 "▾ 출처" 토글로 숨김 (기본 닫힘). 사용자가 원할 때만 펼침.
   grid.innerHTML=d.seeds.map(s=>{
     const ev=(s.evidence||[]).slice(0,3);
     const badges=ev.map(e=>{
       const b=PLATFORM_BADGE[e.platform]||{label:e.platform,color:'#888'};
       const parent=(e.parentChannel||e.parentTitle||'').slice(0,18);
       return `<a href="${e.url}" target="_blank" rel="noopener" title="${(e.parentTitle||'').replace(/"/g,'&quot;')}"
-        style="text-decoration:none;font-size:9px;padding:2px 6px;border-radius:4px;
-        border:1px solid ${b.color}55;color:${b.color};background:${b.color}11">
-        ${b.label} ${parent} ${e.signal>0?'· '+e.signal+'↑':''}
-      </a>`;
+        style="text-decoration:none;font-size:9px;padding:1px 5px;border-radius:3px;
+        color:${b.color};opacity:.75">${b.label} ${parent}</a>`;
     }).join('');
-    const score=s.realityScore.toFixed(1);
     const isPicked=s.status==='picked';
     const isRejected=s.status==='rejected';
-    const border=isPicked?'rgba(0,212,170,.6)':isRejected?'rgba(255,59,59,.4)':'rgba(0,212,170,.2)';
-    const thesisBadge=s.thesisId?`<span style="font-size:9px;color:#6C63FF;background:rgba(108,99,255,.12);padding:1px 5px;border-radius:3px">📌 thesis</span>`:'';
-    return `<div style="background:rgba(0,40,30,.25);border:1px solid ${border};border-radius:8px;padding:10px 12px;line-height:1.4;display:flex;flex-direction:column;gap:6px">
-      <div style="display:flex;justify-content:space-between;font-size:10px;color:#7A8493;gap:4px">
-        <span>🛰 ${s.keyword} · ${s.evidenceCount}건 · ${s.sourceDiversity}소스 ${thesisBadge}</span>
-        <span title="현실성 점수">${score}</span>
+    const border=isPicked?'rgba(0,212,170,.5)':isRejected?'rgba(255,59,59,.3)':'rgba(255,255,255,.1)';
+    return `<div style="background:rgba(0,40,30,.18);border:1px solid ${border};border-radius:8px;padding:10px 12px;line-height:1.45;display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:13px;color:#F5F5F5;line-height:1.5">"${s.titleQuoted}"</div>
+      ${s.hookQuoted?`<div style="font-size:11px;color:#C7CED8;line-height:1.4">↳ "${s.hookQuoted}"</div>`:''}
+      <div style="display:flex;align-items:center;gap:6px;margin-top:2px;font-size:10px;color:#7A8493">
+        <span>${s.keyword} · ${s.evidenceCount}건</span>
+        <span style="margin-left:auto">${_starBar(s.id,s.lastDecision?.rating)}</span>
       </div>
-      <div style="font-size:12px;color:#F5F5F5;line-height:1.45">"${s.titleQuoted}"</div>
-      ${s.hookQuoted?`<div style="font-size:10px;color:#C7CED8;line-height:1.4">↳ "${s.hookQuoted}"</div>`:''}
-      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:2px">${badges}</div>
-      <div style="display:flex;align-items:center;gap:4px;margin-top:4px;border-top:1px solid rgba(255,255,255,.06);padding-top:6px">
-        ${_starBar(s.id,s.lastDecision?.rating)}
-        <span style="margin-left:auto;font-size:9px;color:${isPicked?'#00D4AA':isRejected?'#FF3B3B':'#7A8493'}">${s.status}</span>
-      </div>
+      <details style="font-size:10px;color:#7A8493">
+        <summary style="cursor:pointer;outline:none">출처 ${ev.length}건</summary>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${badges}</div>
+      </details>
     </div>`;
   }).join('');
 }
@@ -2707,7 +2703,7 @@ async function runInsightExtract(){
     const d=await r.json();
     if(!d.ok)throw new Error(d.error||'실패');
     st.textContent=`✅ AI ${d.insightsCreated}개 추출 (evidence ${d.evidenceConsidered}건)`;
-    renderInsights();
+    await renderInsights();
   }catch(e){st.textContent='⚠ '+e.message;}
 }
 async function renderInsights(){

@@ -4,23 +4,40 @@
 
 import type { FetchOpts, RawEvidence, SourceAdapter } from "./types";
 
+// 봇 식별 UA는 차단되기 쉬워 평범한 데스크탑 UA 사용.
 const UA =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) ai-trainer-hub/0.1";
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 const BASE = "https://www.clien.net";
 
 async function htmlGet(url: string): Promise<string> {
-  const r = await fetch(url, { headers: { "User-Agent": UA } });
+  const r = await fetch(url, {
+    headers: {
+      "User-Agent": UA,
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.8",
+      "Cache-Control": "no-cache",
+    },
+  });
   if (!r.ok) throw new Error(`Clien ${r.status} on ${url.slice(0, 120)}`);
   return await r.text();
 }
 
-/** 검색 결과에서 게시글 링크 추출 — /service/board/XXX/12345 형태. */
+/** 검색 결과에서 게시글 링크 추출 — /service/board/XXX/12345 형태.
+ *  Clien 검색은 ?combine=true&q=... 쿼리가 붙은 형태로 노출. */
 function extractPostLinks(html: string, limit: number): string[] {
   const links = new Set<string>();
-  const re = /href="(\/service\/board\/[a-z0-9_]+\/\d+[^"#?]*)"/g;
+  // subject_fixed 클래스가 검색 결과 게시글 링크임 (단순 메뉴 링크 제외)
+  const re = /href="(\/service\/board\/[a-zA-Z0-9_]+\/\d+)[^"]*"\s+class="subject_fixed"/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(html)) && links.size < limit) {
-    links.add(BASE + m[1].split("?")[0]);
+    links.add(BASE + m[1]);
+  }
+  // fallback: subject_fixed 못 찾으면 모든 board 링크
+  if (links.size === 0) {
+    const reAny = /href="(\/service\/board\/[a-zA-Z0-9_]+\/\d+)(?:\?[^"]*)?"/g;
+    while ((m = reAny.exec(html)) && links.size < limit) {
+      links.add(BASE + m[1]);
+    }
   }
   return [...links];
 }
