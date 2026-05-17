@@ -314,6 +314,24 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:22px 0}
     <span class="flow-step">인사이트 도출</span>
   </div>
 
+  <!-- 🛰 실데이터 수집 (YT 댓글 + Reddit + 클리앙) -->
+  <div style="background:linear-gradient(180deg,rgba(0,40,30,.4),rgba(0,60,45,.25));border:1px solid rgba(0,212,170,.35);border-radius:10px;padding:14px;margin-bottom:14px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <span style="color:#00D4AA;font-weight:700;font-size:13px">🛰 실데이터 수집 (YT 댓글 + Reddit + 클리앙)</span>
+      <span id="ingestStatus" style="font-size:10px;color:#7A8493;margin-left:auto">대기</span>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <input id="ingestKw" placeholder="키워드 콤마 구분 (예: AI 자동화, 챗GPT 결제, 엑셀 함수)"
+        style="flex:1;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:8px 10px;color:#F5F5F5;font-size:12px">
+      <button onclick="runIngest()" class="btn"
+        style="background:#00D4AA;border-color:#00D4AA;color:#0A1F2E;font-weight:700;font-size:12px;padding:8px 14px">▶ 수집</button>
+    </div>
+    <div id="ingestReport" style="font-size:11px;color:#C7CED8;line-height:1.6;max-height:120px;overflow-y:auto"></div>
+    <div style="font-size:10px;color:#7A8493;margin-top:6px">
+      수집된 발언은 STEP 2에서 인사이트로 추출 → STEP 3에서 주제·주장으로 묶임 → STEP 4 시드로 자동 등장.
+    </div>
+  </div>
+
   <div class="card-grid">
     <div class="card"><div class="card-label">수집 영상</div><div class="card-value">70<span style="font-size:16px">개</span></div><div class="card-sub">90일 이내</div></div>
     <div class="card"><div class="card-label">자동완성 키워드</div><div class="card-value">25<span style="font-size:16px">개</span></div><div class="card-sub">Google + YouTube</div></div>
@@ -372,6 +390,24 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:22px 0}
     <span class="flow-step">주제·주장</span>
   </div>
 
+  <!-- 🛰 실데이터 인사이트 (Claude가 수집된 Evidence에서 반복 발견 추출) -->
+  <div style="background:linear-gradient(180deg,rgba(0,40,30,.4),rgba(0,60,45,.25));border:1px solid rgba(0,212,170,.35);border-radius:10px;padding:14px;margin-bottom:14px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <span style="color:#00D4AA;font-weight:700;font-size:13px">🛰 실데이터 인사이트</span>
+      <span id="insightStatus" style="font-size:10px;color:#7A8493;margin-left:auto">대기</span>
+      <input id="insightKw" placeholder="키워드 (수집한 것 중)"
+        style="background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:5px 8px;color:#F5F5F5;font-size:11px;width:200px">
+      <button onclick="runInsightExtract()" class="btn"
+        style="background:#00D4AA;border-color:#00D4AA;color:#0A1F2E;font-weight:700;font-size:11px;padding:5px 12px">🔍 추출</button>
+      <button onclick="renderInsights()" class="btn"
+        style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#F5F5F5;font-size:11px;padding:5px 10px">↻</button>
+    </div>
+    <div id="insightList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:8px;max-height:280px;overflow-y:auto"></div>
+    <div style="font-size:10px;color:#7A8493;margin-top:6px">
+      Claude가 evidence 원문에서 *반복되는 발견*만 한 줄로 뽑음 (최소 2명 이상 동의 필요). 새 사실 생성 ❌.
+    </div>
+  </div>
+
   <div class="section-title"><div class="dot"></div> 인사이트 자동화 5 Phase<span class="count">현재 Phase 2</span></div>
   <p class="subtitle">멘토 원칙: <code>"본인이 30분 안에 끝낼 수 있고, 눈 감고 설명할 수 있을 때 자동화"</code></p>
 
@@ -401,6 +437,24 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:22px 0}
     <span class="flow-step done">주제 정의 (알고리즘용)</span><span class="flow-arrow">→</span>
     <span class="flow-step done">주장 정의 (시청자용)</span><span class="flow-arrow">→</span>
     <span class="flow-step done">정합성 검증</span>
+  </div>
+
+  <!-- 🛰 실데이터 주제·주장 (Insight 클러스터링 → 주장 N개, 5개 고정 ❌) -->
+  <div style="background:linear-gradient(180deg,rgba(0,40,30,.4),rgba(0,60,45,.25));border:1px solid rgba(0,212,170,.35);border-radius:10px;padding:14px;margin-bottom:14px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <span style="color:#00D4AA;font-weight:700;font-size:13px">🛰 실데이터 주제·주장</span>
+      <span id="thesesStatus" style="font-size:10px;color:#7A8493;margin-left:auto">대기</span>
+      <input id="thesesKw" placeholder="키워드 (없으면 전체)"
+        style="background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:5px 8px;color:#F5F5F5;font-size:11px;width:180px">
+      <button onclick="runThesesCluster()" class="btn"
+        style="background:#00D4AA;border-color:#00D4AA;color:#0A1F2E;font-weight:700;font-size:11px;padding:5px 12px">🧩 클러스터링</button>
+      <button onclick="renderTheses()" class="btn"
+        style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#F5F5F5;font-size:11px;padding:5px 10px">↻</button>
+    </div>
+    <div id="thesesList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:8px;max-height:320px;overflow-y:auto"></div>
+    <div style="font-size:10px;color:#7A8493;margin-top:6px">
+      개수는 데이터양에 비례 (5개 고정 ❌). <b style="color:#00D4AA">⭐ 채택</b> 클릭 → STEP 4에 자동으로 시드 1장 생성됨.
+    </div>
   </div>
 
   <div class="subtitle">
@@ -438,6 +492,22 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:22px 0}
     <div class="section-title"><div class="dot"></div> 🌱 다음 콘텐츠 시드 20개<span class="count">카드 클릭 → 후크 자동 채움 → [🎨 커버 카피] 탭으로 이동</span></div>
     <div id="seedsPanel" style="background:linear-gradient(180deg,#0A1F2E,#0E2A24);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:20px;color:#F5F5F5;position:relative;overflow:hidden">
       <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.04) 0px,rgba(255,255,255,.04) 1px,transparent 1px,transparent 8px);pointer-events:none"></div>
+      <!-- 🛰 실데이터 시드 (DB) — Evidence 기반, 출처 배지 표시 -->
+      <div id="realSeedsWrap" style="position:relative;margin-bottom:18px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px;color:#7A8493">
+          <span style="color:#00D4AA;font-weight:700">🛰 실데이터 시드 (출처 인용)</span>
+          <span id="realSeedsCount" style="font-size:10px">— 불러오는 중…</span>
+          <label style="font-size:10px;color:#7A8493;display:flex;align-items:center;gap:4px;margin-left:8px">
+            <input type="checkbox" id="filterByPickedThesis" onchange="renderRealSeeds()"> ⭐ picked 주장만
+          </label>
+          <button onclick="ingestPrompt()" class="btn" style="margin-left:auto;font-size:10px;padding:3px 8px;background:rgba(0,212,170,.15);border:1px solid rgba(0,212,170,.4);color:#00D4AA">＋ 키워드로 수집</button>
+          <button onclick="renderRealSeeds()" class="btn" style="font-size:10px;padding:3px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#F5F5F5">↻ 새로고침</button>
+        </div>
+        <div id="realSeedsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:11px;color:#7A8493">
+        <span>🌱 하드코딩 시드 (모킹)</span>
+      </div>
       <div id="seedsGrid" style="position:relative;display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px"></div>
     </div>
   </div>
@@ -2383,6 +2453,235 @@ function renderSeedsPanel(){
     </div>`;
   }).join('');
 }
+
+// ═══ 🛰 실데이터 시드 (DB) — Evidence 기반 ═══
+const PLATFORM_BADGE={
+  youtube:{label:'YT',color:'#FF3B3B',icon:'▶'},
+  reddit :{label:'Reddit',color:'#FF8A3D',icon:'🔶'},
+  clien  :{label:'클리앙',color:'#FFD93D',icon:'KR'},
+  ppomppu:{label:'뽐뿌',color:'#FFD93D',icon:'KR'},
+  x      :{label:'X',color:'#888',icon:'X'},
+  facebook:{label:'FB',color:'#5b8def',icon:'f'},
+};
+function _starBar(seedId,current){
+  return [1,2,3,4,5].map(n=>{
+    const filled=current&&n<=current;
+    return `<span style="cursor:pointer;color:${filled?'#FFD93D':'#3a3f49'};font-size:13px"
+      title="별점 ${n}" onclick="decideSeed('${seedId}',${n})">★</span>`;
+  }).join('')+`<span style="cursor:pointer;color:#7A8493;font-size:10px;margin-left:6px"
+    title="제외" onclick="decideSeed('${seedId}',0)">✕</span>`;
+}
+async function renderRealSeeds(){
+  const grid=document.getElementById('realSeedsGrid');
+  const cnt=document.getElementById('realSeedsCount');
+  if(!grid)return;
+  cnt.textContent='— 불러오는 중…';
+  try{
+    const onlyPicked=document.getElementById('filterByPickedThesis')?.checked;
+    // picked 주장에 묶인 시드만 보고 싶을 때 — 1차 호출로 picked thesis id 모은 뒤 합쳐서 fetch
+    let url='/api/contents/seeds?limit=20';
+    if(onlyPicked){
+      const tr=await fetch('/api/contents/theses?status=picked');
+      const td=await tr.json();
+      const ids=(td.theses||[]).map(t=>t.id);
+      if(ids.length===0){grid.innerHTML='';cnt.textContent='— picked 주장 0건';return;}
+      // 다중 thesisId — 서버는 1개만 받으니 클라에서 합치기
+      const groups=await Promise.all(ids.map(id=>fetch('/api/contents/seeds?limit=20&thesisId='+encodeURIComponent(id)).then(r=>r.json())));
+      const merged={ok:true,seeds:[]};
+      groups.forEach(g=>{if(g.ok)merged.seeds.push(...(g.seeds||[]));});
+      merged.count=merged.seeds.length;
+      renderSeedsFromResponse(merged);return;
+    }
+    const r=await fetch(url);
+    if(r.status===403){cnt.textContent='— 관리자 권한 필요';grid.innerHTML='';return;}
+    const d=await r.json();
+    if(!d.ok){cnt.textContent='— '+d.error;return;}
+    renderSeedsFromResponse(d);
+  }catch(e){cnt.textContent='— 오류: '+e.message;}
+}
+function renderSeedsFromResponse(d){
+  const grid=document.getElementById('realSeedsGrid');
+  const cnt=document.getElementById('realSeedsCount');
+  if(d.count===0){
+    cnt.textContent='— 0건 (＋ 수집 버튼으로 시작)';
+    grid.innerHTML=`<div style="grid-column:1/-1;padding:20px;text-align:center;color:#7A8493;font-size:12px;border:1px dashed rgba(255,255,255,.15);border-radius:8px">
+      DB에 시드 없음. <b style="color:#00D4AA">＋ 키워드로 수집</b> 버튼을 눌러 YouTube/Reddit/클리앙에서 실제 발언을 수집하세요.
+    </div>`;
+    return;
+  }
+  cnt.textContent=`— ${d.count}건`;
+  grid.innerHTML=d.seeds.map(s=>{
+    const ev=(s.evidence||[]).slice(0,3);
+    const badges=ev.map(e=>{
+      const b=PLATFORM_BADGE[e.platform]||{label:e.platform,color:'#888'};
+      const parent=(e.parentChannel||e.parentTitle||'').slice(0,18);
+      return `<a href="${e.url}" target="_blank" rel="noopener" title="${(e.parentTitle||'').replace(/"/g,'&quot;')}"
+        style="text-decoration:none;font-size:9px;padding:2px 6px;border-radius:4px;
+        border:1px solid ${b.color}55;color:${b.color};background:${b.color}11">
+        ${b.label} ${parent} ${e.signal>0?'· '+e.signal+'↑':''}
+      </a>`;
+    }).join('');
+    const score=s.realityScore.toFixed(1);
+    const isPicked=s.status==='picked';
+    const isRejected=s.status==='rejected';
+    const border=isPicked?'rgba(0,212,170,.6)':isRejected?'rgba(255,59,59,.4)':'rgba(0,212,170,.2)';
+    const thesisBadge=s.thesisId?`<span style="font-size:9px;color:#6C63FF;background:rgba(108,99,255,.12);padding:1px 5px;border-radius:3px">📌 thesis</span>`:'';
+    return `<div style="background:rgba(0,40,30,.25);border:1px solid ${border};border-radius:8px;padding:10px 12px;line-height:1.4;display:flex;flex-direction:column;gap:6px">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:#7A8493;gap:4px">
+        <span>🛰 ${s.keyword} · ${s.evidenceCount}건 · ${s.sourceDiversity}소스 ${thesisBadge}</span>
+        <span title="현실성 점수">${score}</span>
+      </div>
+      <div style="font-size:12px;color:#F5F5F5;line-height:1.45">"${s.titleQuoted}"</div>
+      ${s.hookQuoted?`<div style="font-size:10px;color:#C7CED8;line-height:1.4">↳ "${s.hookQuoted}"</div>`:''}
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:2px">${badges}</div>
+      <div style="display:flex;align-items:center;gap:4px;margin-top:4px;border-top:1px solid rgba(255,255,255,.06);padding-top:6px">
+        ${_starBar(s.id,s.lastDecision?.rating)}
+        <span style="margin-left:auto;font-size:9px;color:${isPicked?'#00D4AA':isRejected?'#FF3B3B':'#7A8493'}">${s.status}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── STEP 1: 키워드 수집 (ingest) ───
+async function runIngest(){
+  const raw=document.getElementById('ingestKw')?.value||'';
+  const keywords=raw.split(',').map(s=>s.trim()).filter(Boolean).slice(0,5);
+  if(keywords.length===0){alert('키워드를 입력하세요');return;}
+  const st=document.getElementById('ingestStatus');
+  const rep=document.getElementById('ingestReport');
+  st.textContent=`수집 중… (${keywords.length}개 × 3소스)`;
+  rep.innerHTML='';
+  try{
+    const r=await fetch('/api/contents/ingest',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({keywords,limit:8})});
+    const d=await r.json();
+    if(!d.ok)throw new Error(d.error||'수집 실패');
+    st.textContent=`✅ Evidence ${d.summary.evidenceUpserted}건 저장`;
+    rep.innerHTML=(d.report||[]).map(r=>{
+      const ok=!r.error;
+      return `<div style="color:${ok?'#C7CED8':'#FF8A3D'}">
+        ${ok?'✓':'⚠'} <b>${r.platform}</b> · ${r.keyword} → ${r.upserted}건${r.error?' ('+r.error.slice(0,80)+')':''}
+      </div>`;
+    }).join('');
+  }catch(e){st.textContent='⚠ '+e.message;}
+}
+
+// ─── STEP 2: 인사이트 추출 ───
+async function runInsightExtract(){
+  const kw=document.getElementById('insightKw')?.value?.trim();
+  if(!kw){alert('키워드를 입력하세요 (STEP 1에서 수집한 것)');return;}
+  const st=document.getElementById('insightStatus');
+  st.textContent='추출 중… (Claude)';
+  try{
+    const r=await fetch('/api/contents/insights/extract',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({keyword:kw})});
+    const d=await r.json();
+    if(!d.ok)throw new Error(d.error||'실패');
+    st.textContent=`✅ ${d.insightsCreated}개 인사이트 (evidence ${d.evidenceConsidered}건 검토)`;
+    renderInsights();
+  }catch(e){st.textContent='⚠ '+e.message;}
+}
+async function renderInsights(){
+  const list=document.getElementById('insightList');if(!list)return;
+  try{
+    const r=await fetch('/api/contents/insights/extract');
+    const d=await r.json();
+    if(!d.ok){list.innerHTML='<div style="color:#FF8A3D;font-size:11px">'+d.error+'</div>';return;}
+    if(d.count===0){list.innerHTML='<div style="grid-column:1/-1;padding:14px;text-align:center;color:#7A8493;font-size:11px;border:1px dashed rgba(255,255,255,.15);border-radius:6px">인사이트 0건 — 위에서 추출 실행</div>';return;}
+    list.innerHTML=d.insights.map(i=>`<div style="background:rgba(0,40,30,.25);border:1px solid rgba(0,212,170,.25);border-radius:6px;padding:8px 10px">
+      <div style="font-size:11px;color:#F5F5F5;line-height:1.4">${i.text}</div>
+      <div style="font-size:9px;color:#7A8493;margin-top:4px">${i.keyword} · 근거 ${i.evidenceIds.length}건 · signal ${i.signalSum.toFixed(1)} ${i.thesisId?'· 📌 thesis 묶임':''}</div>
+    </div>`).join('');
+  }catch(e){list.innerHTML='<div style="color:#FF3B3B;font-size:11px">'+e.message+'</div>';}
+}
+
+// ─── STEP 3: 주제·주장 클러스터링 + 채택 ───
+async function runThesesCluster(){
+  const kw=document.getElementById('thesesKw')?.value?.trim();
+  const st=document.getElementById('thesesStatus');
+  st.textContent='클러스터링 중… (Claude)';
+  try{
+    const r=await fetch('/api/contents/theses',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(kw?{keyword:kw}:{})});
+    const d=await r.json();
+    if(!d.ok)throw new Error(d.error||'실패');
+    st.textContent=`✅ ${d.thesesCreated}개 주장 (insight ${d.insightsConsidered}건 검토)`;
+    renderTheses();
+  }catch(e){st.textContent='⚠ '+e.message;}
+}
+async function renderTheses(){
+  const list=document.getElementById('thesesList');if(!list)return;
+  try{
+    const r=await fetch('/api/contents/theses');
+    const d=await r.json();
+    if(!d.ok){list.innerHTML='<div style="color:#FF8A3D;font-size:11px">'+d.error+'</div>';return;}
+    if(d.count===0){list.innerHTML='<div style="grid-column:1/-1;padding:14px;text-align:center;color:#7A8493;font-size:11px;border:1px dashed rgba(255,255,255,.15);border-radius:6px">주장 0건 — 위에서 클러스터링 실행</div>';return;}
+    list.innerHTML=d.theses.map(t=>{
+      const isPicked=t.status==='picked';
+      const isRejected=t.status==='rejected';
+      const border=isPicked?'rgba(0,212,170,.6)':isRejected?'rgba(255,59,59,.4)':'rgba(0,212,170,.2)';
+      return `<div style="background:rgba(0,40,30,.25);border:1px solid ${border};border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:#7A8493">
+          <span>#${t.rank} · ${t.topic}</span>
+          <span title="현실성">현실성 ${t.realityScore} · 시드 ${t.seedCount}</span>
+        </div>
+        <div style="font-size:13px;color:#F5F5F5;font-weight:600;line-height:1.4">"${t.claim}"</div>
+        <div style="font-size:10px;color:#C7CED8;line-height:1.5">근거 인사이트 ${t.insightCount}건:
+          <ul style="margin:3px 0 0 14px;padding:0">${(t.insights||[]).slice(0,3).map(i=>`<li style="font-size:10px;color:#C7CED8">${i.text}</li>`).join('')}</ul>
+        </div>
+        <div style="display:flex;gap:4px;margin-top:4px;border-top:1px solid rgba(255,255,255,.06);padding-top:6px">
+          <button onclick="pickThesis('${t.id}','picked')" class="btn" style="flex:1;font-size:10px;padding:4px 8px;background:${isPicked?'#00D4AA':'rgba(0,212,170,.15)'};border:1px solid #00D4AA;color:${isPicked?'#0A1F2E':'#00D4AA'};font-weight:600">⭐ 채택</button>
+          <button onclick="pickThesis('${t.id}','rejected')" class="btn" style="font-size:10px;padding:4px 8px;background:rgba(255,59,59,.1);border:1px solid rgba(255,59,59,.3);color:#FF8A8A">제외</button>
+          <button onclick="pickThesis('${t.id}','candidate')" class="btn" style="font-size:10px;padding:4px 8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);color:#C7CED8">초기화</button>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){list.innerHTML='<div style="color:#FF3B3B;font-size:11px">'+e.message+'</div>';}
+}
+async function pickThesis(id,status){
+  try{
+    const r=await fetch('/api/contents/theses',{method:'PATCH',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id,status})});
+    const d=await r.json();
+    if(!d.ok)throw new Error(d.error||'실패');
+    appendLog(`📌 주장 → ${status}${d.seed?` · 시드 자동 생성 (evidence ${d.seed.evidenceCount}건, 점수 ${d.seed.score.toFixed(1)})`:''}`,'warn');
+    renderTheses();
+    renderRealSeeds();
+  }catch(e){appendLog('⚠ 주장 상태 변경 실패: '+e.message,'err');}
+}
+async function decideSeed(seedId,rating){
+  try{
+    const r=await fetch(`/api/contents/seeds/${encodeURIComponent(seedId)}/decision`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({rating}),
+    });
+    const d=await r.json();
+    if(!d.ok)throw new Error(d.error||'결정 실패');
+    appendLog(`⭐ 시드 ${seedId.slice(0,8)} → ★${rating} (${d.status})`,'warn');
+    renderRealSeeds();
+  }catch(e){appendLog('⚠ 별점 저장 실패: '+e.message,'err');}
+}
+async function ingestPrompt(){
+  const raw=prompt('수집할 키워드 (콤마 구분, 최대 5개):\n예) AI 자동화, 챗GPT 결제, 엑셀 함수');
+  if(!raw)return;
+  const keywords=raw.split(',').map(s=>s.trim()).filter(Boolean).slice(0,5);
+  if(keywords.length===0)return;
+  appendLog(`▶ POST /api/contents/ingest — ${keywords.length}개 키워드`,'warn');
+  try{
+    const r=await fetch('/api/contents/ingest',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({keywords,limit:8}),
+    });
+    const d=await r.json();
+    if(!d.ok)throw new Error(d.error||'수집 실패');
+    appendLog(`  → Evidence ${d.summary.evidenceUpserted}건 저장 (${d.summary.platforms}소스 × ${d.summary.keywords}키워드)`,'warn');
+    (d.report||[]).forEach(r=>{
+      appendLog(`    ${r.platform}/${r.keyword}: ${r.upserted}건${r.error?' ⚠'+r.error:''}`,r.error?'err':'');
+    });
+    renderRealSeeds();
+  }catch(e){appendLog('⚠ 수집 실패: '+e.message,'err');}
+}
+
 // ═══ 시드별 본문 템플릿 (시드 → 본문 6장 깊은 연동) ═══
 // 키: 시드 번호 (1~20) · 값: BODY 6장 (P2~P7)
 // ═══ 시드별 커버 템플릿 (20개 전체 — 시드 클릭 시 메인 카피 자동 채움) ═══
@@ -2628,7 +2927,7 @@ async function generateBodyFromSeed(){
     if(btn){btn.disabled=false;btn.innerHTML='🤖 AI로 본문 자동 생성';}
   }
 }
-syncCustomFromSelection();renderCoverPatterns();renderCopyWorkbench();renderBodyWorkbench();renderFullResult();renderSeedsPanel();renderHistory();
+syncCustomFromSelection();renderCoverPatterns();renderCopyWorkbench();renderBodyWorkbench();renderFullResult();renderSeedsPanel();renderRealSeeds();renderInsights();renderTheses();renderHistory();
 document.getElementById('progressFill').style.width='14%';
 appendLog('[시작] AI 키워드 → 콘텐츠 자동화 파이프라인 v4 초기화','dim');
 appendLog('✓ 5 STEP 방법론 + v3 데이터 통합 완료','');

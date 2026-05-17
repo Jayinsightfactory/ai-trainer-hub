@@ -315,3 +315,118 @@ model Subscription {
 }
 
 // User 모델에 Subscription 추가를 위한 relation은 User 모델에서 처리됨
+
+// ─── 실데이터 카드 시드 (YouTube/Reddit/Clien 등 출처 인용) ─────
+// Evidence = 원자 단위 (댓글/포스트 1개)  ·  Seed = 카드 1장 (evidence n개)
+// 원칙: sourceUrl 없는 Evidence 생성 금지, 인용 원문(textRaw) 변형 금지.
+
+model Evidence {
+  id            String   @id // sha1(sourceUrl + author + postedAt)
+  platform      String   // youtube | reddit | clien | ppomppu | x | facebook
+  sourceUrl     String
+  author        String
+  authorUrl     String?
+  textRaw       String
+  lang          String   @default("ko")
+  postedAt      DateTime
+  fetchedAt     DateTime @default(now())
+
+  upvotes       Int      @default(0)
+  likes         Int      @default(0)
+  replies       Int      @default(0)
+
+  parentTitle   String?
+  parentChannel String?
+  parentViews   Int?
+
+  keyword       String
+  isExperience  Boolean  @default(false)
+
+  seedLinks     SeedEvidence[]
+
+  @@index([keyword, platform])
+  @@index([postedAt])
+}
+
+model Seed {
+  id              String   @id @default(cuid())
+  keyword         String
+  titleQuoted     String
+  hookQuoted      String?
+  realityScore    Float    @default(0)
+  sourceDiversity Int      @default(1)
+  evidenceCount   Int      @default(0)
+  status          String   @default("candidate") // candidate | picked | rejected
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // 시드는 어떤 주장에 속하는지 (없으면 자유 시드)
+  thesisId        String?
+  thesis          Thesis?  @relation(fields: [thesisId], references: [id], onDelete: SetNull)
+
+  evidenceLinks SeedEvidence[]
+  decisions     SeedDecision[]
+
+  @@index([keyword, realityScore])
+  @@index([status, realityScore])
+  @@index([thesisId])
+}
+
+// ─── 인사이트 (Evidence n개 → Claude 추출 → 한 줄 발견) ────────
+model Insight {
+  id          String   @id @default(cuid())
+  keyword     String   // 어떤 키워드 풀에서 나왔는지
+  text        String   // Claude가 뽑은 인사이트 한 줄
+  evidenceIds String[] // 근거 Evidence id 목록 (Postgres native array)
+  signalSum   Float    @default(0) // 근거 evidence들 signal 합
+  createdAt   DateTime @default(now())
+
+  // 클러스터링 후 어떤 주장에 묶였는지
+  thesisId    String?
+  thesis      Thesis?  @relation(fields: [thesisId], references: [id], onDelete: SetNull)
+
+  @@index([keyword, signalSum])
+  @@index([thesisId])
+}
+
+// ─── 주제·주장 (Insight n개를 클러스터링 → 1개 주장) ───────────
+model Thesis {
+  id           String   @id @default(cuid())
+  topic        String   // 주제 한 줄 (예: "유료 GPT vs 무료 조합")
+  claim        String   // 주장 한 줄 (예: "무료 4개 조합이 충분하다")
+  rank         Int      @default(0)   // UI 표시 순서
+  insightCount Int      @default(0)
+  realityScore Float    @default(0)   // 묶인 insight들 signalSum 합 × 다양성
+  status       String   @default("candidate") // candidate | picked | rejected
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  insights Insight[]
+  seeds    Seed[]
+
+  @@index([status, realityScore])
+}
+
+model SeedEvidence {
+  seedId     String
+  evidenceId String
+
+  seed     Seed     @relation(fields: [seedId], references: [id], onDelete: Cascade)
+  evidence Evidence @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+
+  @@id([seedId, evidenceId])
+}
+
+model SeedDecision {
+  id        String   @id @default(cuid())
+  seedId    String
+  userEmail String
+  rating    Int       // 1~5  (0 = reject)
+  note      String?
+  createdAt DateTime  @default(now())
+
+  seed Seed @relation(fields: [seedId], references: [id], onDelete: Cascade)
+
+  @@index([seedId])
+  @@index([userEmail, createdAt])
+}
