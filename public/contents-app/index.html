@@ -475,22 +475,30 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:22px 0}
     <span class="flow-step done">정합성 검증</span>
   </div>
 
-  <!-- 🛰 3단계: 댓글·레딧 서칭 — 인사이트를 뒷받침할 실제 사례 -->
+  <!-- 🛰 3단계: 주제·주장 분리 — AI 믹싱 최종안 + 선택/수정 -->
   <div style="background:linear-gradient(180deg,rgba(0,40,30,.4),rgba(0,60,45,.25));border:1px solid rgba(0,212,170,.35);border-radius:10px;padding:14px;margin-bottom:14px">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-      <span style="color:#00D4AA;font-weight:700;font-size:13px">🛰 3단계: 댓글·레딧 서칭 — 전문성·실제 사례</span>
-      <span id="searchStatus" style="font-size:10px;color:#7A8493;margin-left:auto">대기</span>
-      <button onclick="renderInsightSearchList()" class="btn"
+      <span style="color:#00D4AA;font-weight:700;font-size:13px">🛰 3단계: 주제·주장 분리 — AI 최종안 + 검증</span>
+      <span id="thesesStatus" style="font-size:10px;color:#7A8493;margin-left:auto">대기</span>
+      <button onclick="runThesesPropose()" class="btn"
+        style="background:#00D4AA;border-color:#00D4AA;color:#0A1F2E;font-weight:700;font-size:11px;padding:5px 12px"
+        title="STEP 2 채택 인사이트들 믹싱 → AI 최종안 N개 제안">🤖 AI 최종안 제안</button>
+      <button onclick="addEmptyThesisDraft()" class="btn"
+        style="background:rgba(0,212,170,.18);border:1px solid #00D4AA;color:#00D4AA;font-size:11px;padding:5px 12px">＋ 직접 작성</button>
+      <button onclick="renderThesisDrafts()" class="btn"
         style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#F5F5F5;font-size:11px;padding:5px 10px">↻</button>
     </div>
     <div style="font-size:10px;color:#7A8493;margin-bottom:8px">
-      각 인사이트마다 🔍 사례 검색 → YT 댓글·Reddit·클리앙에서 실제 발언 자동 수집 → ☑ 진짜 사례만 채택, ✗ LLM 같은 글 거름.
+      AI가 STEP 2 채택 인사이트들을 믹싱해서 주제/주장 최종안을 제안 → 마음에 드는 거 ☑ 채택 / ✏ 직접 편집 / 💬 "이렇게 바꿔줘" 재생성.
     </div>
-    <div id="insightSearchList" style="display:flex;flex-direction:column;gap:10px;max-height:520px;overflow-y:auto"></div>
+    <!-- 채택 인사이트 미리보기 -->
+    <div id="adoptedInsightPreview" style="font-size:10px;color:#C7CED8;background:rgba(255,255,255,.03);border-radius:6px;padding:6px 8px;margin-bottom:8px;max-height:80px;overflow-y:auto"></div>
+    <!-- 주제·주장 최종안 카드 -->
+    <div id="thesisDraftsList" style="display:flex;flex-direction:column;gap:8px;max-height:480px;overflow-y:auto"></div>
     <div style="display:flex;align-items:center;gap:8px;border-top:1px solid rgba(255,255,255,.06);padding-top:8px;margin-top:8px">
-      <span style="font-size:10px;color:#7A8493">채택된 사례 = 카드뉴스 인용 후보</span>
+      <span style="font-size:10px;color:#7A8493"><b style="color:#00D4AA" id="thesisAdoptedCount">0</b>건 채택 = STEP 4로 전달</span>
       <button onclick="goToSeedStep()" class="btn"
-        style="margin-left:auto;background:#00D4AA;border-color:#00D4AA;color:#0A1F2E;font-weight:700;font-size:11px;padding:5px 14px">사례 확정 → STEP 4</button>
+        style="margin-left:auto;background:#00D4AA;border-color:#00D4AA;color:#0A1F2E;font-weight:700;font-size:11px;padding:5px 14px">최종안 확정 → STEP 4</button>
     </div>
   </div>
 
@@ -2801,11 +2809,117 @@ async function addUserInsight(){
 }
 function goToThesisStep(){
   if(typeof goStage==='function')goStage(2);
-  setTimeout(renderInsightSearchList,200);
-  appendLog?.('▶ STEP 3 이동 (각 인사이트별 사례 검색)','warn');
+  setTimeout(renderThesisDrafts,200);
+  appendLog?.('▶ STEP 3 이동 (AI 믹싱 최종안 + 선택/수정)','warn');
 }
 
-// ─── STEP 3: 인사이트별 사례 검색 (전문성·실제 사례) ───
+// ─── STEP 3: 주제·주장 분리 (AI 믹싱 최종안 + 선택/수정) ───
+// SS.selTh = 채택된 thesis ids (STEP 3 → STEP 4 전달)
+SS.selTh = 'realdata.selectedThesisIds';
+
+async function runThesesPropose(){
+  const adoptedInsights=ssGet(SS.selIn);
+  if(adoptedInsights.length===0){alert('STEP 2에서 인사이트를 먼저 채택하세요 (☑)');return;}
+  const st=document.getElementById('thesesStatus');
+  st.textContent='AI 믹싱 중… (Claude)';
+  try{
+    const r=await fetch('/api/contents/theses',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({insightIds:adoptedInsights})});
+    const d=await r.json();
+    if(!d.ok)throw new Error(d.error||'실패');
+    st.textContent=`✅ 최종안 ${d.thesesCreated}개 (인사이트 ${d.insightsConsidered}건 믹싱)`;
+    await renderThesisDrafts();
+  }catch(e){st.textContent='⚠ '+e.message;}
+}
+
+async function renderThesisDrafts(){
+  // 채택 인사이트 미리보기
+  await _renderAdoptedInsightPreview();
+  const list=document.getElementById('thesisDraftsList');
+  if(!list)return;
+  try{
+    const r=await fetch('/api/contents/theses');
+    const d=await r.json();
+    if(!d.ok){list.innerHTML='<div style="color:#FF8A3D;font-size:11px">'+d.error+'</div>';return;}
+    if(d.count===0){list.innerHTML='<div style="padding:14px;text-align:center;color:#7A8493;font-size:11px;border:1px dashed rgba(255,255,255,.15);border-radius:6px">최종안 0건 — 🤖 AI 최종안 제안 또는 ＋ 직접 작성</div>';return;}
+    const adopted=new Set(ssGet(SS.selTh));
+    list.innerHTML=d.theses.map(t=>{
+      const isAdopted=adopted.has(t.id);
+      const border=isAdopted?'#00D4AA':'rgba(255,255,255,.12)';
+      const bg=isAdopted?'rgba(0,212,170,.10)':'rgba(0,40,30,.18)';
+      const tagSrc=t.source==='user'?'<span style="color:#FFD93D;font-size:9px">✍️ 본인</span>':'<span style="color:#00D4AA;font-size:9px">🤖 AI</span>';
+      const tagEdited=t.editedByUser?'<span style="color:#FFD93D;font-size:9px">· 수정됨</span>':'';
+      return `<div data-tid="${t.id}" style="background:${bg};border:1px solid ${border};border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;transition:.15s">
+        <div style="display:flex;gap:6px;align-items:center">
+          <input type="checkbox" ${isAdopted?'checked':''} onchange="toggleAdoptThesis('${t.id}')" style="margin:0;cursor:pointer" title="STEP 4로 보낼지">
+          ${tagSrc} ${tagEdited}
+          <span style="font-size:9px;color:#7A8493">#${t.rank} · 인사이트 ${t.insightCount}건${isAdopted?' · <b style="color:#00D4AA">채택</b>':''}</span>
+        </div>
+        <label style="font-size:9px;color:#7A8493">주제 (topic)</label>
+        <input type="text" data-topic value="${escapeHtml(t.topic)}" style="background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.12);border-radius:5px;padding:6px 8px;color:#F5F5F5;font-size:12px;font-family:inherit">
+        <label style="font-size:9px;color:#7A8493">주장 (claim)</label>
+        <textarea data-claim style="background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.12);border-radius:5px;padding:6px 8px;color:#F5F5F5;font-size:13px;font-weight:600;font-family:inherit;min-height:50px">${escapeHtml(t.claim)}</textarea>
+        <div style="display:flex;gap:4px;margin-top:4px">
+          <button onclick="saveThesis('${t.id}')" class="btn" style="flex:1;font-size:10px;padding:5px;background:#00D4AA;border-color:#00D4AA;color:#0A1F2E;font-weight:600">✓ 저장</button>
+          <button onclick="refineThesisPrompt('${t.id}')" class="btn" style="font-size:10px;padding:5px 10px;background:rgba(108,99,255,.15);border:1px solid #6C63FF;color:#6C63FF;font-weight:600" title="AI에게 수정 요청">💬 이렇게 바꿔줘</button>
+          <button onclick="deleteThesis('${t.id}')" class="btn" style="font-size:10px;padding:5px 8px;background:rgba(255,59,59,.1);border:1px solid rgba(255,59,59,.3);color:#FF8A8A">🗑</button>
+        </div>
+      </div>`;
+    }).join('');
+    document.getElementById('thesisAdoptedCount').textContent=adopted.size;
+  }catch(e){list.innerHTML='<div style="color:#FF3B3B;font-size:11px">'+e.message+'</div>';}
+}
+
+async function _renderAdoptedInsightPreview(){
+  const wrap=document.getElementById('adoptedInsightPreview');
+  if(!wrap)return;
+  const adopted=ssGet(SS.selIn);
+  if(adopted.length===0){wrap.innerHTML='<span style="color:#7A8493">STEP 2에서 채택한 인사이트가 없습니다</span>';return;}
+  try{
+    const r=await fetch('/api/contents/insights');
+    const d=await r.json();
+    if(!d.ok)return;
+    const items=d.insights.filter(i=>adopted.includes(i.id));
+    wrap.innerHTML=`<b style="color:#00D4AA">채택 인사이트 ${items.length}건 (믹싱 재료):</b><br>`
+      +items.map(i=>`<span style="margin-right:8px">${i.source==='user'?'✍️':'🤖'} ${escapeHtml(i.text)}</span>`).join(' · ');
+  }catch{}
+}
+
+function toggleAdoptThesis(id){
+  ssToggle(SS.selTh,id);
+  renderThesisDrafts();
+}
+
+async function refineThesisPrompt(id){
+  const instruction=prompt('어떻게 바꿔드릴까요?\n예) "더 자극적으로", "숫자 빼고 부드럽게", "직장인 톤으로", "20대 타깃으로"');
+  if(!instruction)return;
+  const st=document.getElementById('thesesStatus');
+  st.textContent='AI 수정 중…';
+  try{
+    const r=await fetch('/api/contents/theses/'+encodeURIComponent(id)+'/refine',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({instruction})});
+    const d=await r.json();
+    if(!d.ok)throw new Error(d.error);
+    st.textContent=`✓ 수정 완료: ${d.thesis.topic} / ${d.thesis.claim}`;
+    renderThesisDrafts();
+  }catch(e){st.textContent='⚠ '+e.message;alert('수정 실패: '+e.message);}
+}
+
+async function addEmptyThesisDraft(){
+  const topic=prompt('주제 한 줄 (예: GPT 무료 대체)');
+  if(!topic)return;
+  const claim=prompt('주장 한 줄 (예: 유료 끊고 무료 4개 조합으로 충분)');
+  if(!claim)return;
+  try{
+    const r=await fetch('/api/contents/theses',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({draft:{topic,claim,insightIds:ssGet(SS.selIn)}})});
+    const d=await r.json();
+    if(!d.ok)throw new Error(d.error);
+    renderThesisDrafts();
+  }catch(e){alert('추가 실패: '+e.message);}
+}
+
+// 옛 사례 검색 흐름 — 호환을 위해 빈 함수로 유지 (다른 코드가 호출할 수도)
 async function renderInsightSearchList(){
   const list=document.getElementById('insightSearchList');
   if(!list)return;
@@ -2985,14 +3099,26 @@ async function addEmptyThesis(){
   }catch(e){alert('추가 실패: '+e.message);}
 }
 async function goToSeedStep(){
-  const adopted=ssGet(SS.selIn);
-  appendLog?.(`▶ STEP 4 이동 — 채택 인사이트 ${adopted.length}개 시드화 중…`,'warn');
+  // 채택된 thesis(주제·주장 최종안)들로 시드 생성
+  const adoptedTh=ssGet(SS.selTh);
+  if(adoptedTh.length===0){
+    if(!confirm('STEP 3에서 ☑ 채택한 최종안이 없습니다. 모든 최종안으로 시드 만들까요?'))return;
+  }
+  appendLog?.(`▶ STEP 4 이동 — 최종안 ${adoptedTh.length||'전체'}개 시드화 중…`,'warn');
   try{
-    const r=await fetch('/api/contents/seeds/materialize',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({insightIds: adopted.length?adopted:undefined})});
-    const d=await r.json();
-    if(d.ok)appendLog?.(`  → ${d.created}/${d.processed}개 시드`,'warn');
-  }catch(e){appendLog?.('⚠ materialize 실패: '+e.message,'err');}
+    // 1) 채택 thesis들을 picked로 표시 + 각각 시드 materialize
+    for(const tid of adoptedTh){
+      await fetch('/api/contents/theses',{method:'PATCH',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id:tid,status:'picked'})});
+    }
+    // 2) 채택 인사이트로도 시드 생성 (이중 안전망)
+    const adoptedIn=ssGet(SS.selIn);
+    if(adoptedIn.length){
+      await fetch('/api/contents/seeds/materialize',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({insightIds:adoptedIn})});
+    }
+    appendLog?.('  ✓ 시드 생성 완료','warn');
+  }catch(e){appendLog?.('⚠ 시드화 실패: '+e.message,'err');}
   if(typeof goStage==='function')goStage(3);
   setTimeout(renderRealSeeds,200);
 }
