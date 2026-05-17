@@ -74,20 +74,28 @@ export const redditAdapter: SourceAdapter = {
         }
       }
     }
-    // 글로벌 fallback (한국어 키워드도 결과 부족 시 시도)
+    // 글로벌 fallback — 한국어면 한 번 원문으로 시도, 결과 부족하면 영어 번역으로 재시도
     if (posts.length < 3) {
-      try {
-        const searchUrl =
-          `https://www.reddit.com/search.json?q=${encodeURIComponent(keyword)}` +
-          `&sort=relevance&t=year&limit=${limit}&type=link`;
-        const search = await jget<SearchResp>(searchUrl);
-        for (const c of search.data.children ?? []) {
-          if (c.data.created_utc >= sinceTs && !posts.find((p) => p.id === c.data.id)) {
-            posts.push(c.data);
+      const queries: string[] = [keyword];
+      if (isKorean) {
+        const en = await translateToEn(keyword).catch(() => null);
+        if (en && en.toLowerCase() !== keyword.toLowerCase()) queries.push(en);
+      }
+      for (const q of queries) {
+        if (posts.length >= limit) break;
+        try {
+          const searchUrl =
+            `https://www.reddit.com/search.json?q=${encodeURIComponent(q)}` +
+            `&sort=relevance&t=year&limit=${limit}&type=link`;
+          const search = await jget<SearchResp>(searchUrl);
+          for (const c of search.data.children ?? []) {
+            if (c.data.created_utc >= sinceTs && !posts.find((p) => p.id === c.data.id)) {
+              posts.push(c.data);
+            }
           }
+        } catch {
+          // ignore
         }
-      } catch {
-        // ignore
       }
     }
     posts = posts.slice(0, limit);
@@ -156,4 +164,28 @@ export const redditAdapter: SourceAdapter = {
 
 function detectLang(text: string): string {
   return /[가-힣]/.test(text) ? "ko" : /[ぁ-んァ-ン一-龥]/.test(text) ? "ja" : "en";
+}
+
+// ─── 한국어 키워드 → 영어 (Reddit 글로벌 검색용) ───
+// Claude 호출 1회 (cached). 모듈 메모리 캐시 — 같은 키워드 재호출은 즉시.
+const _translateCache = new Map<string, string>();
+async function translateToEn(ko: string): Promise<string | null> {
+  if (_translateCache.has(ko)) return _translateCache.get(ko)!;
+  if (!process.env.ANTHROPIC_API_KEY) return null;
+  try {
+    const { createAnthropic } = await import("@ai-sdk/anthropic");
+    const { generateText } = await import("ai");
+    const anthropic = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const { text } = await generateText({
+      model: anthropic("claude-haiku-4-5"),
+      system: "Translate Korean tech/business search keywords to natural English. Output only the translation, no quotes, no explanation. Keep brand names (GPT, Claude, ChatGPT) as-is.",
+      prompt: ko,
+      temperature: 0,
+    });
+    const en = text.trim().replace(/^["']|["']$/g, "").slice(0, 80);
+    if (en) _translateCache.set(ko, en);
+    return en || null;
+  } catch {
+    return null;
+  }
 }
