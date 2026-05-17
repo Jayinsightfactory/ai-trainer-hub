@@ -2661,31 +2661,47 @@ async function renderInsights(){
     const r=await fetch('/api/contents/insights');
     const d=await r.json();
     if(!d.ok){aiList.innerHTML='<div style="color:#FF8A3D;font-size:11px">'+d.error+'</div>';return;}
-    // ⭐ 현재 선택된 키워드의 인사이트만 표시 (옛 키워드 인사이트와 섞임 방지)
     const selKw=new Set(ssGet(SS.selKw));
     const scoped=selKw.size>0 ? d.insights.filter(i=>selKw.has(i.keyword)) : d.insights;
     const ai=scoped.filter(i=>i.source==='ai');
     const us=scoped.filter(i=>i.source==='user');
-    // 헤더에 현재 키워드 표시
+    // 본인 입력은 자동 채택 (기본). AI 후보는 미채택 (사용자가 골라야)
+    const adopted=new Set(ssGet(SS.selIn));
+    us.forEach(i=>adopted.add(i.id)); // 본인 입력은 항상 채택 상태
+    // 헤더에 현재 키워드 + 채택 카운트
     const hdrKw=document.getElementById('insightStatus');
-    if(hdrKw && selKw.size>0){
-      hdrKw.textContent=`키워드: ${[...selKw].join(', ')}`;
-      hdrKw.style.color='#00D4AA';
+    if(hdrKw){
+      hdrKw.innerHTML=`<span style="color:#00D4AA">키워드: ${[...selKw].join(', ')||'없음'}</span>`;
     }
     document.getElementById('aiInsightCount').textContent=`${ai.length}건`;
     document.getElementById('userInsightCount').textContent=`${us.length}건`;
-    document.getElementById('totalInsightCount').textContent=`${ai.length+us.length}건`;
-    const card=(i,isUser)=>`<div data-id="${i.id}" style="background:rgba(0,40,30,.22);border:1px solid ${isUser?'rgba(255,217,61,.4)':'rgba(0,212,170,.25)'};border-radius:6px;padding:7px 9px">
-      <div data-view style="font-size:11px;color:#F5F5F5;line-height:1.4">${escapeHtml(i.text)}</div>
-      <div style="display:flex;gap:4px;margin-top:5px">
-        <span style="font-size:9px;color:#7A8493;flex:1">${isUser?'✍️ 본인':'🤖 AI'}${i.editedAt?' · 수정됨':''}${i.evidenceIds?.length?` · 근거 ${i.evidenceIds.length}`:''}</span>
-        <button onclick="editInsightStart('${i.id}', this)" class="btn" style="font-size:9px;padding:2px 6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#F5F5F5">✏ 수정</button>
-        <button onclick="deleteInsight('${i.id}')" class="btn" style="font-size:9px;padding:2px 6px;background:rgba(255,59,59,.1);border:1px solid rgba(255,59,59,.3);color:#FF8A8A">🗑</button>
-      </div>
-    </div>`;
+    const totalAdopted=scoped.filter(i=>adopted.has(i.id)).length;
+    document.getElementById('totalInsightCount').innerHTML=`<b style="color:#00D4AA">채택 ${totalAdopted}건</b> / 전체 ${ai.length+us.length}건`;
+    // 채택된 ids를 sessionStorage에 동기화 (AI는 사용자가 체크, 본인은 자동)
+    ssSet(SS.selIn, scoped.filter(i=>adopted.has(i.id)).map(i=>i.id));
+
+    const card=(i,isUser)=>{
+      const isAdopted=adopted.has(i.id);
+      const accent=isAdopted?'#00D4AA':'rgba(255,255,255,.18)';
+      return `<div data-id="${i.id}" style="background:${isAdopted?'rgba(0,212,170,.10)':'rgba(0,40,30,.18)'};border:1px solid ${accent};border-radius:6px;padding:7px 9px;transition:.15s">
+        <div style="display:flex;align-items:flex-start;gap:6px">
+          <input type="checkbox" ${isAdopted?'checked':''} onchange="toggleAdoptInsight('${i.id}')" style="margin-top:2px;flex-shrink:0;cursor:pointer" title="STEP 3로 보낼지 채택/해제">
+          <div data-view style="flex:1;font-size:11px;color:#F5F5F5;line-height:1.4">${escapeHtml(i.text)}</div>
+        </div>
+        <div style="display:flex;gap:4px;margin-top:5px;padding-left:18px">
+          <span style="font-size:9px;color:#7A8493;flex:1">${isUser?'✍️ 본인':'🤖 AI'}${i.editedAt?' · 수정됨':''}${isAdopted?' · <b style="color:#00D4AA">채택</b>':''}</span>
+          <button onclick="editInsightStart('${i.id}', this)" class="btn" style="font-size:9px;padding:2px 6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#F5F5F5">✏ 수정</button>
+          <button onclick="deleteInsight('${i.id}')" class="btn" style="font-size:9px;padding:2px 6px;background:rgba(255,59,59,.1);border:1px solid rgba(255,59,59,.3);color:#FF8A8A">🗑</button>
+        </div>
+      </div>`;
+    };
     aiList.innerHTML=ai.length?ai.map(i=>card(i,false)).join(''):'<div style="color:#7A8493;font-size:10px;padding:10px;text-align:center;border:1px dashed rgba(255,255,255,.1);border-radius:6px">🤖 AI 추출 버튼 누르세요</div>';
     usList.innerHTML=us.length?us.map(i=>card(i,true)).join(''):'<div style="color:#7A8493;font-size:10px;padding:10px;text-align:center;border:1px dashed rgba(255,255,255,.1);border-radius:6px">아래 입력 칸에서 추가</div>';
   }catch(e){aiList.innerHTML='<div style="color:#FF3B3B;font-size:11px">'+e.message+'</div>';}
+}
+function toggleAdoptInsight(id){
+  ssToggle(SS.selIn, id);
+  renderInsights();
 }
 function editInsightStart(id,btn){
   const wrap=btn.closest('[data-id]');
@@ -2742,10 +2758,17 @@ async function renderInsightSearchList(){
     const r=await fetch('/api/contents/insights');
     const d=await r.json();
     if(!d.ok){list.innerHTML='<div style="color:#FF8A3D;font-size:11px">'+d.error+'</div>';return;}
-    // 현재 선택된 키워드 인사이트만
+    // ⭐ STEP 2에서 사용자가 채택한 인사이트만
+    const adopted=new Set(ssGet(SS.selIn));
     const selKw=new Set(ssGet(SS.selKw));
-    const scoped=selKw.size>0 ? d.insights.filter(i=>selKw.has(i.keyword)) : d.insights;
-    if(scoped.length===0){list.innerHTML=`<div style="padding:14px;text-align:center;color:#7A8493;font-size:11px;border:1px dashed rgba(255,255,255,.15);border-radius:6px">선택 키워드(${[...selKw].join(', ')||'없음'})의 인사이트가 없습니다. STEP 2에서 먼저 만드세요.</div>`;return;}
+    let scoped=d.insights.filter(i=>adopted.has(i.id));
+    if(scoped.length===0 && selKw.size>0){
+      // 폴백: 본인 인사이트(자동 채택)이라도 보여줌
+      scoped=d.insights.filter(i=>selKw.has(i.keyword) && i.source==='user');
+    }
+    const st=document.getElementById('searchStatus');
+    if(st)st.innerHTML=`<span style="color:#00D4AA">채택 인사이트 ${scoped.length}건</span>`;
+    if(scoped.length===0){list.innerHTML=`<div style="padding:14px;text-align:center;color:#7A8493;font-size:11px;border:1px dashed rgba(255,255,255,.15);border-radius:6px">채택된 인사이트가 없습니다. STEP 2로 돌아가서 카드의 체크박스로 채택하세요.</div>`;return;}
     list.innerHTML=scoped.map(i=>{
       const src=i.source==='user'?'✍️ 본인':'🤖 AI';
       const adoptedCount=i.evidenceIds?.length||0;
@@ -2907,12 +2930,13 @@ async function addEmptyThesis(){
   }catch(e){alert('추가 실패: '+e.message);}
 }
 async function goToSeedStep(){
-  // 인사이트 → 시드 자동 materialize (채택된 evidence 기반)
-  appendLog?.('▶ STEP 4 이동 — 인사이트별 시드 materialize 중…','warn');
+  const adopted=ssGet(SS.selIn);
+  appendLog?.(`▶ STEP 4 이동 — 채택 인사이트 ${adopted.length}개 시드화 중…`,'warn');
   try{
-    const r=await fetch('/api/contents/seeds/materialize',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    const r=await fetch('/api/contents/seeds/materialize',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({insightIds: adopted.length?adopted:undefined})});
     const d=await r.json();
-    if(d.ok)appendLog?.(`  → ${d.created}/${d.processed}개 시드 생성/갱신`,'warn');
+    if(d.ok)appendLog?.(`  → ${d.created}/${d.processed}개 시드`,'warn');
   }catch(e){appendLog?.('⚠ materialize 실패: '+e.message,'err');}
   if(typeof goStage==='function')goStage(3);
   setTimeout(renderRealSeeds,200);
