@@ -3897,14 +3897,37 @@ async function generateBodyFromSeed(){
     if(btn){btn.disabled=false;btn.innerHTML='🤖 AI로 본문 자동 생성';}
   }
 }
-// 🚀 한 페이지 통합 흐름 — STEP 1/2/3 박스를 모두 ① 시드 탭으로 이동 (위→아래 스크롤)
+// 🚀 한 페이지 통합 흐름 — STEP 1~4 + sticky nav 를 첫 진입 화면(stage0) 최상단으로
 function _unifyRealdataSteps(){
   const unified=document.getElementById('rdUnified');
   if(!unified)return;
-  ['rdStep1','rdStep2','rdStep3'].forEach(id=>{
+  ['rdStep1','rdStep2','rdStep3','realSeedsWrap'].forEach(id=>{
     const box=document.getElementById(id);
     if(box && box.parentElement!==unified) unified.appendChild(box);
   });
+  // sticky nav도 함께 wrap (DOM 순서: nav → unified)
+  const nav=document.getElementById('rdStepNav');
+  const stage0=document.getElementById('stage0');
+  if(stage0){
+    // 기존 stage0 정적 콘텐츠를 details로 접음 (사용자가 원하면 펼침)
+    const oldContent=document.createElement('details');
+    oldContent.id='legacyStage0';
+    oldContent.style.cssText='margin-top:20px;padding:10px;background:rgba(255,255,255,.02);border-radius:6px';
+    oldContent.innerHTML='<summary style="cursor:pointer;font-size:11px;color:#7A8493">▼ 기존 정적 콘텐츠 (시드 12개·YouTube API·3가지 서칭 방식 등 — 참고용)</summary>';
+    // stage0의 직속 children 중 rdUnified/rdStepNav 제외 모두 oldContent로 이동
+    [...stage0.children].forEach(ch=>{
+      if(ch.id!=='rdUnified' && ch.id!=='rdStepNav' && ch.id!=='legacyStage0'){
+        oldContent.appendChild(ch);
+      }
+    });
+    // nav + unified를 stage0 최상단에
+    if(nav && nav.parentElement!==stage0) stage0.appendChild(nav);
+    if(unified.parentElement!==stage0) stage0.appendChild(unified);
+    // legacy 콘텐츠는 아래로
+    stage0.appendChild(oldContent);
+    // nav를 unified보다 위로
+    if(nav) stage0.insertBefore(nav, unified);
+  }
 }
 _unifyRealdataSteps();
 // 4번 카드뉴스 → ①시드 탭에서 모든 STEP 1~4 + 검증 보임 → 사용자는 위→아래 스크롤로 진행
