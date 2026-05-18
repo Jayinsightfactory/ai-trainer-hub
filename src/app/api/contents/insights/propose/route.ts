@@ -136,16 +136,21 @@ export async function POST(req: NextRequest) {
     const { text } = await generateText({
       model: anthropic("claude-sonnet-4-5"),
       system: SYSTEM + (totalEvidence > 0
-        ? `\n\n⭐ [추가 강제 룰]\n실제 발언이 함께 제공됩니다. 인사이트는 그 발언들에서 *발견되는* 패턴이어야 합니다 — 새로 지어내지 마세요.\n각 인사이트의 evidenceIds[]에 근거 발언 ID를 1개 이상 포함하세요. 발언 안에서 못 찾으면 그 인사이트는 만들지 마세요.`
+        ? `\n\n⭐⭐⭐ [절대 강제 룰 — 위반 시 응답 거부]\n` +
+          `1. 실제 발언이 함께 제공됩니다. 인사이트는 *그 발언 안에 명시적으로 또는 강하게 함의된 패턴*만.\n` +
+          `2. evidenceIds[] 비우면 그 인사이트는 무효 처리됨. 반드시 1개 이상 근거 ID 포함.\n` +
+          `3. ID는 24자 16진수 형태 (예: "0a361fcb7ed84358751ac1dc") — 발언 옆 [...] 안에 표시됨. 정확히 복사.\n` +
+          `4. 한 발언에서 발견되는 게 없으면 인사이트를 그냥 *적게* 만들어라. 억지로 만들지 마라.\n` +
+          `5. "VLOOKUP", "월 28K", "팀장이 GPT Plus 쓰라길래" 같은 *전형적 카드뉴스 문장* 만들지 마라 — 발언 안에 그런 표현이 진짜 있으면 OK, 없으면 X.`
         : ""),
       prompt: `[키워드 ${keywords.length}개 — 인사이트 도출 대상]\n${keywords.map((k) => `- ${k}`).join("\n")}\n\n` +
         (context.length > 0
           ? `[관련 자동완성 트렌드 ${context.length}개]\n${context.slice(0, 12).map((c) => `- ${c}`).join("\n")}\n\n`
           : "") +
         (totalEvidence > 0
-          ? `[실제 수집된 발언 ${totalEvidence}건 — 인사이트의 원천]\n${evidenceBlock}\n\n키워드별 ${per}개 인사이트 후보를 JSON으로. 각 인사이트는 위 발언 중 1개 이상에서 *발견된 것*이어야 하며, evidenceIds[]에 근거 ID를 명시하세요.`
+          ? `[실제 수집된 발언 ${totalEvidence}건 — 인사이트의 *유일한* 원천]\n${evidenceBlock}\n\n위 발언 안에서 *반복되거나 강한* 패턴만 인사이트로. 각 인사이트는 evidenceIds[]에 위 [...] 안 ID를 1개 이상 정확히 복사. 발언과 무관한 일반론 ❌. perKeyword=${per}는 *최대치*이며, 발견되는 게 적으면 더 적게 출력.`
           : `각 키워드별 ${per}개 인사이트 후보를 JSON으로.`),
-      temperature: 0.5,
+      temperature: 0.3,
     });
     parsed = parseLLMJson(text);
   } catch (e) {
@@ -157,13 +162,38 @@ export async function POST(req: NextRequest) {
 
   const validKw = new Set(keywords);
   const allEvidenceIds = new Set(Object.values(evidenceByKw).flat().map((e) => e.id));
-  const candidates = (parsed.data.insights ?? [])
+  const hadEvidence = totalEvidence > 0;
+  let candidates = (parsed.data.insights ?? [])
     .map((i) => ({
       keyword: (i.keyword ?? "").trim(),
       text: (i.text ?? "").trim().slice(0, 200),
       evidenceIds: (i.evidenceIds ?? []).filter((id) => allEvidenceIds.has(id)),
     }))
     .filter((i) => validKw.has(i.keyword) && i.text.length >= 5);
+
+  // ⭐ Grounding 강제: evidence가 있었는데 evidenceIds 0인 인사이트 = 합성. 제거.
+  if (hadEvidence) {
+    candidates = candidates.filter((c) => c.evidenceIds.length > 0);
+  }
+
+  // ⭐ Fallback: AI grounding 실패면 evidence 원문 직접 발췌로 인사이트 생성
+  // (LLM 합성 컨텐츠 대신 실제 사람 발언 인용)
+  if (hadEvidence && candidates.length === 0) {
+    const fallbackCands: typeof candidates = [];
+    for (const [kw, evs] of Object.entries(evidenceByKw)) {
+      const top = evs.slice(0, Math.min(per, evs.length));
+      for (const e of top) {
+        const oneLine = e.text.replace(/\s+/g, " ").trim();
+        const quoted = oneLine.length <= 80 ? oneLine : oneLine.slice(0, 78) + "…";
+        fallbackCands.push({
+          keyword: kw,
+          text: `"${quoted}" (${e.platform} ${e.signal}↑)`,
+          evidenceIds: [e.id],
+        });
+      }
+    }
+    candidates = fallbackCands;
+  }
 
   // 기존 동일-키워드 AI 후보(미채택, thesisId null) 정리 — 재실행 시 깨끗하게
   await prisma.insight.deleteMany({
@@ -183,10 +213,21 @@ export async function POST(req: NextRequest) {
     ),
   );
 
+  const groundedCount = created.filter((c) => c.evidenceIds.length > 0).length;
   return NextResponse.json({
     ok: true,
     keywords,
     insightsCreated: created.length,
+    grounding: {
+      hadEvidence,
+      totalEvidence,
+      groundedCount,
+      note: hadEvidence && groundedCount < created.length
+        ? "일부 인사이트가 evidence 근거 없이 생성됨 (LLM 합성). 사용자 확인 필요."
+        : hadEvidence
+          ? "모든 인사이트가 실제 evidence에 근거"
+          : "수집된 evidence 없음 — LLM 일반 컨텐츠",
+    },
     insights: created,
   });
 }
