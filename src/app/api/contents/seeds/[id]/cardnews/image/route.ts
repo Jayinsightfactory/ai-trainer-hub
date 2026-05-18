@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { isAdmin } from "@/lib/admin";
-import { callGeminiImageAPI } from "@/lib/cardnews-generator";
+import { generateImageWithFallback } from "@/lib/cardnews-generator";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 90;
@@ -23,26 +23,30 @@ export async function POST(req: NextRequest) {
   if (!prompt) {
     return NextResponse.json({ ok: false, error: "prompt required" }, { status: 400 });
   }
-  if (!process.env.GEMINI_API_KEY) {
+  if (!process.env.GEMINI_API_KEY && !process.env.OPENAI_API_KEY) {
     return NextResponse.json(
       {
         ok: false,
-        error: "GEMINI_API_KEY not set on server",
+        error: "no image API key (GEMINI_API_KEY or OPENAI_API_KEY)",
         fallback: {
-          hint: "Railway Variables에 GEMINI_API_KEY 추가하면 자동 생성 가능. 일단은 Gemini Studio에 프롬프트 직접 붙여넣어 사용하세요.",
-          studioUrl: "https://aistudio.google.com/prompts/new",
+          hint: "Railway Variables에 GEMINI_API_KEY 또는 OPENAI_API_KEY 추가하면 자동 생성 가능.",
+          studioUrls: {
+            gemini: "https://aistudio.google.com/prompts/new",
+            openai: "https://platform.openai.com/api-keys",
+          },
         },
       },
       { status: 503 },
     );
   }
-  const r = await callGeminiImageAPI(prompt);
+  const r = await generateImageWithFallback(prompt);
   if (!r.ok) {
-    return NextResponse.json({ ok: false, error: r.error }, { status: 500 });
+    return NextResponse.json({ ok: false, error: r.error, tried: r.tried }, { status: 500 });
   }
   return NextResponse.json({
     ok: true,
     page: body.page ?? null,
+    provider: r.provider,
     mimeType: r.mimeType,
     imageBase64: r.imageBase64,
     dataUrl: `data:${r.mimeType};base64,${r.imageBase64}`,

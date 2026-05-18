@@ -201,7 +201,60 @@ function inferBackgroundForKeyword(keyword: string): string {
   return "한국 일상 장면 (카페/사무실/집), 자연광, 평범한 30대 한 명";
 }
 
-// ─── Gemini Image API 호출 (Imagen 3 또는 Gemini 2.5 Flash Image) ───
+// ─── 통합 이미지 생성 — Gemini 우선, 실패 시 OpenAI DALL-E 3 fallback ───
+export async function generateImageWithFallback(prompt: string): Promise<{ ok: true; imageBase64: string; mimeType: string; provider: "gemini" | "openai" } | { ok: false; error: string; tried: string[] }> {
+  const tried: string[] = [];
+  // 1) Gemini Imagen 3 (이미 있으면 우선)
+  if (process.env.GEMINI_API_KEY) {
+    tried.push("gemini");
+    const r = await callGeminiImageAPI(prompt);
+    if (r.ok) return { ...r, provider: "gemini" };
+  }
+  // 2) OpenAI DALL-E 3 fallback
+  if (process.env.OPENAI_API_KEY) {
+    tried.push("openai");
+    const r = await callOpenAIImageAPI(prompt);
+    if (r.ok) return { ...r, provider: "openai" };
+  }
+  return { ok: false, error: tried.length === 0 ? "no image API key (GEMINI_API_KEY or OPENAI_API_KEY)" : "all providers failed", tried };
+}
+
+// ─── OpenAI DALL-E 3 (한글 프롬프트도 잘 처리, 9:16에 가까운 1024x1792 지원) ───
+export async function callOpenAIImageAPI(prompt: string): Promise<{ ok: true; imageBase64: string; mimeType: string } | { ok: false; error: string }> {
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) return { ok: false, error: "OPENAI_API_KEY missing" };
+  try {
+    // DALL-E 3 prompt limit = 4000자. 자름.
+    const safe = prompt.slice(0, 3900);
+    const r = await fetch("https://api.openai.com/v1/images/generations", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${key}`,
+      },
+      body: JSON.stringify({
+        model: "dall-e-3",
+        prompt: safe,
+        n: 1,
+        size: "1024x1792", // 9:16 비율 가장 근접
+        quality: "standard",
+        response_format: "b64_json",
+      }),
+    });
+    if (!r.ok) {
+      const errText = await r.text();
+      return { ok: false, error: `OpenAI ${r.status}: ${errText.slice(0, 300)}` };
+    }
+    const d = (await r.json()) as { data?: Array<{ b64_json?: string }> };
+    const b64 = d.data?.[0]?.b64_json;
+    if (!b64) return { ok: false, error: "no image in OpenAI response" };
+    return { ok: true, imageBase64: b64, mimeType: "image/png" };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
+// ─── Gemini Image API 호출 (Imagen 3) ───
 export async function callGeminiImageAPI(prompt: string): Promise<{ ok: true; imageBase64: string; mimeType: string } | { ok: false; error: string }> {
   const key = process.env.GEMINI_API_KEY;
   if (!key) return { ok: false, error: "GEMINI_API_KEY missing" };

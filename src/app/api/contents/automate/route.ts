@@ -20,7 +20,7 @@ import { prisma } from "@/lib/prisma";
 import { ADAPTERS, availablePlatforms } from "@/lib/sources";
 import { classifyIsExperience, evidenceId } from "@/lib/sources/util";
 import { materializeSeedForInsight } from "@/lib/sources/materializer";
-import { generateCardnews, buildCoverPrompt, buildBodyPrompt, callGeminiImageAPI } from "@/lib/cardnews-generator";
+import { generateCardnews, buildCoverPrompt, buildBodyPrompt, generateImageWithFallback } from "@/lib/cardnews-generator";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { generateText } from "ai";
 import { parseLLMJson } from "@/lib/parse-llm-json";
@@ -267,28 +267,29 @@ export async function POST(req: NextRequest) {
     ...payload.body.map((b, i) => ({ page: b.p || `P${i + 2}`, prompt: prompts.body[i] })),
     { page: payload.identity.p || "P8 정체성", prompt: prompts.identity },
   ];
-  const images: Array<{ page: string; dataUrl?: string; error?: string }> = [];
-  let geminiUsable = true;
-  if (wantImages && process.env.GEMINI_API_KEY) {
+  const images: Array<{ page: string; dataUrl?: string; provider?: string; error?: string }> = [];
+  const hasImgKey = !!(process.env.GEMINI_API_KEY || process.env.OPENAI_API_KEY);
+  let imageUsable = hasImgKey;
+  if (wantImages && hasImgKey) {
     for (const { page, prompt } of allPrompts) {
-      const r = await callGeminiImageAPI(prompt);
+      const r = await generateImageWithFallback(prompt);
       if (r.ok) {
-        images.push({ page, dataUrl: `data:${r.mimeType};base64,${r.imageBase64}` });
+        images.push({ page, provider: r.provider, dataUrl: `data:${r.mimeType};base64,${r.imageBase64}` });
       } else {
         images.push({ page, error: r.error });
-        if (/key|api/i.test(r.error)) geminiUsable = false;
+        if (/key|api/i.test(r.error)) imageUsable = false;
       }
-      // 1초 간격 (rate-limit)
-      await new Promise((res) => setTimeout(res, 1000));
+      await new Promise((res) => setTimeout(res, 800));
     }
     logStep("images", t6, images.some((i) => i.dataUrl), {
       generated: images.filter((i) => i.dataUrl).length,
       total: images.length,
+      providers: [...new Set(images.filter((i) => i.provider).map((i) => i.provider))],
     });
   } else {
     logStep("images", t6, false, undefined,
-      wantImages ? "GEMINI_API_KEY not set — prompts only" : "skipped by request");
-    geminiUsable = false;
+      wantImages ? "no image API key (GEMINI_API_KEY or OPENAI_API_KEY)" : "skipped by request");
+    imageUsable = false;
   }
 
   // ─── 응답 ──────────────────────────────────────────────────
@@ -304,7 +305,7 @@ export async function POST(req: NextRequest) {
       identity: payload.identity,
       prompts,
       images,
-      geminiUsable,
+      imageUsable,
     },
     summary: {
       ingest: { evidenceUpserted, platforms },
@@ -312,7 +313,7 @@ export async function POST(req: NextRequest) {
       thesis: thesisId ? { id: thesisId } : null,
       seed: { id: seedId, keyword: seed.keyword, titleQuoted: seed.titleQuoted },
       cardnews: { pages: 1 + payload.body.length + 1 },
-      images: { generated: images.filter((i) => i.dataUrl).length, total: images.length, geminiUsable },
+      images: { generated: images.filter((i) => i.dataUrl).length, total: images.length, imageUsable },
     },
   });
 }
@@ -329,7 +330,13 @@ export async function GET() {
       adapters: availablePlatforms(),
       anthropic: Boolean(process.env.ANTHROPIC_API_KEY),
       gemini: Boolean(process.env.GEMINI_API_KEY),
+      openai: Boolean(process.env.OPENAI_API_KEY),
       youtubeApi: Boolean(process.env.YOUTUBE_API_KEY),
+      imageProvider: process.env.GEMINI_API_KEY
+        ? "gemini (preferred)"
+        : process.env.OPENAI_API_KEY
+          ? "openai (dall-e-3 fallback)"
+          : "none",
     },
     note: "POST { keyword: string } → 6-step chain → cardnews + images",
   });
