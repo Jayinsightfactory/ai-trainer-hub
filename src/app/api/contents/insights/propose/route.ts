@@ -97,12 +97,26 @@ export async function POST(req: NextRequest) {
   //   → Claude가 "발견되는" 인사이트로 만듦 (합성이 아니라 추출에 가깝게)
   const evidenceByKw: Record<string, Array<{ id: string; text: string; platform: string; signal: number }>> = {};
   for (const kw of keywords) {
-    const evs = await prisma.evidence.findMany({
+    // ⭐ 정확 키워드 매칭 0건이면 토큰 substring 매칭으로 확장
+    let evs = await prisma.evidence.findMany({
       where: { keyword: kw },
       orderBy: [{ upvotes: "desc" }, { likes: "desc" }, { postedAt: "desc" }],
       take: 8,
       select: { id: true, textRaw: true, platform: true, upvotes: true, likes: true },
     });
+    if (evs.length === 0) {
+      // 토큰 단위로 substring 매칭 (예: "AI 자기계발" → DB의 "AI", "자기계발" 매칭)
+      const tokens = kw.toLowerCase().split(/\s+/).filter((t) => t.length >= 2);
+      if (tokens.length > 0) {
+        // 토큰 OR: 어느 한 토큰이라도 evidence.keyword에 포함된 것
+        evs = await prisma.evidence.findMany({
+          where: { OR: tokens.map((t) => ({ keyword: { contains: t, mode: "insensitive" } })) },
+          orderBy: [{ upvotes: "desc" }, { likes: "desc" }, { postedAt: "desc" }],
+          take: 8,
+          select: { id: true, textRaw: true, platform: true, upvotes: true, likes: true },
+        });
+      }
+    }
     evidenceByKw[kw] = evs.map((e) => ({
       id: e.id,
       text: e.textRaw.replace(/\s+/g, " ").slice(0, 180),

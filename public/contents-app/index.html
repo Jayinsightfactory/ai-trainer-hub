@@ -2730,12 +2730,16 @@ function renderSeedRow(seeds){
       title="입력 칸에 추가">🌱 ${s}</button>`;
   }).join('');
 }
+// 시드 클릭 = 입력 키워드와 *공백 조합* (예: "AI" + "자기계발" → "AI 자기계발")
+// 사용자가 명시적으로 별도 키워드 원하면 직접 콤마 입력
 function fillInputWithSeed(seed){
   const inp=document.getElementById('mainKwInput');
   if(!inp)return;
   const cur=inp.value.trim();
-  if(!cur)inp.value=seed;
-  else if(!cur.split(',').map(s=>s.trim()).includes(seed)) inp.value=cur+', '+seed;
+  if(!cur){inp.value=seed;}
+  else if(!cur.toLowerCase().includes(seed.toLowerCase())){
+    inp.value=cur+' '+seed; // 공백 조합 (한 키워드로 검색)
+  }
   inp.focus();
 }
 
@@ -2780,10 +2784,30 @@ async function loadCollectedEvidence(kws){
   panel.style.display='block';
   document.getElementById('analysisKwTitle').textContent=`"${kws.join(', ')}"`;
 
-  // 1) evidence 수집 (전체) — 한 키워드당 50건씩
-  const groups=await Promise.all(kws.map(kw=>fetch('/api/contents/evidence?keyword='+encodeURIComponent(kw)+'&limit=50').then(r=>r.json()).catch(()=>({ok:false,evidence:[]}))));
+  // 1) evidence 수집 (전체) — 사용자 키워드 + 토큰 매칭 DB 키워드 합집합
+  // 예: "AI 자기계발" → 토큰 ["AI","자기계발"] → DB의 "ai", "자기계발", "AI 자동화", "직장인 자기계발" 모두 매칭
+  const userTokens=kws.flatMap(k=>k.toLowerCase().split(/\s+/).filter(t=>t.length>=2));
+  // DB 전체 키워드 list 가져오기
+  const allDbRes=await fetch('/api/contents/trending-keywords?limit=100').then(r=>r.json()).catch(()=>({ok:false,keywords:[]}));
+  const dbKwAll=(allDbRes.ok?allDbRes.keywords:[]).filter(k=>k.sources.includes('db_frequency')).map(k=>k.keyword);
+  // 사용자 토큰과 매칭되는 DB 키워드만
+  const matchedDbKws=dbKwAll.filter(dbk=>{
+    const dl=dbk.toLowerCase();
+    return userTokens.some(t=>dl.includes(t)||t.includes(dl));
+  });
+  // fetch할 키워드 = 사용자 키워드 + 매칭 DB 키워드 (중복 제거)
+  const fetchKws=[...new Set([...kws, ...matchedDbKws])].slice(0,8);
+  const groups=await Promise.all(fetchKws.map(kw=>fetch('/api/contents/evidence?keyword='+encodeURIComponent(kw)+'&limit=30').then(r=>r.json()).catch(()=>({ok:false,evidence:[]}))));
   const all=[];
-  groups.forEach(g=>{if(g.ok)all.push(...(g.evidence||[]));});
+  const seenIds=new Set();
+  groups.forEach(g=>{
+    if(!g.ok)return;
+    (g.evidence||[]).forEach(e=>{
+      if(seenIds.has(e.id))return;
+      seenIds.add(e.id);
+      all.push(e);
+    });
+  });
 
   // 2) 통계 카드
   const byPlat={youtube:0,reddit:0,clien:0};
@@ -2834,16 +2858,17 @@ async function loadCollectedEvidence(kws){
     document.getElementById('analysisExpansion').innerHTML='<span style="color:#FF8A3D;font-size:10px">'+e.message+'</span>';
   }
 
-  // 4) 관련 DB 키워드 (substring 매칭) — 24개
+  // 4) 관련 DB 키워드 (토큰 매칭) — 24개
   try{
-    const dbRes=await fetch('/api/contents/trending-keywords?limit=50');
+    const dbRes=await fetch('/api/contents/trending-keywords?limit=80');
     const dd=await dbRes.json();
     const dbRow=document.getElementById('analysisDb');
-    const lowKws=kws.map(k=>k.toLowerCase());
+    const tokens=kws.flatMap(k=>k.toLowerCase().split(/\s+/).filter(t=>t.length>=2));
     const related=(dd.ok?dd.keywords:[]).filter(k=>{
       if(!k.sources.includes('db_frequency'))return false;
       const lk=k.keyword.toLowerCase();
-      return lowKws.some(uk=>lk.includes(uk)||uk.includes(lk));
+      // 토큰 중 하나라도 DB 키워드와 매칭 (양방향)
+      return tokens.some(t=>lk.includes(t)||t.includes(lk));
     }).slice(0,24);
     const sel=new Set(ssGet(SS.selKw));
     if(related.length>0){
