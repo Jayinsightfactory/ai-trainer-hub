@@ -314,14 +314,29 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:22px 0}
     <span class="flow-step">인사이트 도출</span>
   </div>
 
-  <!-- 🛰 1단계: 키워드 추출 — 시드 → 자동완성 확장 (YouTube 검색 패턴) -->
+  <!-- 🛰 1단계: 트렌드 수집 — 사용자 입력 + 수집 (수동) -->
   <div style="background:linear-gradient(180deg,rgba(0,40,30,.4),rgba(0,60,45,.25));border:1px solid rgba(0,212,170,.35);border-radius:10px;padding:14px;margin-bottom:14px">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-      <span style="color:#00D4AA;font-weight:700;font-size:13px">🛰 1단계: 키워드 추출 — 시드 → 자동완성 확장</span>
+      <span style="color:#00D4AA;font-weight:700;font-size:13px">🛰 1단계: 트렌드 수집 — 키워드 입력 + 수집</span>
       <span id="trendStatus" style="font-size:10px;color:#7A8493;margin-left:auto">대기</span>
     </div>
-    <div style="font-size:10px;color:#7A8493;margin-bottom:8px">
-      ① 시드 1개 클릭 → ② 그 시드의 YT 자동완성 확장 → ③ 마음에 드는 확장 키워드 체크 → STEP 2.
+    <!-- 메인 입력 + 수집 버튼 -->
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <input id="mainKwInput" placeholder="키워드 입력 (예: AI 자동화 후기, 챗GPT 결제, 부동산 폭락 — 콤마 구분)"
+        style="flex:1;background:rgba(0,0,0,.4);border:2px solid rgba(0,212,170,.4);border-radius:6px;padding:10px 12px;color:#F5F5F5;font-size:13px"
+        onkeydown="if(event.key==='Enter')runManualCollect()">
+      <button onclick="runManualCollect()" class="btn"
+        style="background:#00D4AA;border-color:#00D4AA;color:#0A1F2E;font-weight:700;font-size:13px;padding:10px 20px">▶ 수집</button>
+    </div>
+    <div id="collectReport" style="font-size:11px;color:#C7CED8;margin-bottom:8px;display:none;background:rgba(0,212,170,.06);padding:8px 10px;border-radius:6px;border-left:3px solid #00D4AA"></div>
+    <!-- 수집된 evidence 미리보기 -->
+    <div id="collectedEvidence" style="margin-bottom:8px;display:none">
+      <div style="font-size:10px;color:#7A8493;margin-bottom:4px">📋 <b style="color:#00D4AA">수집된 실데이터</b> 미리보기 (STEP 2에서 참고)</div>
+      <div id="collectedEvidenceList" style="display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto"></div>
+    </div>
+    <hr style="border:0;border-top:1px dashed rgba(255,255,255,.1);margin:10px 0">
+    <div style="font-size:10px;color:#7A8493;margin-bottom:6px">
+      💡 <b>보조 도구</b> — 시드 클릭으로 입력 칸 자동 채우기 / 자동완성·DB 키워드 추가 선택
     </div>
 
     <!-- ① 시드 카테고리 — 6 분야 탭 + 그 분야 시드 칩 -->
@@ -2672,22 +2687,74 @@ function pickSeedGroup(i){
 function renderSeedRow(seeds){
   const row=document.getElementById('seedRow');
   if(!row)return;
-  const sel=new Set(ssGet(SS.selKw));
   row.innerHTML=seeds.map(s=>{
-    const active=s===_activeSeed;
-    const checked=sel.has(s);
-    // ⭐ 체크박스도 자동완성 펼침을 트리거 (사용자 의도 = "이 시드 보고 싶다")
-    return `<div style="display:inline-flex;align-items:center;gap:0;background:${active?'rgba(0,212,170,.18)':'rgba(255,255,255,.06)'};border:1px solid ${active?'#00D4AA':'rgba(255,255,255,.15)'};border-radius:14px;padding:0 4px 0 8px">
-      <input type="checkbox" ${checked?'checked':''} onchange="toggleSeedAndExpand('${s.replace(/'/g,"\\'")}')" style="margin:0;cursor:pointer" title="이 시드 선택 + 자동완성 자동 펼침">
-      <button onclick="pickSeed('${s.replace(/'/g,"\\'")}')" class="btn"
-        style="font-size:11px;padding:5px 8px 5px 6px;background:transparent;border:0;color:${active?'#0A1F2E':'#F5F5F5'};font-weight:${active?'700':'400'};outline:none;cursor:pointer">🌱 ${s}</button>
-    </div>`;
+    // 시드 = 입력 칸 자동 채움 트리거 (체크박스 제거 — 입력이 메인)
+    return `<button onclick="fillInputWithSeed('${s.replace(/'/g,"\\'")}')" class="btn"
+      style="font-size:11px;padding:4px 10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#F5F5F5;border-radius:14px"
+      title="입력 칸에 추가">🌱 ${s}</button>`;
   }).join('');
 }
-// 체크박스 → 키워드 선택 + 자동완성 동시 펼침 (context sessionStorage 채워짐)
-function toggleSeedAndExpand(kw){
-  ssToggle(SS.selKw, kw);
-  pickSeed(kw); // 자동완성 펼침 + expansionContext 저장
+function fillInputWithSeed(seed){
+  const inp=document.getElementById('mainKwInput');
+  if(!inp)return;
+  const cur=inp.value.trim();
+  if(!cur)inp.value=seed;
+  else if(!cur.split(',').map(s=>s.trim()).includes(seed)) inp.value=cur+', '+seed;
+  inp.focus();
+}
+
+// ─── ▶ 수집 — 사용자 입력 키워드로 ingest API 호출 ───
+async function runManualCollect(){
+  const inp=document.getElementById('mainKwInput');
+  const raw=inp?.value?.trim();
+  if(!raw){inp?.focus();return;}
+  const kws=raw.split(',').map(s=>s.trim()).filter(Boolean).slice(0,5);
+  const st=document.getElementById('trendStatus');
+  const rep=document.getElementById('collectReport');
+  st.textContent=`수집 중… (${kws.length}개 × 3소스)`;
+  rep.style.display='block';
+  rep.innerHTML='⏳ YouTube + Reddit + 클리앙 호출 중…';
+  try{
+    const t0=Date.now();
+    const r=await fetch('/api/contents/ingest',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({keywords:kws,limit:10})});
+    const d=await r.json();
+    if(!d.ok)throw new Error(d.error||'수집 실패');
+    const elapsed=Math.round((Date.now()-t0)/1000);
+    st.textContent=`✅ ${elapsed}초 · ${d.summary.evidenceUpserted}건 저장`;
+    rep.innerHTML=`✅ <b>수집 완료</b> · ${elapsed}초<br>`
+      +(d.report||[]).map(r=>`&nbsp;&nbsp;${r.error?'⚠':'✓'} <b>${r.platform}</b>·${r.keyword} → ${r.upserted}건${r.error?' ('+r.error.slice(0,60)+')':''}`).join('<br>');
+    // SS.selKw에 사용자 키워드 추가
+    const cur=new Set(ssGet(SS.selKw));
+    kws.forEach(k=>cur.add(k));
+    ssSet(SS.selKw,[...cur]);
+    updateTrendSelectedCount();
+    // 수집된 evidence 미리보기 + 자동완성/DB 갱신
+    await loadCollectedEvidence(kws);
+    await loadTrendingKeywords(); // DB freq 갱신
+    // 첫 키워드의 자동완성도 자동 펼침 (context 저장)
+    if(kws[0]) pickSeed(kws[0]);
+  }catch(e){st.textContent='⚠ '+e.message;rep.innerHTML='<span style="color:#FF8A3D">'+e.message+'</span>';}
+}
+
+async function loadCollectedEvidence(kws){
+  const wrap=document.getElementById('collectedEvidence');
+  const list=document.getElementById('collectedEvidenceList');
+  if(!wrap||!list)return;
+  wrap.style.display='block';
+  const groups=await Promise.all(kws.map(kw=>fetch('/api/contents/evidence?keyword='+encodeURIComponent(kw)+'&limit=5').then(r=>r.json()).catch(()=>({ok:false,evidence:[]}))));
+  const all=[];
+  groups.forEach(g=>{if(g.ok)all.push(...(g.evidence||[]));});
+  if(all.length===0){list.innerHTML='<div style="color:#7A8493;font-size:10px;padding:6px">수집된 발언 없음</div>';return;}
+  const PLAT={youtube:'#FF3B3B',reddit:'#FF8A3D',clien:'#FFD93D'};
+  list.innerHTML=all.slice(0,12).map(e=>{
+    const c=PLAT[e.platform]||'#888';
+    return `<div style="background:rgba(255,255,255,.02);border-left:2px solid ${c};padding:5px 8px;font-size:10px;color:#C7CED8;line-height:1.4">
+      <span style="color:${c};font-weight:600">${e.platform}</span>
+      · <span style="color:#7A8493">${e.keyword}</span>
+      · ${escapeHtml((e.textRaw||'').slice(0,120))}${(e.textRaw||'').length>120?'…':''}
+    </div>`;
+  }).join('');
 }
 function renderDbFreqRow(kws){
   const wrap=document.getElementById('dbFreqWrap');
