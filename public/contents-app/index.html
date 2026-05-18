@@ -354,10 +354,9 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:22px 0}
     <!-- 호환용 hidden div (옛 함수 참조) -->
     <div id="collectedEvidence" style="display:none"></div>
 
-    <details style="margin-top:6px">
-      <summary style="font-size:10px;color:#7A8493;cursor:pointer">💡 보조 도구 — 시드 단축 입력 / 자동완성·DB 추가 선택</summary>
-      <div style="margin-top:6px;padding:6px 8px;background:rgba(255,255,255,.02);border-radius:6px"></div>
-    </details>
+    <div style="margin-top:8px;padding-top:8px;border-top:1px dashed rgba(255,255,255,.1)">
+      <div style="font-size:10px;color:#7A8493;margin-bottom:4px">💡 시드 단축 입력 — 분야 탭 → 시드 클릭 = 입력 칸에 추가</div>
+    </div>
 
     <!-- ① 시드 카테고리 — 6 분야 탭 + 그 분야 시드 칩 -->
     <div style="margin-bottom:8px">
@@ -2810,7 +2809,14 @@ async function loadCollectedEvidence(kws){
         </label>`;
       }).join('');
     } else {
-      expRow.innerHTML=`<span style="font-size:10px;color:#FF8A3D">⚠ ${ed.info?.ytTitlesFetched===0?'YT API 응답 없음':'결과 없음'}</span>`;
+      const isYtFail = ed.info?.ytTitlesFetched===0;
+      expRow.innerHTML=isYtFail
+        ? `<div style="font-size:10px;color:#FF8A3D;padding:6px 8px;background:rgba(255,138,61,.08);border-radius:4px;line-height:1.6">
+            ⚠ <b>YT API 응답 없음</b> — 일일 quota 소진 또는 키 만료 가능성<br>
+            <span style="color:#7A8493">DB 키워드만 사용해도 STEP 2 가능. quota는 PST 자정 reset.</span>
+            <button onclick="loadCollectedEvidence(${JSON.stringify(kws).replace(/"/g,'&quot;')})" class="btn" style="margin-left:6px;font-size:9px;padding:2px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#F5F5F5">↻ 재시도</button>
+           </div>`
+        : `<span style="font-size:10px;color:#7A8493">자동완성 결과 없음 — 다른 키워드 시도</span>`;
     }
     if(ed.ok)sessionStorage.setItem('realdata.expansionContext', JSON.stringify(ed.keywords.map(k=>k.keyword)));
   }catch(e){
