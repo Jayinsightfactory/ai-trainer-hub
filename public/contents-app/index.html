@@ -348,7 +348,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:22px 0}
       <!-- evidence 미리보기 -->
       <div>
         <div style="font-size:10px;color:#7A8493;margin-bottom:3px">📋 핵심 발언 미리보기:</div>
-        <div id="collectedEvidenceList" style="display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto"></div>
+        <div id="collectedEvidenceList" style="display:flex;flex-direction:column;gap:4px;max-height:400px;overflow-y:auto"></div>
       </div>
     </div>
     <!-- 호환용 hidden div (옛 함수 참조) -->
@@ -2780,8 +2780,8 @@ async function loadCollectedEvidence(kws){
   panel.style.display='block';
   document.getElementById('analysisKwTitle').textContent=`"${kws.join(', ')}"`;
 
-  // 1) evidence 수집 (전체)
-  const groups=await Promise.all(kws.map(kw=>fetch('/api/contents/evidence?keyword='+encodeURIComponent(kw)+'&limit=20').then(r=>r.json()).catch(()=>({ok:false,evidence:[]}))));
+  // 1) evidence 수집 (전체) — 한 키워드당 50건씩
+  const groups=await Promise.all(kws.map(kw=>fetch('/api/contents/evidence?keyword='+encodeURIComponent(kw)+'&limit=50').then(r=>r.json()).catch(()=>({ok:false,evidence:[]}))));
   const all=[];
   groups.forEach(g=>{if(g.ok)all.push(...(g.evidence||[]));});
 
@@ -2805,9 +2805,9 @@ async function loadCollectedEvidence(kws){
       <div style="font-size:16px;font-weight:700;color:${s.color}">${s.value}</div>
     </div>`).join('');
 
-  // 3) 자동완성 확장 (첫 키워드 기준)
+  // 3) 자동완성 확장 (첫 키워드 기준) — 24개
   try{
-    const expRes=await fetch('/api/contents/trending-keywords?seed='+encodeURIComponent(kws[0])+'&limit=12');
+    const expRes=await fetch('/api/contents/trending-keywords?seed='+encodeURIComponent(kws[0])+'&limit=24');
     const ed=await expRes.json();
     const expRow=document.getElementById('analysisExpansion');
     const sel=new Set(ssGet(SS.selKw));
@@ -2834,9 +2834,9 @@ async function loadCollectedEvidence(kws){
     document.getElementById('analysisExpansion').innerHTML='<span style="color:#FF8A3D;font-size:10px">'+e.message+'</span>';
   }
 
-  // 4) 관련 DB 키워드 (substring 매칭)
+  // 4) 관련 DB 키워드 (substring 매칭) — 24개
   try{
-    const dbRes=await fetch('/api/contents/trending-keywords?limit=30');
+    const dbRes=await fetch('/api/contents/trending-keywords?limit=50');
     const dd=await dbRes.json();
     const dbRow=document.getElementById('analysisDb');
     const lowKws=kws.map(k=>k.toLowerCase());
@@ -2844,7 +2844,7 @@ async function loadCollectedEvidence(kws){
       if(!k.sources.includes('db_frequency'))return false;
       const lk=k.keyword.toLowerCase();
       return lowKws.some(uk=>lk.includes(uk)||uk.includes(lk));
-    }).slice(0,12);
+    }).slice(0,24);
     const sel=new Set(ssGet(SS.selKw));
     if(related.length>0){
       dbRow.innerHTML=related.map(k=>{
@@ -2866,7 +2866,7 @@ async function loadCollectedEvidence(kws){
       list.innerHTML='<div style="color:#7A8493;font-size:10px;padding:6px">수집된 발언 없음</div>';
     } else {
       const PLAT={youtube:'#FF3B3B',reddit:'#FF8A3D',clien:'#FFD93D'};
-      const top=[...all].sort((a,b)=>(b.upvotes+b.likes)-(a.upvotes+a.likes)).slice(0,6);
+      const top=[...all].sort((a,b)=>(b.upvotes+b.likes)-(a.upvotes+a.likes)).slice(0,20);
       list.innerHTML=top.map(e=>{
         const c=PLAT[e.platform]||'#888';
         const sig=(e.upvotes||0)+(e.likes||0);
@@ -3909,11 +3909,12 @@ function _unifyRealdataSteps(){
   const nav=document.getElementById('rdStepNav');
   const stage0=document.getElementById('stage0');
   if(stage0){
-    // 기존 stage0 정적 콘텐츠를 details로 접음 (사용자가 원하면 펼침)
+    // 기존 stage0 풍부한 콘텐츠 (시드 12개·YouTube 70개·자동완성 25개·댓글) — 기본 펼침
     const oldContent=document.createElement('details');
     oldContent.id='legacyStage0';
+    oldContent.open=true; // ⭐ 기본 펼침 — 사용자가 기획수집된 풍부한 데이터 바로 봄
     oldContent.style.cssText='margin-top:20px;padding:10px;background:rgba(255,255,255,.02);border-radius:6px';
-    oldContent.innerHTML='<summary style="cursor:pointer;font-size:11px;color:#7A8493">▼ 기존 정적 콘텐츠 (시드 12개·YouTube API·3가지 서칭 방식 등 — 참고용)</summary>';
+    oldContent.innerHTML='<summary style="cursor:pointer;font-size:12px;color:#00D4AA;font-weight:600;margin-bottom:8px">📊 풍부한 기획수집 데이터 (시드 12개·YouTube 70개·자동완성 25개·댓글 페인포인트) — 자료 작업용</summary>';
     // stage0의 직속 children 중 rdUnified/rdStepNav 제외 모두 oldContent로 이동
     [...stage0.children].forEach(ch=>{
       if(ch.id!=='rdUnified' && ch.id!=='rdStepNav' && ch.id!=='legacyStage0'){
