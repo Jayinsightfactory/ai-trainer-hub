@@ -2689,6 +2689,16 @@ async function loadTrendingKeywords(){
     ]);
     if(!r1.ok)throw new Error(r1.error||'시드 실패');
     _seedGroups = r1.groups || [{name:'전체', emoji:'🌱', seeds: r1.seeds}];
+    // ⭐ 첫 기획 정적 시드 통합: SEEDS(12) + SUGGEST(30) → "기획 시드" 분야
+    try {
+      const legacySeeds = (typeof SEEDS !== 'undefined' && Array.isArray(SEEDS)) ? SEEDS.map(s => s.kw || s).filter(Boolean) : [];
+      const legacySuggest = (typeof SUGGEST !== 'undefined' && Array.isArray(SUGGEST)) ? SUGGEST.map(s => s.t || s).filter(Boolean) : [];
+      const merged = [...new Set([...legacySeeds, ...legacySuggest])].slice(0, 48);
+      if (merged.length > 0) {
+        _seedGroups.unshift({ name: '기획 시드', emoji: '📊', seeds: merged });
+        _activeGroup = 0; // 기획 시드를 기본으로
+      }
+    } catch {}
     renderSeedGroupTabs();
     renderSeedRow(_seedGroups[_activeGroup]?.seeds || []);
     if(r2.ok){
