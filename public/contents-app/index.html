@@ -329,15 +329,35 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:22px 0}
         style="background:#00D4AA;border-color:#00D4AA;color:#0A1F2E;font-weight:700;font-size:13px;padding:10px 20px">▶ 수집</button>
     </div>
     <div id="collectReport" style="font-size:11px;color:#C7CED8;margin-bottom:8px;display:none;background:rgba(0,212,170,.06);padding:8px 10px;border-radius:6px;border-left:3px solid #00D4AA"></div>
-    <!-- 수집된 evidence 미리보기 -->
-    <div id="collectedEvidence" style="margin-bottom:8px;display:none">
-      <div style="font-size:10px;color:#7A8493;margin-bottom:4px">📋 <b style="color:#00D4AA">수집된 실데이터</b> 미리보기 (STEP 2에서 참고)</div>
-      <div id="collectedEvidenceList" style="display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto"></div>
+
+    <!-- 📊 분석 결과 패널 — 사용자 키워드 기준 통계 + 자동완성 + 관련 DB + evidence -->
+    <div id="analysisPanel" style="display:none;background:rgba(0,40,30,.18);border:1px solid rgba(0,212,170,.25);border-radius:8px;padding:10px 12px;margin-bottom:8px">
+      <div style="font-size:11px;color:#00D4AA;font-weight:700;margin-bottom:8px">📊 <span id="analysisKwTitle">"키워드"</span> 분석 결과</div>
+      <!-- 통계 카드 -->
+      <div id="analysisStats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px"></div>
+      <!-- 자동완성 확장 (입력 키워드 기준) -->
+      <div style="margin-bottom:8px">
+        <div style="font-size:10px;color:#7A8493;margin-bottom:3px">🔥 사람들 실제 관심 방향 (자동완성):</div>
+        <div id="analysisExpansion" style="display:flex;flex-wrap:wrap;gap:4px;min-height:24px"></div>
+      </div>
+      <!-- 관련 DB 키워드 -->
+      <div style="margin-bottom:8px">
+        <div style="font-size:10px;color:#7A8493;margin-bottom:3px">📊 DB에 이미 있는 관련 키워드:</div>
+        <div id="analysisDb" style="display:flex;flex-wrap:wrap;gap:4px;min-height:24px"></div>
+      </div>
+      <!-- evidence 미리보기 -->
+      <div>
+        <div style="font-size:10px;color:#7A8493;margin-bottom:3px">📋 핵심 발언 미리보기:</div>
+        <div id="collectedEvidenceList" style="display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto"></div>
+      </div>
     </div>
-    <hr style="border:0;border-top:1px dashed rgba(255,255,255,.1);margin:10px 0">
-    <div style="font-size:10px;color:#7A8493;margin-bottom:6px">
-      💡 <b>보조 도구</b> — 시드 클릭으로 입력 칸 자동 채우기 / 자동완성·DB 키워드 추가 선택
-    </div>
+    <!-- 호환용 hidden div (옛 함수 참조) -->
+    <div id="collectedEvidence" style="display:none"></div>
+
+    <details style="margin-top:6px">
+      <summary style="font-size:10px;color:#7A8493;cursor:pointer">💡 보조 도구 — 시드 단축 입력 / 자동완성·DB 추가 선택</summary>
+      <div style="margin-top:6px;padding:6px 8px;background:rgba(255,255,255,.02);border-radius:6px"></div>
+    </details>
 
     <!-- ① 시드 카테고리 — 6 분야 탭 + 그 분야 시드 칩 -->
     <div style="margin-bottom:8px">
@@ -2744,23 +2764,103 @@ async function runManualCollect(){
 }
 
 async function loadCollectedEvidence(kws){
-  const wrap=document.getElementById('collectedEvidence');
-  const list=document.getElementById('collectedEvidenceList');
-  if(!wrap||!list)return;
-  wrap.style.display='block';
-  const groups=await Promise.all(kws.map(kw=>fetch('/api/contents/evidence?keyword='+encodeURIComponent(kw)+'&limit=5').then(r=>r.json()).catch(()=>({ok:false,evidence:[]}))));
+  // ⭐ 분석 결과 패널 — 사용자 입력 키워드 기준 모든 데이터 종합
+  const panel=document.getElementById('analysisPanel');
+  if(!panel)return;
+  panel.style.display='block';
+  document.getElementById('analysisKwTitle').textContent=`"${kws.join(', ')}"`;
+
+  // 1) evidence 수집 (전체)
+  const groups=await Promise.all(kws.map(kw=>fetch('/api/contents/evidence?keyword='+encodeURIComponent(kw)+'&limit=20').then(r=>r.json()).catch(()=>({ok:false,evidence:[]}))));
   const all=[];
   groups.forEach(g=>{if(g.ok)all.push(...(g.evidence||[]));});
-  if(all.length===0){list.innerHTML='<div style="color:#7A8493;font-size:10px;padding:6px">수집된 발언 없음</div>';return;}
-  const PLAT={youtube:'#FF3B3B',reddit:'#FF8A3D',clien:'#FFD93D'};
-  list.innerHTML=all.slice(0,12).map(e=>{
-    const c=PLAT[e.platform]||'#888';
-    return `<div style="background:rgba(255,255,255,.02);border-left:2px solid ${c};padding:5px 8px;font-size:10px;color:#C7CED8;line-height:1.4">
-      <span style="color:${c};font-weight:600">${e.platform}</span>
-      · <span style="color:#7A8493">${e.keyword}</span>
-      · ${escapeHtml((e.textRaw||'').slice(0,120))}${(e.textRaw||'').length>120?'…':''}
-    </div>`;
-  }).join('');
+
+  // 2) 통계 카드
+  const byPlat={youtube:0,reddit:0,clien:0};
+  let signalSum=0, signalMax=0;
+  all.forEach(e=>{
+    byPlat[e.platform]=(byPlat[e.platform]||0)+1;
+    const s=(e.upvotes||0)+(e.likes||0);
+    signalSum+=s; if(s>signalMax)signalMax=s;
+  });
+  const stats=[
+    {label:'전체 발언', value:all.length, color:'#00D4AA'},
+    {label:'YT / Reddit / 클리앙', value:`${byPlat.youtube} / ${byPlat.reddit} / ${byPlat.clien}`, color:'#FF8A3D'},
+    {label:'평균 반응', value:all.length?Math.round(signalSum/all.length)+'↑':'0', color:'#FFD93D'},
+    {label:'최고 반응', value:signalMax+'↑', color:'#6C63FF'},
+  ];
+  document.getElementById('analysisStats').innerHTML=stats.map(s=>`
+    <div style="background:rgba(255,255,255,.03);border-radius:6px;padding:8px 10px;text-align:center">
+      <div style="font-size:9px;color:#7A8493;margin-bottom:2px">${s.label}</div>
+      <div style="font-size:16px;font-weight:700;color:${s.color}">${s.value}</div>
+    </div>`).join('');
+
+  // 3) 자동완성 확장 (첫 키워드 기준)
+  try{
+    const expRes=await fetch('/api/contents/trending-keywords?seed='+encodeURIComponent(kws[0])+'&limit=12');
+    const ed=await expRes.json();
+    const expRow=document.getElementById('analysisExpansion');
+    const sel=new Set(ssGet(SS.selKw));
+    if(ed.ok && ed.count>0){
+      expRow.innerHTML=ed.keywords.map(k=>{
+        const ch=sel.has(k.keyword);
+        return `<label style="font-size:10px;color:${ch?'#0A1F2E':'#F5F5F5'};background:${ch?'#00D4AA':'rgba(255,255,255,.05)'};border:1px solid ${ch?'#00D4AA':'rgba(255,255,255,.12)'};border-radius:12px;padding:3px 9px;cursor:pointer;display:inline-flex;align-items:center;gap:3px">
+          <input type="checkbox" ${ch?'checked':''} onchange="toggleTrendKw('${k.keyword.replace(/'/g,"\\'")}')" style="margin:0">
+          <span>${escapeHtml(k.keyword)}</span>
+        </label>`;
+      }).join('');
+    } else {
+      expRow.innerHTML=`<span style="font-size:10px;color:#FF8A3D">⚠ ${ed.info?.ytTitlesFetched===0?'YT API 응답 없음':'결과 없음'}</span>`;
+    }
+    if(ed.ok)sessionStorage.setItem('realdata.expansionContext', JSON.stringify(ed.keywords.map(k=>k.keyword)));
+  }catch(e){
+    document.getElementById('analysisExpansion').innerHTML='<span style="color:#FF8A3D;font-size:10px">'+e.message+'</span>';
+  }
+
+  // 4) 관련 DB 키워드 (substring 매칭)
+  try{
+    const dbRes=await fetch('/api/contents/trending-keywords?limit=30');
+    const dd=await dbRes.json();
+    const dbRow=document.getElementById('analysisDb');
+    const lowKws=kws.map(k=>k.toLowerCase());
+    const related=(dd.ok?dd.keywords:[]).filter(k=>{
+      if(!k.sources.includes('db_frequency'))return false;
+      const lk=k.keyword.toLowerCase();
+      return lowKws.some(uk=>lk.includes(uk)||uk.includes(lk));
+    }).slice(0,12);
+    const sel=new Set(ssGet(SS.selKw));
+    if(related.length>0){
+      dbRow.innerHTML=related.map(k=>{
+        const ch=sel.has(k.keyword);
+        return `<label style="font-size:10px;color:${ch?'#0A1F2E':'#F5F5F5'};background:${ch?'#00D4AA':'rgba(0,212,170,.08)'};border:1px solid ${ch?'#00D4AA':'rgba(0,212,170,.3)'};border-radius:12px;padding:3px 9px;cursor:pointer;display:inline-flex;align-items:center;gap:3px">
+          <input type="checkbox" ${ch?'checked':''} onchange="toggleTrendKw('${k.keyword.replace(/'/g,"\\'")}')" style="margin:0">
+          <span>${escapeHtml(k.keyword)}${k.evidenceCount?` <span style="opacity:.6">${k.evidenceCount}</span>`:''}</span>
+        </label>`;
+      }).join('');
+    } else {
+      dbRow.innerHTML='<span style="font-size:10px;color:#7A8493">관련 DB 키워드 없음 (이번이 첫 수집)</span>';
+    }
+  }catch{}
+
+  // 5) Evidence 미리보기
+  const list=document.getElementById('collectedEvidenceList');
+  if(list){
+    if(all.length===0){
+      list.innerHTML='<div style="color:#7A8493;font-size:10px;padding:6px">수집된 발언 없음</div>';
+    } else {
+      const PLAT={youtube:'#FF3B3B',reddit:'#FF8A3D',clien:'#FFD93D'};
+      const top=[...all].sort((a,b)=>(b.upvotes+b.likes)-(a.upvotes+a.likes)).slice(0,6);
+      list.innerHTML=top.map(e=>{
+        const c=PLAT[e.platform]||'#888';
+        const sig=(e.upvotes||0)+(e.likes||0);
+        return `<div style="background:rgba(255,255,255,.02);border-left:2px solid ${c};padding:5px 8px;font-size:10px;color:#C7CED8;line-height:1.4">
+          <span style="color:${c};font-weight:600">${e.platform}</span>
+          ${sig?` <span style="color:${c}">${sig}↑</span>`:''}
+          · ${escapeHtml((e.textRaw||'').slice(0,140))}${(e.textRaw||'').length>140?'…':''}
+        </div>`;
+      }).join('');
+    }
+  }
 }
 function renderDbFreqRow(kws){
   const wrap=document.getElementById('dbFreqWrap');
