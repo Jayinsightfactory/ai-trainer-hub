@@ -93,18 +93,45 @@ export async function POST(req: NextRequest) {
     context = [...collected].slice(0, 20);
   }
 
-  let parsed: { ok: true; data: { insights?: Array<{ keyword?: string; text?: string }> } } | { ok: false; error: string; raw?: string };
+  // ⭐ 핵심: 각 키워드의 실제 수집 evidence를 fetch → prompt에 원문 포함
+  //   → Claude가 "발견되는" 인사이트로 만듦 (합성이 아니라 추출에 가깝게)
+  const evidenceByKw: Record<string, Array<{ id: string; text: string; platform: string; signal: number }>> = {};
+  for (const kw of keywords) {
+    const evs = await prisma.evidence.findMany({
+      where: { keyword: kw },
+      orderBy: [{ upvotes: "desc" }, { likes: "desc" }, { postedAt: "desc" }],
+      take: 8,
+      select: { id: true, textRaw: true, platform: true, upvotes: true, likes: true },
+    });
+    evidenceByKw[kw] = evs.map((e) => ({
+      id: e.id,
+      text: e.textRaw.replace(/\s+/g, " ").slice(0, 180),
+      platform: e.platform,
+      signal: (e.upvotes ?? 0) + (e.likes ?? 0),
+    }));
+  }
+  const evidenceBlock = Object.entries(evidenceByKw)
+    .filter(([, evs]) => evs.length > 0)
+    .map(([kw, evs]) => `▌${kw} — 실제 발언 ${evs.length}건:\n${evs.map((e) => `  [${e.id}] (${e.platform}/${e.signal}↑) ${e.text}`).join("\n")}`)
+    .join("\n\n");
+  const totalEvidence = Object.values(evidenceByKw).reduce((s, v) => s + v.length, 0);
+
+  let parsed: { ok: true; data: { insights?: Array<{ keyword?: string; text?: string; evidenceIds?: string[] }> } } | { ok: false; error: string; raw?: string };
   try {
     const anthropic = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const { text } = await generateText({
       model: anthropic("claude-sonnet-4-5"),
-      system: SYSTEM,
+      system: SYSTEM + (totalEvidence > 0
+        ? `\n\n⭐ [추가 강제 룰]\n실제 발언이 함께 제공됩니다. 인사이트는 그 발언들에서 *발견되는* 패턴이어야 합니다 — 새로 지어내지 마세요.\n각 인사이트의 evidenceIds[]에 근거 발언 ID를 1개 이상 포함하세요. 발언 안에서 못 찾으면 그 인사이트는 만들지 마세요.`
+        : ""),
       prompt: `[키워드 ${keywords.length}개 — 인사이트 도출 대상]\n${keywords.map((k) => `- ${k}`).join("\n")}\n\n` +
         (context.length > 0
-          ? `[관련 자동완성 트렌드 ${context.length}개 — 사람들 실제 관심 방향. 인사이트에 이 패턴 녹여서 더 구체적으로]\n${context.map((c) => `- ${c}`).join("\n")}\n\n`
+          ? `[관련 자동완성 트렌드 ${context.length}개]\n${context.slice(0, 12).map((c) => `- ${c}`).join("\n")}\n\n`
           : "") +
-        `각 키워드별 ${per}개 인사이트 후보를 JSON으로. 자동완성 트렌드가 있으면 그 구체적 방향성을 반영해서 막연하지 않게.`,
-      temperature: 0.6,
+        (totalEvidence > 0
+          ? `[실제 수집된 발언 ${totalEvidence}건 — 인사이트의 원천]\n${evidenceBlock}\n\n키워드별 ${per}개 인사이트 후보를 JSON으로. 각 인사이트는 위 발언 중 1개 이상에서 *발견된 것*이어야 하며, evidenceIds[]에 근거 ID를 명시하세요.`
+          : `각 키워드별 ${per}개 인사이트 후보를 JSON으로.`),
+      temperature: 0.5,
     });
     parsed = parseLLMJson(text);
   } catch (e) {
@@ -115,21 +142,18 @@ export async function POST(req: NextRequest) {
   }
 
   const validKw = new Set(keywords);
+  const allEvidenceIds = new Set(Object.values(evidenceByKw).flat().map((e) => e.id));
   const candidates = (parsed.data.insights ?? [])
     .map((i) => ({
       keyword: (i.keyword ?? "").trim(),
       text: (i.text ?? "").trim().slice(0, 200),
+      evidenceIds: (i.evidenceIds ?? []).filter((id) => allEvidenceIds.has(id)),
     }))
     .filter((i) => validKw.has(i.keyword) && i.text.length >= 5);
 
-  // 기존 동일-키워드 AI 후보 중 evidence 미연결 + thesisId null 만 삭제 (재실행 가능)
+  // 기존 동일-키워드 AI 후보(미채택, thesisId null) 정리 — 재실행 시 깨끗하게
   await prisma.insight.deleteMany({
-    where: {
-      keyword: { in: keywords },
-      source: "ai",
-      thesisId: null,
-      evidenceIds: { isEmpty: true },
-    },
+    where: { keyword: { in: keywords }, source: "ai", thesisId: null },
   });
 
   const created = await Promise.all(
@@ -138,7 +162,7 @@ export async function POST(req: NextRequest) {
         data: {
           keyword: c.keyword,
           text: c.text,
-          evidenceIds: [],
+          evidenceIds: c.evidenceIds, // ⭐ 근거 evidence id 보존 (추적성)
           source: "ai",
         },
       }),
