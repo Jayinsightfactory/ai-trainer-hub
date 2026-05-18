@@ -2668,6 +2668,9 @@ async function loadTrendingKeywords(){
     const totalSeeds = _seedGroups.reduce((s,g)=>s+g.seeds.length,0);
     st.textContent=`시드 ${totalSeeds}개 (${_seedGroups.length}분야) + DB ${r2.ok?r2.keywords.filter(k=>k.sources.includes('db_frequency')).length:0}건`;
     updateTrendSelectedCount();
+    // ⭐ 페이지 로드 시 활성 카테고리의 첫 시드 자동 픽업 → 자동완성 미리 노출
+    const firstSeed = _seedGroups[_activeGroup]?.seeds[0];
+    if (firstSeed && !_activeSeed) pickSeed(firstSeed);
   }catch(e){st.textContent='⚠ '+e.message;seedRow.innerHTML='<span style="color:#FF8A3D;font-size:10px">'+e.message+'</span>';}
 }
 function renderSeedGroupTabs(){
@@ -2683,6 +2686,9 @@ function pickSeedGroup(i){
   _activeGroup=i;
   renderSeedGroupTabs();
   renderSeedRow(_seedGroups[i]?.seeds || []);
+  // 분야 바꾸면 그 분야 첫 시드 자동 픽업
+  const firstSeed=_seedGroups[i]?.seeds[0];
+  if(firstSeed) pickSeed(firstSeed);
 }
 function renderSeedRow(seeds){
   const row=document.getElementById('seedRow');
@@ -2816,8 +2822,15 @@ async function pickSeed(seed){
     if(!d.ok)throw new Error(d.error||'실패');
     st.textContent=`"${seed}" 확장 ${d.count}개 (영상 ${d.info.ytTitlesFetched})`;
     document.getElementById('expansionCount').textContent=`— ${d.count}개`;
-    renderExpansion(d.keywords);
-  }catch(e){st.textContent='⚠ '+e.message;row.innerHTML='<span style="color:#FF8A3D;font-size:10px">'+e.message+'</span>';}
+    if(d.count===0){
+      const reason = d.info.ytTitlesFetched===0
+        ? `<span style="color:#FF8A3D">⚠ YT API 응답 없음 (key/quota 점검 필요)</span>`
+        : `<span style="color:#7A8493">자동완성 결과 없음 — 다른 시드 시도</span>`;
+      row.innerHTML=`<div style="font-size:10px;padding:6px 8px;background:rgba(255,138,61,.06);border-radius:4px">${reason}</div>`;
+    } else {
+      renderExpansion(d.keywords);
+    }
+  }catch(e){st.textContent='⚠ '+e.message;row.innerHTML='<span style="color:#FF8A3D;font-size:10px;padding:6px 8px">⚠ '+e.message+'</span>';}
 }
 function renderExpansion(kws){
   const row=document.getElementById('expansionRow');
