@@ -315,7 +315,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:22px 0}
   </div>
 
   <!-- 🛰 1단계: 트렌드 수집 — 사용자 입력 + 수집 (수동) -->
-  <div style="background:linear-gradient(180deg,rgba(0,40,30,.4),rgba(0,60,45,.25));border:1px solid rgba(0,212,170,.35);border-radius:10px;padding:14px;margin-bottom:14px">
+  <div id="rdStep1" class="rd-step" style="background:linear-gradient(180deg,rgba(0,40,30,.4),rgba(0,60,45,.25));border:1px solid rgba(0,212,170,.35);border-radius:10px;padding:14px;margin-bottom:14px">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
       <span style="color:#00D4AA;font-weight:700;font-size:13px">🛰 1단계: 트렌드 수집 — 키워드 입력 + 수집</span>
       <span id="trendStatus" style="font-size:10px;color:#7A8493;margin-left:auto">대기</span>
@@ -460,7 +460,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:22px 0}
   </div>
 
   <!-- 🛰 2단계: AI 인사이트 + 본인 인사이트 -->
-  <div style="background:linear-gradient(180deg,rgba(0,40,30,.4),rgba(0,60,45,.25));border:1px solid rgba(0,212,170,.35);border-radius:10px;padding:14px;margin-bottom:14px">
+  <div id="rdStep2" class="rd-step" style="background:linear-gradient(180deg,rgba(0,40,30,.4),rgba(0,60,45,.25));border:1px solid rgba(0,212,170,.35);border-radius:10px;padding:14px;margin-bottom:14px">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
       <span style="color:#00D4AA;font-weight:700;font-size:13px">🛰 2단계: 인사이트 도출 (AI + 본인)</span>
       <span id="insightStatus" style="font-size:10px;color:#7A8493;margin-left:auto">대기</span>
@@ -530,7 +530,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:22px 0}
   </div>
 
   <!-- 🛰 3단계: 주제·주장 분리 — AI 믹싱 최종안 + 선택/수정 -->
-  <div style="background:linear-gradient(180deg,rgba(0,40,30,.4),rgba(0,60,45,.25));border:1px solid rgba(0,212,170,.35);border-radius:10px;padding:14px;margin-bottom:14px">
+  <div id="rdStep3" class="rd-step" style="background:linear-gradient(180deg,rgba(0,40,30,.4),rgba(0,60,45,.25));border:1px solid rgba(0,212,170,.35);border-radius:10px;padding:14px;margin-bottom:14px">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
       <span style="color:#00D4AA;font-weight:700;font-size:13px">🛰 3단계: 주제·주장 분리 — AI 최종안 + 검증</span>
       <span id="thesesStatus" style="font-size:10px;color:#7A8493;margin-left:auto">대기</span>
@@ -591,8 +591,19 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:22px 0}
     <div class="section-title"><div class="dot"></div> 🌱 다음 콘텐츠 시드 20개<span class="count">카드 클릭 → 후크 자동 채움 → [🎨 커버 카피] 탭으로 이동</span></div>
     <div id="seedsPanel" style="background:linear-gradient(180deg,#0A1F2E,#0E2A24);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:20px;color:#F5F5F5;position:relative;overflow:hidden">
       <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.04) 0px,rgba(255,255,255,.04) 1px,transparent 1px,transparent 8px);pointer-events:none"></div>
+      <!-- 🚀 한 페이지 통합 흐름 — JS가 페이지 로드 시 rdStep1/2/3을 이 컨테이너로 이동 -->
+      <div id="rdUnified" style="display:flex;flex-direction:column;gap:0"></div>
+      <!-- sticky 진행 nav -->
+      <nav id="rdStepNav" style="position:sticky;top:0;z-index:50;background:rgba(14,21,33,.92);backdrop-filter:blur(8px);border-radius:8px;padding:8px 10px;margin-bottom:10px;display:flex;gap:6px;flex-wrap:wrap;font-size:11px">
+        <a href="#rdStep1" style="color:#00D4AA;text-decoration:none;background:rgba(0,212,170,.12);padding:4px 10px;border-radius:12px">1. 수집</a>
+        <a href="#rdStep2" style="color:#FFD93D;text-decoration:none;background:rgba(255,217,61,.10);padding:4px 10px;border-radius:12px">2. 인사이트</a>
+        <a href="#rdStep3" style="color:#FF8A3D;text-decoration:none;background:rgba(255,138,61,.10);padding:4px 10px;border-radius:12px">3. 주제·주장</a>
+        <a href="#realSeedsWrap" style="color:#6C63FF;text-decoration:none;background:rgba(108,99,255,.12);padding:4px 10px;border-radius:12px">4. 시드</a>
+        <span style="margin-left:auto;font-size:10px;color:#7A8493;align-self:center">위→아래 스크롤 진행</span>
+      </nav>
+
       <!-- 🛰 실데이터 시드 (DB) — Evidence 기반, 출처 배지 표시 -->
-      <div id="realSeedsWrap" style="position:relative;margin-bottom:18px">
+      <div id="realSeedsWrap" class="rd-step rd-step-4" style="position:relative;margin-bottom:18px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px;color:#7A8493">
           <span style="color:#00D4AA;font-weight:700">🛰 실데이터 시드 (출처 인용)</span>
           <span id="realSeedsCount" style="font-size:10px">— 불러오는 중…</span>
@@ -2990,9 +3001,9 @@ function manualKwPrompt(){
 function goToInsightStep(){
   const kws=ssGet(SS.selKw);
   if(kws.length===0){alert('자동완성 확장에서 키워드 1개 이상 체크하세요');return;}
-  if(typeof goStage==='function')goStage(1);
-  setTimeout(()=>{renderInsights();},200);
-  appendLog?.(`▶ STEP 2 이동 (확정 키워드 ${kws.length}개: ${kws.join(', ')})`,'warn');
+  renderInsights();
+  document.getElementById('rdStep2')?.scrollIntoView({behavior:'smooth',block:'start'});
+  appendLog?.(`▶ STEP 2 (확정 키워드 ${kws.length}개: ${kws.join(', ')})`,'warn');
 }
 
 // ─── STEP 2: AI 후보 + 본인 인사이트 (사용자가 메인) ───
@@ -3105,9 +3116,9 @@ async function addUserInsight(){
   }catch(e){alert('추가 실패: '+e.message);}
 }
 function goToThesisStep(){
-  if(typeof goStage==='function')goStage(2);
-  setTimeout(renderThesisDrafts,200);
-  appendLog?.('▶ STEP 3 이동 (AI 믹싱 최종안 + 선택/수정)','warn');
+  renderThesisDrafts();
+  document.getElementById('rdStep3')?.scrollIntoView({behavior:'smooth',block:'start'});
+  appendLog?.('▶ STEP 3 (AI 믹싱 최종안 + 선택/수정)','warn');
 }
 
 // ─── STEP 3: 주제·주장 분리 (AI 믹싱 최종안 + 선택/수정) ───
@@ -3396,19 +3407,16 @@ async function addEmptyThesis(){
   }catch(e){alert('추가 실패: '+e.message);}
 }
 async function goToSeedStep(){
-  // 채택된 thesis(주제·주장 최종안)들로 시드 생성
   const adoptedTh=ssGet(SS.selTh);
   if(adoptedTh.length===0){
     if(!confirm('STEP 3에서 ☑ 채택한 최종안이 없습니다. 모든 최종안으로 시드 만들까요?'))return;
   }
-  appendLog?.(`▶ STEP 4 이동 — 최종안 ${adoptedTh.length||'전체'}개 시드화 중…`,'warn');
+  appendLog?.(`▶ STEP 4 — 최종안 ${adoptedTh.length||'전체'}개 시드화 중…`,'warn');
   try{
-    // 1) 채택 thesis들을 picked로 표시 + 각각 시드 materialize
     for(const tid of adoptedTh){
       await fetch('/api/contents/theses',{method:'PATCH',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({id:tid,status:'picked'})});
     }
-    // 2) 채택 인사이트로도 시드 생성 (이중 안전망)
     const adoptedIn=ssGet(SS.selIn);
     if(adoptedIn.length){
       await fetch('/api/contents/seeds/materialize',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -3416,8 +3424,8 @@ async function goToSeedStep(){
     }
     appendLog?.('  ✓ 시드 생성 완료','warn');
   }catch(e){appendLog?.('⚠ 시드화 실패: '+e.message,'err');}
-  if(typeof goStage==='function')goStage(3);
-  setTimeout(renderRealSeeds,200);
+  renderRealSeeds();
+  document.getElementById('realSeedsWrap')?.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 // 작은 HTML escape util
@@ -3889,6 +3897,18 @@ async function generateBodyFromSeed(){
     if(btn){btn.disabled=false;btn.innerHTML='🤖 AI로 본문 자동 생성';}
   }
 }
+// 🚀 한 페이지 통합 흐름 — STEP 1/2/3 박스를 모두 ① 시드 탭으로 이동 (위→아래 스크롤)
+function _unifyRealdataSteps(){
+  const unified=document.getElementById('rdUnified');
+  if(!unified)return;
+  ['rdStep1','rdStep2','rdStep3'].forEach(id=>{
+    const box=document.getElementById(id);
+    if(box && box.parentElement!==unified) unified.appendChild(box);
+  });
+}
+_unifyRealdataSteps();
+// 4번 카드뉴스 → ①시드 탭에서 모든 STEP 1~4 + 검증 보임 → 사용자는 위→아래 스크롤로 진행
+
 syncCustomFromSelection();renderCoverPatterns();renderCopyWorkbench();renderBodyWorkbench();renderFullResult();renderSeedsPanel();renderRealSeeds();renderInsights();loadTrendingKeywords();renderHistory();
 document.getElementById('progressFill').style.width='14%';
 appendLog('[시작] AI 키워드 → 콘텐츠 자동화 파이프라인 v4 초기화','dim');
