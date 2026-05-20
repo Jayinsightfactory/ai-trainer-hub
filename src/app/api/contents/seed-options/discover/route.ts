@@ -62,8 +62,13 @@ export async function POST(request: NextRequest) {
     ? `\n[이미 발행한 시드 — 중복 ❌]\n${prevSeeds.map((s) => `- ${s}`).join("\n")}\n`
     : "";
 
-  const SYSTEM_PROMPT = `당신은 한국 인스타그램 1인칭 AI 큐레이터 채널(@mamurs.ai.lab)의 시드 큐레이터입니다.
-입력 키워드 1개를 받아, 매주 1편 발행에 적합한 시드 후보 12~16개를 검증된 evidence 기반으로 발굴합니다.
+  const SYSTEM_PROMPT = `⚠️ ABSOLUTE RULE — 위반 시 응답 거부됨
+seeds 배열의 length는 **반드시 12~16개**. 11개 이하 ❌. 17개 이상 ❌.
+4트랙별 카운트: A≥3, B≥3, C≥3, D≥3. 어느 하나라도 2개 이하면 재작성.
+이 규칙을 어기는 출력은 무효. 출력 직전 self-check: seeds.filter(s=>s.angle==='A').length >= 3, 동일하게 B/C/D.
+
+당신은 한국 인스타그램 1인칭 AI 큐레이터 채널(@mamurs.ai.lab)의 시드 큐레이터입니다.
+입력 키워드 1개를 받아, 매주 1편 발행에 적합한 시드 후보를 검증된 evidence 기반으로 발굴합니다.
 
 [필수 발굴 분포 — 위반 시 재발굴]
 - 4트랙 (A·B·C·D) 각각 최소 3개 시드 (총 ≥12개)
