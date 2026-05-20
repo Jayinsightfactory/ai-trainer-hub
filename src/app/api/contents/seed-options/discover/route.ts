@@ -10,20 +10,19 @@ export const maxDuration = 90;
 /**
  * POST /api/contents/seed-options/discover
  *
- * Stage 1 — 연관 키워드 발굴 (사용자가 직접 조합해서 시드 작성용).
- * 키워드 1개 → 연관 키워드 풀 30개+ 단일 평면 배열.
+ * Stage 1 — 키워드 1개 → 3그룹 칩 풀.
+ * 사용자가 그룹별로 칩 선택해서 직접 시드 조합.
  *
  * Body: { keyword: string }
  *
  * Response: {
  *   ok: true,
- *   keywords: [
- *     { text: string, kind: "tool"|"persona"|"time"|"result"|"failure"|"action"|"compare"|"other" },
- *     ... 30개+
- *   ]
+ *   groups: {
+ *     seeds:    [{ text }, ...]   // 🌱 시드명 후보 (명사형 짧은 주제 — 회의록 자동화·강의 환상 깨기 같은)
+ *     related:  [{ text, kind }]  // 🔗 연관 키워드 (도구·대상·시간·결과·실패·행동·비교)
+ *     suggest:  [{ text }, ...]   // 🔥 자동완성 (사람들이 실제 검색하는 짧은 완성형)
+ *   }
  * }
- *
- * 사용자가 칩 다중 선택 → 직접 시드 작성 → Stage 2(카드 기획)로 이동.
  */
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -42,48 +41,54 @@ export async function POST(request: NextRequest) {
   }
 
   const SYSTEM_PROMPT = `⚠️ ABSOLUTE RULE
-keywords 배열의 length는 **반드시 30~50개**. 29개 이하 ❌.
-모두 한국어 (외래어 도구명은 OK), 1~12자 짧은 키워드/표현.
-중복 ❌. 동의어 ❌.
+3그룹 출력. 각 그룹 length:
+- seeds: 12~16개 (시드명 후보 = 명사형 짧은 주제. 예: "회의록 자동화", "AI 도구 정리", "강의 환상 깨기")
+- related: 30~40개 (연관 키워드. 도구·대상·시간·결과·실패·행동·비교 골고루)
+- suggest: 15~20개 (자동완성. 사람들이 실제로 입력하는 짧은 검색 표현)
 
-당신은 한국 인스타그램 1인칭 AI 큐레이터 채널(@mamurs.ai.lab)의 연관 키워드 발굴기입니다.
-입력 키워드 1개를 받아, 사용자가 직접 조합해서 시드를 작성할 수 있도록 다양한 연관 키워드 풀을 평면 배열로 발굴합니다.
+당신은 한국 인스타그램 1인칭 AI 큐레이터 채널(@mamurs.ai.lab)의 키워드 풀 발굴기입니다.
+입력 키워드 1개를 받아, 사용자가 3그룹에서 칩 골라 조합해서 시드 작성할 수 있도록 발굴합니다.
 
-[다양성 — 다음 8가지 kind를 골고루 섞을 것]
-- tool: 검증된 도구/서비스 이름 (NotebookLM·Cursor·Claude·Perplexity·Notion AI·ChatGPT Canvas·Gamma 등)
-- persona: 페르소나/대상 (30대 직장인·1인 마케터·비개발자·자영업자·학생·기획자·디자이너·프리랜서 등)
-- time: 시간/주기 (한 달·일주일·30일·3개월·매일·점심·출근 전·주말·새벽 등)
-- result: 측정 가능한 결과 표현 (30분→3분·5시간 절약·1시간이 20분·매주 3건·월 30만→15만 등)
-- failure: 실패/문제 표현 (30개 깔고 4개·구독 정리·삭제했어요·환불·결국 안 씀·실패작 10개 등)
-- action: 1인칭 행동 (해봤더니·만들어봤어요·정리했어요·끊었어요·돌려봤어요·자동화·세팅 등)
-- compare: 비교 표현 (5개 1주씩·VS 비교·맞붙여봤더니·3개 비교·진짜 쓸만한 1개 등)
-- other: 트렌드 어휘 (신기능·후기·꿀팁 ❌·핵심·솔직·환상 깨짐·진짜 효과·반전 등)
+[그룹 정의]
+🌱 seeds = 명사형 시드명 후보
+  - 1~5어절 짧은 주제 (예: "회의록 자동화", "AI 강의 환상 깨기", "구독료 정리")
+  - 행동/결과 X, 주제·소재만
+  - 12~16개
 
-[키워드 작성 규칙]
-- 1~12자 짧게 (긴 문장 ❌)
-- 한국 직장인 카톡 톤 (광고체 ❌, "꿀팁/꼭 알아야 할" ❌)
-- 검증된 실데이터 표현만 (87% 같은 가짜 통계 ❌)
-- 시드 조합용 재료 → 다른 키워드와 합쳐서 자연스러운 시드명이 만들어질 수 있어야
+🔗 related = 연관 키워드 (kind 분류)
+  - tool: 검증된 도구 이름 (NotebookLM·Cursor·Claude·Perplexity 등)
+  - persona: 페르소나 (30대 직장인·1인 마케터·비개발자 등)
+  - time: 시간/주기 (한 달·3개월·매일 등)
+  - result: 측정 결과 (30분→3분·5시간 절약 등)
+  - failure: 실패 표현 (30개 깔고 4개·환불·결국 안 씀 등)
+  - action: 1인칭 행동 어미 (해봤더니·만들어봤어요 등)
+  - compare: 비교 표현 (VS·5개 1주씩 등)
+  - other: 트렌드 어휘 (신기능·환상 깨짐·반전 등)
+  - 30~40개, 8가지 kind 골고루
 
-[출력 — JSON 객체만, markdown 코드블록 ❌]
+🔥 suggest = 자동완성 (사람들 실제 검색 표현)
+  - 입력 키워드 뒤에 자주 붙는 표현 (예: "ai 활용법", "ai 자동화 후기", "ai 부수익", "ai 자소서")
+  - 1~5어절, 짧고 검색 친화적
+  - 15~20개
+
+[공통 규칙]
+- 한국어 (외래어 도구명은 OK)
+- 광고체·꿀팁/꼭 알아야 할 ❌
+- 가짜 통계 ❌
+
+[출력 JSON 형식, markdown 코드블록 ❌]
 {
-  "keywords": [
-    { "text": "NotebookLM", "kind": "tool" },
-    { "text": "30대 직장인", "kind": "persona" },
-    { "text": "한 달 써봤더니", "kind": "time" },
-    { "text": "30분→3분", "kind": "result" },
-    { "text": "30개 깔고 4개", "kind": "failure" },
-    { "text": "해봤거든요", "kind": "action" },
-    { "text": "VS 비교", "kind": "compare" },
-    { "text": "솔직 후기", "kind": "other" }
-    // ... 총 30~50개
-  ]
+  "groups": {
+    "seeds": [{ "text": "회의록 자동화" }, ...],
+    "related": [{ "text": "NotebookLM", "kind": "tool" }, ...],
+    "suggest": [{ "text": "ai 활용법" }, ...]
+  }
 }
 
-[self-check 출력 직전 필수 확인]
-- keywords.length >= 30 ✅
-- 8가지 kind 모두 ≥3개 포함 ✅
-- 중복 ❌`;
+[self-check 직전 확인]
+- seeds.length >= 12 ✅
+- related.length >= 30 ✅
+- suggest.length >= 15 ✅`;
 
   try {
     const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -100,12 +105,12 @@ keywords 배열의 length는 **반드시 30~50개**. 29개 이하 ❌.
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-5",
-        max_tokens: 4000,
+        max_tokens: 6000,
         system: SYSTEM_PROMPT,
         messages: [
           {
             role: "user",
-            content: `[입력 키워드]\n${keyword}\n\n위 키워드 기반 연관 키워드 풀 30~50개를 8가지 kind 골고루 섞어서 JSON으로 발굴하세요.`,
+            content: `[입력 키워드]\n${keyword}\n\n위 키워드 기반 3그룹 풀 (seeds·related·suggest)을 JSON으로 발굴하세요.`,
           },
         ],
         temperature: 0.7,
@@ -123,7 +128,7 @@ keywords 배열의 length는 **반드시 30~50개**. 29개 이하 ❌.
     const data = (await r.json()) as { content?: Array<{ type: string; text?: string }> };
     const text = data.content?.filter((c) => c.type === "text").map((c) => c.text || "").join("\n") || "";
 
-    const parsed = parseLLMJson<{ keywords: unknown[] }>(text);
+    const parsed = parseLLMJson<{ groups: { seeds?: unknown[]; related?: unknown[]; suggest?: unknown[] } }>(text);
     if (!parsed.ok) {
       return NextResponse.json(
         { ok: false, error: `JSON 파싱 실패: ${parsed.error}`, raw: parsed.raw },
@@ -131,8 +136,15 @@ keywords 배열의 length는 **반드시 30~50개**. 29개 이하 ❌.
       );
     }
 
-    const keywords = Array.isArray(parsed.data.keywords) ? parsed.data.keywords : [];
-    return NextResponse.json({ ok: true, keywords });
+    const g = parsed.data.groups || {};
+    return NextResponse.json({
+      ok: true,
+      groups: {
+        seeds: Array.isArray(g.seeds) ? g.seeds : [],
+        related: Array.isArray(g.related) ? g.related : [],
+        suggest: Array.isArray(g.suggest) ? g.suggest : [],
+      },
+    });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return NextResponse.json({ ok: false, error: msg }, { status: 500 });

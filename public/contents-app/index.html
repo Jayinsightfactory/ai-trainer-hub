@@ -329,11 +329,33 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:22px 0}
     <div id="discoverError" style="display:none;font-size:11px;color:#FF6B6B;margin-top:6px;padding:6px 10px;background:rgba(255,107,107,.08);border-radius:6px;border-left:3px solid #FF6B6B"></div>
   </div>
 
-  <!-- 키워드 칩 풀 (다중 선택) -->
+  <!-- 3그룹 칩 풀 (다중 선택) -->
   <div id="keywordsWrap" style="display:none">
-    <div class="section-title"><div class="dot"></div> 연관 키워드 풀<span class="count" id="keywordsCount">0개</span></div>
-    <div style="font-size:11px;color:#7A8493;margin-bottom:8px">💡 칩 클릭 = 선택/해제. 여러 개 골라서 아래 입력칸에 자유롭게 조합하세요.</div>
-    <div id="keywordsGrid" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;padding:12px;background:rgba(255,255,255,.02);border-radius:8px"></div>
+    <div style="font-size:11px;color:#7A8493;margin-bottom:8px">💡 그룹별로 칩 클릭 = 선택/해제. 여러 개 골라서 아래 입력칸에 자유롭게 조합하세요.</div>
+
+    <!-- 🌱 시드명 -->
+    <div style="margin-bottom:12px">
+      <div style="font-size:11px;color:#7A8493;margin-bottom:4px">
+        🌱 <b style="color:#00D4AA">시드명</b> 후보 <span style="opacity:.7">— 명사형 짧은 주제</span> <span id="seedsCount" style="opacity:.7;float:right;font-size:10px">0개</span>
+      </div>
+      <div id="seedsGrid" style="display:flex;flex-wrap:wrap;gap:6px;padding:10px;background:rgba(0,212,170,.04);border:1px solid rgba(0,212,170,.18);border-radius:8px;min-height:44px"></div>
+    </div>
+
+    <!-- 🔗 연관 -->
+    <div style="margin-bottom:12px">
+      <div style="font-size:11px;color:#7A8493;margin-bottom:4px">
+        🔗 <b style="color:#6C63FF">연관</b> 키워드 <span style="opacity:.7">— 도구·대상·시간·결과·실패·행동·비교</span> <span id="relatedCount" style="opacity:.7;float:right;font-size:10px">0개</span>
+      </div>
+      <div id="relatedGrid" style="display:flex;flex-wrap:wrap;gap:6px;padding:10px;background:rgba(108,99,255,.04);border:1px solid rgba(108,99,255,.18);border-radius:8px;min-height:44px"></div>
+    </div>
+
+    <!-- 🔥 자동완성 -->
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;color:#7A8493;margin-bottom:4px">
+        🔥 <b style="color:#FF8A3D">자동완성</b> <span style="opacity:.7">— 사람들 실제 검색 표현</span> <span id="suggestCount" style="opacity:.7;float:right;font-size:10px">0개</span>
+      </div>
+      <div id="suggestGrid" style="display:flex;flex-wrap:wrap;gap:6px;padding:10px;background:rgba(255,138,61,.04);border:1px solid rgba(255,138,61,.18);border-radius:8px;min-height:44px"></div>
+    </div>
 
     <!-- 선택된 칩 + 시드 작성 -->
     <div id="seedComposeWrap" style="background:linear-gradient(180deg,rgba(0,212,170,.08),rgba(0,212,170,.02));border:1px solid rgba(0,212,170,.3);border-radius:10px;padding:14px;margin-bottom:14px">
@@ -833,9 +855,9 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:22px 0}
 </main>
 
 <script>
-// ════════════ Stage 1 — 연관 키워드 발굴 + 시드 자유 조합 ════════════
-let CURRENT_KEYWORDS = [];
-const SELECTED_CHIPS = new Set();
+// ════════════ Stage 1 — 3그룹 칩 풀 (시드명/연관/자동완성) ════════════
+let CURRENT_GROUPS = { seeds: [], related: [], suggest: [] };
+const SELECTED_CHIPS = new Set(); // key = "group:idx"
 let SELECTED_SEED = null;
 
 const KIND_COLOR = {
@@ -848,21 +870,24 @@ const KIND_LABEL = {
   result: '결과', failure: '실패', action: '행동',
   compare: '비교', other: '기타',
 };
+const GROUP_COLOR = {
+  seeds: '#00D4AA',    // 시드명 — 민트
+  related: '#6C63FF',  // 연관 — 보라
+  suggest: '#FF8A3D',  // 자동완성 — 오렌지
+};
 
 async function runDiscoverSeeds() {
   const input = document.getElementById('discoverKwInput');
   const status = document.getElementById('discoverStatus');
   const errBox = document.getElementById('discoverError');
   const wrap = document.getElementById('keywordsWrap');
-  const grid = document.getElementById('keywordsGrid');
-  const cnt = document.getElementById('keywordsCount');
   const keyword = (input.value || '').trim();
   if (!keyword) { input.focus(); return; }
 
   errBox.style.display = 'none';
   status.textContent = '발굴 중…';
   status.style.color = '#6C63FF';
-  grid.innerHTML = '';
+  ['seedsGrid', 'relatedGrid', 'suggestGrid'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
   wrap.style.display = 'block';
   SELECTED_CHIPS.clear();
   renderSelectedChips();
@@ -875,10 +900,19 @@ async function runDiscoverSeeds() {
     });
     const data = await r.json();
     if (!data.ok) throw new Error(data.error || '발굴 실패');
-    CURRENT_KEYWORDS = Array.isArray(data.keywords) ? data.keywords : [];
-    renderKeywords(CURRENT_KEYWORDS);
-    cnt.textContent = `${CURRENT_KEYWORDS.length}개`;
-    status.textContent = `✓ ${CURRENT_KEYWORDS.length}개`;
+    CURRENT_GROUPS = {
+      seeds: Array.isArray(data.groups?.seeds) ? data.groups.seeds : [],
+      related: Array.isArray(data.groups?.related) ? data.groups.related : [],
+      suggest: Array.isArray(data.groups?.suggest) ? data.groups.suggest : [],
+    };
+    renderGroup('seeds');
+    renderGroup('related');
+    renderGroup('suggest');
+    document.getElementById('seedsCount').textContent = `${CURRENT_GROUPS.seeds.length}개`;
+    document.getElementById('relatedCount').textContent = `${CURRENT_GROUPS.related.length}개`;
+    document.getElementById('suggestCount').textContent = `${CURRENT_GROUPS.suggest.length}개`;
+    const total = CURRENT_GROUPS.seeds.length + CURRENT_GROUPS.related.length + CURRENT_GROUPS.suggest.length;
+    status.textContent = `✓ ${total}개 (시드 ${CURRENT_GROUPS.seeds.length} / 연관 ${CURRENT_GROUPS.related.length} / 자동완성 ${CURRENT_GROUPS.suggest.length})`;
     status.style.color = '#00D4AA';
   } catch (e) {
     status.textContent = '실패';
@@ -888,32 +922,52 @@ async function runDiscoverSeeds() {
   }
 }
 
-function renderKeywords(keywords) {
-  const grid = document.getElementById('keywordsGrid');
+function renderGroup(group) {
+  const grid = document.getElementById(group + 'Grid');
+  if (!grid) return;
   grid.innerHTML = '';
-  keywords.forEach((k, idx) => {
+  const items = CURRENT_GROUPS[group] || [];
+  const groupColor = GROUP_COLOR[group];
+  items.forEach((k, idx) => {
     const text = (k && k.text) || '';
-    const kind = (k && k.kind) || 'other';
-    const color = KIND_COLOR[kind] || '#7A8493';
+    const kind = (k && k.kind) || null;
+    // 연관 그룹은 kind 색상 / 나머지는 그룹 색상
+    const color = (group === 'related' && kind) ? (KIND_COLOR[kind] || groupColor) : groupColor;
     const chip = document.createElement('button');
-    chip.dataset.idx = String(idx);
-    chip.title = KIND_LABEL[kind] || kind;
-    chip.style.cssText = `background:rgba(255,255,255,.04);border:1px solid ${color}55;color:#F5F5F5;border-radius:16px;padding:6px 12px;font-size:12px;cursor:pointer;transition:all .12s`;
-    chip.innerHTML = `<span style="color:${color};font-size:9px;margin-right:5px;text-transform:uppercase">${KIND_LABEL[kind]}</span>${escHtml(text)}`;
-    chip.onclick = () => toggleKeyword(idx, chip, color);
-    chip.onmouseenter = () => { if (!SELECTED_CHIPS.has(idx)) { chip.style.background = `${color}22`; chip.style.borderColor = color; } };
-    chip.onmouseleave = () => { if (!SELECTED_CHIPS.has(idx)) { chip.style.background = 'rgba(255,255,255,.04)'; chip.style.borderColor = `${color}55`; } };
+    const key = `${group}:${idx}`;
+    chip.dataset.key = key;
+    if (kind) chip.title = KIND_LABEL[kind] || kind;
+    chip.style.cssText = `background:rgba(255,255,255,.04);border:1px solid ${color}55;color:#F5F5F5;border-radius:16px;padding:5px 11px;font-size:12px;cursor:pointer;transition:all .12s`;
+    const kindLabel = (group === 'related' && kind) ? `<span style="color:${color};font-size:9px;margin-right:5px;text-transform:uppercase">${KIND_LABEL[kind]}</span>` : '';
+    chip.innerHTML = `${kindLabel}${escHtml(text)}`;
+    chip.onclick = () => toggleChip(key, chip, color);
+    chip.onmouseenter = () => { if (!SELECTED_CHIPS.has(key)) { chip.style.background = `${color}22`; chip.style.borderColor = color; } };
+    chip.onmouseleave = () => { if (!SELECTED_CHIPS.has(key)) { chip.style.background = 'rgba(255,255,255,.04)'; chip.style.borderColor = `${color}55`; } };
     grid.appendChild(chip);
   });
 }
 
-function toggleKeyword(idx, chip, color) {
-  if (SELECTED_CHIPS.has(idx)) {
-    SELECTED_CHIPS.delete(idx);
+function getChipByKey(key) {
+  const [group, idxStr] = key.split(':');
+  const idx = parseInt(idxStr, 10);
+  return CURRENT_GROUPS[group]?.[idx];
+}
+
+function getChipColor(key) {
+  const [group] = key.split(':');
+  const k = getChipByKey(key);
+  if (group === 'related' && k?.kind) return KIND_COLOR[k.kind] || GROUP_COLOR[group];
+  return GROUP_COLOR[group];
+}
+
+function toggleChip(key, chip, color) {
+  if (SELECTED_CHIPS.has(key)) {
+    SELECTED_CHIPS.delete(key);
     chip.style.background = 'rgba(255,255,255,.04)';
     chip.style.borderColor = `${color}55`;
+    chip.style.boxShadow = '';
   } else {
-    SELECTED_CHIPS.add(idx);
+    SELECTED_CHIPS.add(key);
     chip.style.background = `${color}33`;
     chip.style.borderColor = color;
     chip.style.boxShadow = `0 0 0 1px ${color}55 inset`;
@@ -926,16 +980,17 @@ function renderSelectedChips() {
   const cnt = document.getElementById('selectedChipsCount');
   if (!bar) return;
   bar.innerHTML = '';
-  const items = [...SELECTED_CHIPS].map(i => CURRENT_KEYWORDS[i]).filter(Boolean);
-  items.forEach((k, n) => {
-    const idx = [...SELECTED_CHIPS][n];
-    const color = KIND_COLOR[k.kind] || '#7A8493';
+  const keys = [...SELECTED_CHIPS];
+  keys.forEach((key) => {
+    const k = getChipByKey(key);
+    if (!k) return;
+    const color = getChipColor(key);
     const tag = document.createElement('span');
     tag.style.cssText = `background:${color}33;border:1px solid ${color};color:#F5F5F5;border-radius:14px;padding:3px 9px;font-size:11px;display:inline-flex;align-items:center;gap:4px`;
     tag.innerHTML = `${escHtml(k.text)} <span style="cursor:pointer;opacity:.7;font-size:13px;line-height:1" title="해제">×</span>`;
     tag.querySelector('span').onclick = () => {
-      SELECTED_CHIPS.delete(idx);
-      const chip = document.querySelector(`#keywordsGrid button[data-idx="${idx}"]`);
+      SELECTED_CHIPS.delete(key);
+      const chip = document.querySelector(`button[data-key="${key}"]`);
       if (chip) {
         chip.style.background = 'rgba(255,255,255,.04)';
         chip.style.borderColor = `${color}55`;
@@ -945,11 +1000,11 @@ function renderSelectedChips() {
     };
     bar.appendChild(tag);
   });
-  if (cnt) cnt.textContent = `${items.length}개`;
+  if (cnt) cnt.textContent = `${keys.length}개`;
 }
 
 function fillSeedFromSelectedChips() {
-  const items = [...SELECTED_CHIPS].map(i => CURRENT_KEYWORDS[i]).filter(Boolean);
+  const items = [...SELECTED_CHIPS].map(getChipByKey).filter(Boolean);
   const text = items.map(k => k.text).join(' ');
   const ta = document.getElementById('seedComposeInput');
   if (ta) ta.value = text;
@@ -957,10 +1012,9 @@ function fillSeedFromSelectedChips() {
 
 function clearSelectedChips() {
   SELECTED_CHIPS.clear();
-  document.querySelectorAll('#keywordsGrid button').forEach(chip => {
-    const idx = parseInt(chip.dataset.idx, 10);
-    const k = CURRENT_KEYWORDS[idx];
-    const color = (k && KIND_COLOR[k.kind]) || '#7A8493';
+  document.querySelectorAll('#seedsGrid button, #relatedGrid button, #suggestGrid button').forEach(chip => {
+    const key = chip.dataset.key;
+    const color = getChipColor(key);
     chip.style.background = 'rgba(255,255,255,.04)';
     chip.style.borderColor = `${color}55`;
     chip.style.boxShadow = '';
@@ -976,12 +1030,12 @@ function composeSeedAndGo() {
     if (ta) ta.focus();
     return;
   }
-  // 선택된 칩 메타에서 도구·페르소나·시간·결과·실패·비교 분리
-  const chips = [...SELECTED_CHIPS].map(i => CURRENT_KEYWORDS[i]).filter(Boolean);
-  const byKind = (kind) => chips.filter(c => c.kind === kind).map(c => c.text);
+  const chips = [...SELECTED_CHIPS].map(getChipByKey).filter(Boolean);
+  const relatedChips = chips.filter(c => c.kind); // related만 kind 있음
+  const byKind = (kind) => relatedChips.filter(c => c.kind === kind).map(c => c.text);
   SELECTED_SEED = {
     name: text,
-    angle: null, // 사용자가 STEP 2에서 4트랙 중 선택
+    angle: null,
     evidence: {
       tools: byKind('tool'),
       numbers: byKind('result'),
