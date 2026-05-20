@@ -11,7 +11,7 @@ export const maxDuration = 90;
  * POST /api/contents/seed-options/discover
  *
  * Stage 1 — 시드 발굴.
- * 키워드 1개 → 시드 후보 5~10개 (각 후보에 4-Gate 점수·evidence 풍부도·차별성).
+ * 키워드 1개 → 시드 후보 12~16개 (4트랙별 최소 3개씩 강제, 4-Gate 점수·evidence 풍부도·차별성 포함).
  *
  * Body: { keyword: string, prevSeeds?: string[] }
  *  - prevSeeds: 이미 발행한 편의 시드명 (중복 방지)
@@ -63,7 +63,12 @@ export async function POST(request: NextRequest) {
     : "";
 
   const SYSTEM_PROMPT = `당신은 한국 인스타그램 1인칭 AI 큐레이터 채널(@mamurs.ai.lab)의 시드 큐레이터입니다.
-입력 키워드 1개를 받아, 매주 1편 발행에 적합한 시드 후보 5~10개를 검증된 evidence 기반으로 발굴합니다.
+입력 키워드 1개를 받아, 매주 1편 발행에 적합한 시드 후보 12~16개를 검증된 evidence 기반으로 발굴합니다.
+
+[필수 발굴 분포 — 위반 시 재발굴]
+- 4트랙 (A·B·C·D) 각각 최소 3개 시드 (총 ≥12개)
+- 트랙 편향 ❌ (한 트랙 6개 이상 ❌)
+- 키워드를 6가지 이상 다른 각도로 해석할 것 (도구·시간·실패·비교·신기능·작은가게/직장인/학생 등 페르소나·계절성)
 
 [채널 정체성]
 - 한국 30대 직장인 페르소나
@@ -118,13 +123,13 @@ totalScore = whyNow*2 + whyUs*2 + soWhat*3 + saveShare*2 + diversity*1
       "totalScore": 75,
       "reason": "추천 이유 1줄"
     },
-    ... 5~10개
+    ... 총 12~16개 (4트랙 각 ≥3개)
   ]
 }
 
 [정렬]
 - totalScore 내림차순
-- 상위 5~10개만 반환`;
+- 12~16개 전부 반환 (5~10개로 잘라내지 말 것)`;
 
   try {
     const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -141,7 +146,7 @@ totalScore = whyNow*2 + whyUs*2 + soWhat*3 + saveShare*2 + diversity*1
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-5",
-        max_tokens: 4000,
+        max_tokens: 8000,
         system: SYSTEM_PROMPT,
         messages: [
           {
